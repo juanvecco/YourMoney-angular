@@ -1,0 +1,80 @@
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white">
+        <h6 class="mb-0 text-primary">Nova Despesa</h6>
+    </div>
+    <div class="card-body p-4">
+        <form (ngSubmit)="onSubmit()">
+            <div class="row g-3">
+
+                <!-- Descrição -->
+                <div class="col-12">
+                    <label class="form-label small">Descrição</label>
+                    <input type="text" class="form-control form-control-sm" [(ngModel)]="novaDespesa.descricao"
+                        name="descricao" required />
+                </div>
+
+                <!-- Valor -->
+                <div class="col-md-6">
+                    <label class="form-label small">Valor (R$)</label>
+                    <input type="number" class="form-control form-control-sm" [(ngModel)]="novaDespesa.valor"
+                        name="valor" min="0.01" step="0.01" required />
+                </div>
+
+                <!-- Data -->
+                <div class="col-md-6">
+                    <label class="form-label small">Data</label>
+                    <input type="date" class="form-control form-control-sm" [(ngModel)]="novaDespesa.data" name="data"
+                        required />
+                </div>
+
+                <!-- Conta -->
+                <div class="col-12">
+                    <label class="form-label small">Conta</label>
+                    <select class="form-select form-select-sm" [(ngModel)]="novaDespesa.idContaFinanceira"
+                        name="idContaFinanceira" required>
+                        <option value="" disabled>Selecione uma conta</option>
+                        <option *ngFor="let conta of contas" [value]="conta.id">{{ conta.descricao }}</option>
+                    </select>
+                </div>
+
+                <!-- Tipo de Despesa -->
+                <div class="col-md-6">
+                    <label class="form-label small">Tipo de Despesa</label>
+                    <select class="form-select form-select-sm" [(ngModel)]="novaDespesa.idTipoDespesa"
+                        (change)="onTipoChange()" name="idTipoDespesa">
+                        <option value="" disabled>Selecione</option>
+                        <option *ngFor="let tipo of tiposDespesa" [value]="tipo.id">{{ tipo.descricao }}</option>
+                    </select>
+                </div>
+
+                <!-- Natureza da Despesa -->
+                <div class="col-md-6">
+                    <label class="form-label small">Natureza da Despesa</label>
+                    <select class="form-select form-select-sm" [(ngModel)]="novaDespesa.idNaturezaDespesa"
+                        (change)="onNaturezaChange()" name="idNaturezaDespesa"
+                        [disabled]="naturezasDespesa.length === 0">
+                        <option value="" disabled>Selecione</option>
+                        <option *ngFor="let nat of naturezasDespesa" [value]="nat.id">{{ nat.descricao }}</option>
+                    </select>
+                </div>
+
+                <!-- Categoria Específica -->
+                <div class="col-12">
+                    <label class="form-label small">Categoria Específica</label>
+                    <select class="form-select form-select-sm" [(ngModel)]="novaDespesa.idCategoriaEspecifica"
+                        name="idCategoriaEspecifica" [disabled]="categoriasEspecificas.length === 0">
+                        <option value="" disabled>Selecione</option>
+                        <option *ngFor="let cat of categoriasEspecificas" [value]="cat.id">{{ cat.descricao }}</option>
+                    </select>
+                </div>
+
+                <!-- Botão -->
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary btn-sm w-100" [disabled]="!formValido()">
+                        Cadastrar Despesa
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

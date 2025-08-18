@@ -1,0 +1,76 @@
+/* Fundo branco e bordas suaves */
+.bg-white {
+    background-color: #ffffff !important;
+}
+
+/* Cards e containers */
+.container {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Botões de navegação de mês */
+.btn-outline-secondary {
+    border-color: #e0e0e0;
+    color: #555;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+    border-color: #d0d0d0;
+}
+
+/* Lista de despesas */
+.list-group-item {
+    background-color: #ffffff;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.list-group-item:hover {
+    background-color: #fafafa;
+    border-color: #e8e8e8;
+}
+
+/* Badge de valor */
+.badge {
+    background-color: #f0f8f0 !important;
+    color: #006400 !important;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+
+/* Total geral */
+.text-end strong {
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+/* Total por conta - estilo limpo */
+.text-muted {
+    color: #6c757d !important;
+    font-size: 0.9rem;
+}
+
+.text-dark {
+    color: #212529 !important;
+}
+
+.text-success {
+    color: #008000 !important;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    .badge {
+        font-size: 0.9rem;
+    }
+}

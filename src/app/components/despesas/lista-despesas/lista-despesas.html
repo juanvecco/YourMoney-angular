@@ -1,0 +1,49 @@
+<div class="container my-4">
+    <!-- Totalizadores por Conta -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <h6 class="text-muted mb-3" style="font-weight: 500;">Total por Conta</h6>
+            <div class="d-flex flex-wrap gap-2">
+                <div class="bg-white border rounded-3 px-3 py-2 shadow-sm" style="font-size: 0.95rem; min-width: 180px;"
+                    *ngFor="let total of totalPorConta">
+                    <strong class="text-dark">{{ total.descricao }}</strong>
+                    <div class="text-success mt-1" style="font-weight: 600;">
+                        R$ {{ total.valor | number:'1.2-2' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Lista de despesas -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <button class="btn btn-outline-secondary" (click)="mudarMes(-1)">&#8592;</button>
+        <h4 class="mb-0">{{ mesAtual | date:'MMMM/yyyy' : 'pt' }}</h4>
+        <button class="btn btn-outline-secondary" (click)="mudarMes(1)">&#8594;</button>
+    </div>
+
+    <ul class="list-group">
+        <li class="list-group-item d-flex justify-content-between align-items-center" *ngFor="let despesa of despesas">
+
+            <div>
+                <span>{{ despesa.descricao }}</span>
+                <br />
+                <small class="text-muted">{{ despesa.data | date:'shortDate' }}</small>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-success fs-6">R$ {{ despesa.valor | number:'1.2-2' }}</span>
+                <!-- Botões -->
+                <button class="btn btn-sm btn-outline-primary me-2" (click)="abrirModalEditar(despesa)">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" (click)="deletarDespesa(despesa.id)">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </li>
+    </ul>
+
+    <div class="text-end mt-4">
+        <strong>Total:</strong> R$ {{ totalDespesas | number:'1.2-2' }}
+    </div>
+</div>

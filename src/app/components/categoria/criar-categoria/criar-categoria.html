@@ -1,0 +1,46 @@
+<div class="container my-4">
+    <!-- Formulário de Cadastro -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Criar Nova Categoria</h5>
+        </div>
+        <div class="card-body">
+            <form (ngSubmit)="onSubmit()">
+                <div class="row g-3">
+                    <!-- Descrição -->
+                    <div class="col-md-6">
+                        <label class="form-label">Descrição</label>
+                        <input type="text" class="form-control" [(ngModel)]="novaCategoria.descricao" name="descricao"
+                            required />
+                    </div>
+
+                    <!-- Tipo de Despesa -->
+                    <div class="col-md-6">
+                        <label class="form-label">Tipo de Despesa</label>
+                        <select class="form-select" [(ngModel)]="novaCategoria.categoriaPaiId" (change)="onTipoChange()"
+                            name="categoriaPaiId">
+                            <option value="" disabled>Selecione</option>
+                            <option *ngFor="let tipo of tiposDespesa" [value]="tipo.id">{{ tipo.descricao }}</option>
+                        </select>
+                    </div>
+
+                    <!-- Natureza da Despesa -->
+                    <div class="col-md-6">
+                        <label class="form-label">Natureza da Despesa</label>
+                        <select class="form-select" [(ngModel)]="novaCategoria.categoriaPaiId" name="categoriaPaiId"
+                            [disabled]="naturezasDespesa.length === 0">
+                            <option value="" disabled>Selecione</option>
+                            <option *ngFor="let nat of naturezasDespesa" [value]="nat.id">{{ nat.descricao }}</option>
+                        </select>
+                    </div>
+
+                    <!-- Botão -->
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-success" [disabled]="!formValido()">Salvar
+                            Categoria</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
