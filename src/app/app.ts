@@ -1,16 +1,21 @@
 import { Component } from '@angular/core';
-import { HomeComponent } from './navegacao/home/home'; // Apenas o HomeComponent é usado no App
+import { RouterOutlet } from '@angular/router';
+// import { HomeComponent } from './navegacao/home/home';
 import { MenuComponent } from './navegacao/menu/menu';
 import { FooterComponent } from './navegacao/footer/footer';
+import { DespesasPageComponent } from './components/despesas/despesas-page/despesas-page';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [
-    HomeComponent, // Apenas o HomeComponent é necessário aqui
+    RouterOutlet,
+    // HomeComponent,
     MenuComponent,
-    FooterComponent
+    FooterComponent,
+    DespesasPageComponent
   ],
-  templateUrl: './app.html'
+  templateUrl: './app.html',
+  styles: []
 })
 export class App { }
