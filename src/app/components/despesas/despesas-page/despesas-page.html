@@ -1,0 +1,132 @@
+<div class="container my-4">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4>Gerenciar Despesas</h4>
+        <button class="btn btn-primary btn-sm" (click)="abrirModal()">
+            <i class="bi bi-plus-circle"></i> Cadastrar Despesa
+        </button>
+    </div>
+    <!-- Totalizadores por Conta -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <h6 class="text-muted mb-3" style="font-weight: 500;">Total por Conta</h6>
+            <div class="d-flex flex-wrap gap-2">
+                <div class="bg-white border rounded-3 px-3 py-2 shadow-sm" style="font-size: 0.95rem; min-width: 180px;"
+                    *ngFor="let total of totalPorConta">
+                    <strong class="text-dark">{{ total.descricao }}</strong>
+                    <div class="text-success mt-1" style="font-weight: 600;">
+                        R$ {{ total.valor | number:'1.2-2' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navegação por mês -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(-1)">&lt;</button>
+        <h6 class="mb-0">{{ mesAtual | date:'MMMM/yyyy' : 'pt' }}</h6>
+        <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(1)">&gt;</button>
+    </div>
+
+    <!-- Lista de Despesas -->
+    <ul class="list-group mb-4">
+        <li class="list-group-item d-flex justify-content-between align-items-center" *ngFor="let despesa of despesas">
+            <div>
+                <span class="fw-medium">{{ despesa.descricao }}</span>
+                <br />
+                <small class="text-muted">{{ despesa.data | date:'shortDate' }}</small>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-success bg-opacity-10 text-success px-3 py-2">
+                    R$ {{ despesa.valor | number:'1.2-2' }}
+                </span>
+                <!-- Botões -->
+                <button class="btn btn-sm btn-outline-primary" (click)="abrirModalEditar(despesa)">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" (click)="deletarDespesa(despesa.id)">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </li>
+    </ul>
+
+    <!-- Total Geral -->
+    <div class="text-end">
+        <strong>Total:</strong> R$ {{ totalDespesas | number:'1.2-2' }}
+    </div>
+</div>
+
+<!-- Modal de Cadastro -->
+<div class="modal fade" id="modalDespesa" tabindex="-1" aria-labelledby="modalDespesaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDespesaLabel">Nova Despesa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Descrição</label>
+                            <input type="text" class="form-control" [(ngModel)]="novaDespesa.descricao" name="descricao"
+                                required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Valor (R$)</label>
+                            <input type="number" step="0.01" class="form-control" [(ngModel)]="novaDespesa.valor"
+                                name="valor" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Data</label>
+                            <input type="date" class="form-control" [(ngModel)]="novaDespesa.data" name="data"
+                                required />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Conta</label>
+                            <select class="form-select" [(ngModel)]="novaDespesa.idContaFinanceira" name="conta"
+                                required>
+                                <option value="" disabled>Selecione uma conta</option>
+                                <option *ngFor="let conta of contas" [value]="conta.id">{{ conta.descricao }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Tipo de Despesa</label>
+                            <select class="form-select" [(ngModel)]="novaDespesa.idTipoDespesa"
+                                (change)="onTipoChange()" name="tipo">
+                                <option value="" disabled>Selecione</option>
+                                <option *ngFor="let tipo of tiposDespesa" [value]="tipo.id">{{ tipo.descricao }}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Natureza da Despesa</label>
+                            <select class="form-select" [(ngModel)]="novaDespesa.idNaturezaDespesa"
+                                (change)="onNaturezaChange()" name="natureza"
+                                [disabled]="naturezasDespesa.length === 0">
+                                <option value="" disabled>Selecione</option>
+                                <option *ngFor="let nat of naturezasDespesa" [value]="nat.id">{{ nat.descricao }}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Categoria Específica</label>
+                            <select class="form-select" [(ngModel)]="novaDespesa.idCategoriaEspecifica" name="categoria"
+                                [disabled]="categoriasEspecificas.length === 0">
+                                <option value="" disabled>Selecione</option>
+                                <option *ngFor="let cat of categoriasEspecificas" [value]="cat.id">{{ cat.descricao }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" (click)="salvarDespesa()">Salvar Despesa</button>
+            </div>
+        </div>
+    </div>
+</div>
