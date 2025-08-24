@@ -1,0 +1,33 @@
+<div class="container my-4">
+    <h1>Receitas</h1>
+
+    <!-- Navegação por mês -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(-1)">&lt;</button>
+        <h6 class="mb-0">{{ mesAtual | date:'MMMM/yyyy' : 'pt' }}</h6>
+        <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(1)">&gt;</button>
+    </div>
+    <!-- Lista de Receitas -->
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Descrição</th>
+                <th>Valor</th>
+                <th>Data</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let receita of receitas">
+                <td>{{ receita.descricao }}</td>
+                <td>{{ receita.valor | currency:'BRL':'symbol':'1.2-2':'pt' }}</td>
+                <td>{{ receita.data | date:'shortDate' : 'pt' }}</td>
+                <td>
+                    <!-- <button class="btn btn-sm btn-primary" (click)="editarReceita(receita)">Editar</button>
+                    <button class="btn btn-sm btn-danger" (click)="deletarReceita(receita.id)">Deletar</button> -->
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

@@ -103,7 +103,9 @@ export class DespesasPageComponent {
     }
 
     mudarMes(direcao: number) {
-        this.mesAtual.setMonth(this.mesAtual.getMonth() + direcao);
+        const novoMes = new Date(this.mesAtual);
+        novoMes.setMonth(novoMes.getMonth() + direcao);
+        this.mesAtual = novoMes;
         this.carregarDespesas();
     }
 

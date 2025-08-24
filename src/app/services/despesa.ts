@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface Despesa {
   id: string;
@@ -27,7 +28,7 @@ export interface Categoria {
   providedIn: 'root',
 })
 export class DespesaService {
-  private baseUrl = 'https://localhost:60915/api';
+  private baseUrl = environment.apiUrl;
 
   private todasCategorias: Categoria[] = [];
 
@@ -88,8 +89,5 @@ export class DespesaService {
   }): Observable<Categoria> {
     return this.http.post<Categoria>(`${this.baseUrl}/Categoria`, categoria);
   }
-  // listarCategorias(): Observable<Categoria[]> {
-  //   return this.http.get<Categoria[]>(`${this.baseUrl}/Categorias`);
-  // }
 }
 
