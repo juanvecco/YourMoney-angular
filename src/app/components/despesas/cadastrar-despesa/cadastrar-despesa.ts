@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DespesaService, Despesa, Categoria } from '../../../services/despesa';
@@ -10,6 +10,7 @@ import { DespesaService, Despesa, Categoria } from '../../../services/despesa';
   templateUrl: './cadastrar-despesa.html'
 })
 export class CadastrarDespesaComponent implements OnInit {
+  @Output() despesaCadastrada = new EventEmitter<void>();
   despesas: Despesa[] = [];
   mesAtual: Date = new Date();
   totalDespesas = 0;
@@ -114,6 +115,7 @@ export class CadastrarDespesaComponent implements OnInit {
       next: () => {
         alert('Despesa cadastrada com sucesso!');
         this.resetarFormulario();
+        this.despesaCadastrada.emit();
       },
       error: (erro) => {
         console.error('Erro ao salvar despesa', erro);
