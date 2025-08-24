@@ -66,7 +66,6 @@ export class DespesasPageComponent {
         });
     }
 
-
     calcularTotalPorConta() {
         const totalMap: { [id: string]: number } = {};
 
@@ -343,6 +342,7 @@ export class DespesasPageComponent {
                 alert('Despesa cadastrada com sucesso!');
                 const modal = document.querySelector('#modalDespesa');
                 (window as any).bootstrap.Modal.getInstance(modal)?.hide();
+                this.carregarDespesas();
             },
             error: (erro) => {
                 console.error('Erro ao salvar despesa', erro);
