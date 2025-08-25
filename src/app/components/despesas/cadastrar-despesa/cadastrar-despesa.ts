@@ -2,6 +2,7 @@ import { Component, OnInit, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DespesaService, Despesa, Categoria } from '../../../services/despesa';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-cadastrar-despesa',
@@ -113,13 +114,30 @@ export class CadastrarDespesaComponent implements OnInit {
 
     this.despesaService.criarDespesa(payload).subscribe({
       next: () => {
-        alert('Despesa cadastrada com sucesso!');
         this.resetarFormulario();
         this.despesaCadastrada.emit();
+
+
+        // ✅ Alerta mais elegante
+        Swal.fire({
+          icon: 'success',
+          title: 'Despesa cadastrada!',
+          text: 'Sua despesa foi registrada com sucesso.',
+          confirmButtonColor: '#b49452',   // dourado premium
+          background: '#f8f8f8',           // claro e elegante
+          color: '#283b6b',                // azul presidente
+        });
       },
       error: (erro) => {
         console.error('Erro ao salvar despesa', erro);
-        alert('Erro ao salvar despesa.');
+        Swal.fire({
+          icon: 'error',
+          title: 'Erro!',
+          text: 'Não foi possível salvar a despesa.',
+          confirmButtonColor: '#b49452',
+          background: '#f8f8f8',
+          color: '#283b6b',
+        });
       }
     });
   }
