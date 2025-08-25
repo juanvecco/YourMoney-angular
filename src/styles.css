@@ -1,3 +1,18 @@
 .container {
     padding-top: 10px;
 }
+
+:root {
+    --gold-light: #e4c77f;
+    --gold: #b49452;
+    --blue-president: #283b6b;
+    --blue-muted: #89877e;
+    --blue-soft: #657495;
+    --blue-light: #a3a9af;
+    --blue-dark: #555f7e;
+    --blue-gray: #939ab4;
+    --blue-medium: #5f6c94;
+    --blue-deep: #42547b;
+
+    --card-bg: #f8f8f8;
+}

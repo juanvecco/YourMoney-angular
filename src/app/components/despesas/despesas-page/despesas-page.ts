@@ -339,14 +339,30 @@ export class DespesasPageComponent {
 
         this.despesaService.criarDespesa(payload).subscribe({
             next: () => {
-                alert('Despesa cadastrada com sucesso!');
                 const modal = document.querySelector('#modalDespesa');
                 (window as any).bootstrap.Modal.getInstance(modal)?.hide();
                 this.carregarDespesas();
+
+                // ✅ Alerta mais elegante
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Despesa cadastrada!',
+                    text: 'Sua despesa foi registrada com sucesso.',
+                    confirmButtonColor: '#b49452',   // dourado premium
+                    background: '#f8f8f8',           // claro e elegante
+                    color: '#283b6b',                // azul presidente
+                });
             },
             error: (erro) => {
                 console.error('Erro ao salvar despesa', erro);
-                alert('Erro ao salvar despesa. Verifique o console.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro!',
+                    text: 'Não foi possível salvar a despesa.',
+                    confirmButtonColor: '#b49452',
+                    background: '#f8f8f8',
+                    color: '#283b6b',
+                });
             }
         });
     }
