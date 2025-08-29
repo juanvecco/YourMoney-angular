@@ -1,19 +1,26 @@
 import { Component } from "@angular/core";
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Receita, ReceitaService } from "../../../services/receita";
+import Swal from 'sweetalert2';
 
 @Component({
     selector: "app-receita-page",
-    imports: [CommonModule],
+    imports: [CommonModule, FormsModule],
     templateUrl: "./receita-page.html"
 })
 export class ReceitaPageComponent {
     // Lógica do componente
-
     receitas: Receita[] = [];
     mesAtual: Date = new Date();
     totalReceitas = 0;
 
+    //Formulário
+    novaReceita = {
+        descricao: '',
+        valor: 0,
+        data: new Date().toISOString().split('T')[0]
+    };
 
     constructor(private receitaService: ReceitaService) {
         this.carregarDadosIniciais();
@@ -42,4 +49,52 @@ export class ReceitaPageComponent {
         this.mesAtual = novoMes;
         this.carregarReceitas();
     }
+
+    abrirModal() {
+        this.novaReceita = {
+            descricao: '',
+            valor: 0,
+            data: new Date().toISOString().split('T')[0]
+        };
+
+        const modal = new (window as any).bootstrap.Modal(document.getElementById('modalReceita'));
+        modal.show();
+    }
+
+    salvarReceita() {
+
+        if (!this.novaReceita.descricao || !this.novaReceita.valor || !this.novaReceita.data) {
+            alert('Preencha todos os campos obrigatórios.');
+            return;
+        }
+
+        this.receitaService.criarReceita(this.novaReceita).subscribe({
+            next: () => {
+                const modal = new (window as any).bootstrap.Modal(document.getElementById('modalReceita'));
+                modal.hide();
+                this.carregarReceitas();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Despesa cadastrada!',
+                    text: 'Sua despesa foi registrada com sucesso.',
+                    confirmButtonColor: '#b49452',
+                    background: '#f8f8f8',
+                    color: '#283b6b',
+                });
+            },
+            error: (erro) => {
+                console.error('Erro ao salvar receita', erro);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro!',
+                    text: 'Não foi possível salvar a despesa.',
+                    confirmButtonColor: '#b49452',
+                    background: '#f8f8f8',
+                    color: '#283b6b',
+                });
+            }
+        });
+    }
+
 }
