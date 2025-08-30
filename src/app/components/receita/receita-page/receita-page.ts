@@ -17,6 +17,7 @@ export class ReceitaPageComponent {
 
     //Formulário
     novaReceita = {
+        id: '',
         descricao: '',
         valor: 0,
         data: new Date().toISOString().split('T')[0]
@@ -50,25 +51,56 @@ export class ReceitaPageComponent {
         this.carregarReceitas();
     }
 
+    // abrirModal() {
+    //     this.novaReceita = {
+    //         descricao: '',
+    //         valor: 0,
+    //         data: new Date().toISOString().split('T')[0]
+    //     };
+
+    //     const modal = new (window as any).bootstrap.Modal(document.getElementById('modalReceita'));
+    //     modal.show();
+    // }
+
+    editando: boolean = false;
+
     abrirModal() {
+        this.editando = false;
         this.novaReceita = {
+            id: '',
             descricao: '',
             valor: 0,
             data: new Date().toISOString().split('T')[0]
         };
+        const modal = new (window as any).bootstrap.Modal(document.getElementById('modalReceita'));
+        modal.show();
+    }
 
+    abrirModalReceita(receita: Receita) {
+        this.editando = true;
+        this.novaReceita = { ...receita, data: new Date(receita.data).toISOString().split('T')[0] }; // Preenche com os dados da receita existente
         const modal = new (window as any).bootstrap.Modal(document.getElementById('modalReceita'));
         modal.show();
     }
 
     salvarReceita() {
-
         if (!this.novaReceita.descricao || !this.novaReceita.valor || !this.novaReceita.data) {
-            alert('Preencha todos os campos obrigatórios.');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Campos obrigatórios!',
+                text: 'Preencha todos os campos antes de salvar.',
+                confirmButtonColor: '#b49452',
+                background: '#f8f8f8',
+                color: '#283b6b',
+            });
             return;
         }
 
-        this.receitaService.criarReceita(this.novaReceita).subscribe({
+        const request$ = this.editando
+            ? this.receitaService.atualizarReceita(this.novaReceita)
+            : this.receitaService.criarReceita(this.novaReceita);
+
+        request$.subscribe({
             next: () => {
                 const modal = document.getElementById('modalReceita');
                 (window as any).bootstrap.Modal.getInstance(modal)?.hide();
@@ -76,8 +108,10 @@ export class ReceitaPageComponent {
 
                 Swal.fire({
                     icon: 'success',
-                    title: 'Receita cadastrada!',
-                    text: 'Sua receita foi registrada com sucesso.',
+                    title: this.editando ? 'Receita atualizada!' : 'Receita cadastrada!',
+                    text: this.editando
+                        ? 'Sua receita foi atualizada com sucesso.'
+                        : 'Sua receita foi registrada com sucesso.',
                     confirmButtonColor: '#b49452',
                     background: '#f8f8f8',
                     color: '#283b6b',
@@ -88,10 +122,37 @@ export class ReceitaPageComponent {
                 Swal.fire({
                     icon: 'error',
                     title: 'Erro!',
-                    text: 'Não foi possível salvar a receita.',
+                    text: this.editando
+                        ? 'Não foi possível atualizar a receita.'
+                        : 'Não foi possível salvar a receita.',
                     confirmButtonColor: '#b49452',
                     background: '#f8f8f8',
                     color: '#283b6b',
+                });
+            }
+        });
+    }
+
+    deletarReceita(id: string) {
+        Swal.fire({
+            title: 'Confirmação',
+            text: 'Tem certeza que deseja deletar esta receita?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sim, deletar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                this.receitaService.deletarReceita(id).subscribe({
+                    next: () => {
+                        this.receitas = this.receitas.filter(d => d.id !== id);
+                        this.totalReceitas = this.receitas.reduce((soma, d) => soma + d.valor, 0);
+                        Swal.fire('Deletado!', 'Receita deletada com sucesso.', 'success');
+                    },
+                    error: (erro) => {
+                        console.error('Erro ao deletar receita', erro);
+                        Swal.fire('Erro!', 'Não foi possível deletar a receita.', 'error');
+                    }
                 });
             }
         });
