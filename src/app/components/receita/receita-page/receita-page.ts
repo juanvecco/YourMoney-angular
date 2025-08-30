@@ -70,14 +70,14 @@ export class ReceitaPageComponent {
 
         this.receitaService.criarReceita(this.novaReceita).subscribe({
             next: () => {
-                const modal = new (window as any).bootstrap.Modal(document.getElementById('modalReceita'));
-                modal.hide();
+                const modal = document.getElementById('modalReceita');
+                (window as any).bootstrap.Modal.getInstance(modal)?.hide();
                 this.carregarReceitas();
 
                 Swal.fire({
                     icon: 'success',
-                    title: 'Despesa cadastrada!',
-                    text: 'Sua despesa foi registrada com sucesso.',
+                    title: 'Receita cadastrada!',
+                    text: 'Sua receita foi registrada com sucesso.',
                     confirmButtonColor: '#b49452',
                     background: '#f8f8f8',
                     color: '#283b6b',
@@ -88,7 +88,7 @@ export class ReceitaPageComponent {
                 Swal.fire({
                     icon: 'error',
                     title: 'Erro!',
-                    text: 'Não foi possível salvar a despesa.',
+                    text: 'Não foi possível salvar a receita.',
                     confirmButtonColor: '#b49452',
                     background: '#f8f8f8',
                     color: '#283b6b',
