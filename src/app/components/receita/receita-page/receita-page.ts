@@ -51,20 +51,9 @@ export class ReceitaPageComponent {
         this.carregarReceitas();
     }
 
-    // abrirModal() {
-    //     this.novaReceita = {
-    //         descricao: '',
-    //         valor: 0,
-    //         data: new Date().toISOString().split('T')[0]
-    //     };
-
-    //     const modal = new (window as any).bootstrap.Modal(document.getElementById('modalReceita'));
-    //     modal.show();
-    // }
-
     editando: boolean = false;
 
-    abrirModal() {
+    abrirModalReceita() {
         this.editando = false;
         this.novaReceita = {
             id: '',
@@ -76,9 +65,9 @@ export class ReceitaPageComponent {
         modal.show();
     }
 
-    abrirModalReceita(receita: Receita) {
+    abrirModalEditar(receita: Receita) {
         this.editando = true;
-        this.novaReceita = { ...receita, data: new Date(receita.data).toISOString().split('T')[0] }; // Preenche com os dados da receita existente
+        this.novaReceita = { ...receita, data: new Date(receita.data).toISOString().split('T')[0] };
         const modal = new (window as any).bootstrap.Modal(document.getElementById('modalReceita'));
         modal.show();
     }
