@@ -1,0 +1,78 @@
+<div class="container my-5">
+    <div class="row justify-content-center">
+
+        <!-- Card Principal: Disponível para Investir -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 text-center flex-fill" style="background: var(--card-bg);">
+                <div class="card-body p-5">
+
+                    <!-- Ícone Dinâmico -->
+                    <i class="{{ obterIconeDisponivel() }}" style="font-size: 3rem; color: var(--gold);"></i>
+
+                    <!-- Título -->
+                    <h5 class="mt-3" style="color: var(--blue-president); font-weight: 600;">
+                        {{ obterTextoDisponivel() }}
+                    </h5>
+
+                    <!-- Valor Destaque -->
+                    <div class="mt-3">
+                        <span [class]="obterCorDisponivel()" style="font-size: 2.5rem; font-weight: 700;">
+                            {{ formatarValor(calcularDisponivel()) }}
+                        </span>
+                    </div>
+
+                    <!-- Navegação de Mês -->
+                    <div class="d-flex justify-content-center align-items-center gap-3 mt-3">
+                        <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(-1)">
+                            &#8592;
+                        </button>
+                        <strong>{{ mesAtual | date:'MMMM/yyyy' : 'pt' }}</strong>
+                        <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(1)">
+                            &#8594;
+                        </button>
+                    </div>
+
+                    <!-- Legenda -->
+                    <!-- <p class="text-muted small mt-2">
+                        Baseado no mês atual
+                    </p> -->
+
+                    <!-- Botão de Ação -->
+                    <div class="mt-4">
+                        <button class="btn btn-outline-success btn-sm" (click)="abrirModalInvestimento()"
+                            [disabled]="calcularDisponivel() <= 0">
+                            <i class="bi bi-graph-up-arrow"></i> Investir Agora
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Detalhes -->
+    <!-- <div class="row justify-content-center mt-4">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h6 class="mb-3">Detalhes do Mês</h6>
+                    <div class="row">
+                        <div class="col-6 text-start">
+                            <small class="text-muted">Total de Receitas</small> -->
+    <!-- <div class="text-success fw-bold">
+                                {{ formatarValor(totalReceitas) }}
+                            </div> -->
+    <!-- </div>
+                        <div class="col-6 text-end">
+                            <small class="text-muted">Total de Despesas</small> -->
+    <!-- <div class="text-danger fw-bold">
+                                {{ formatarValor(totalDespesas) }}
+                            </div> -->
+    <!-- </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> -->
+</div>
