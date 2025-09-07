@@ -31,10 +31,9 @@ export class DisponivelPageComponent {
 
     constructor(private receitaService: ReceitaService, private despesaService: DespesaService) { }
 
-    // ngOnInit() {
-    //     this.obterReceitas();
-    //     this.obterDespesas();
-    // }
+    ngOnInit(): void {
+        this.carregarDados();
+    }
 
     obterReceitas(mes: number, ano: number) {
         this.receitaService.obterPorReferencia(mes, ano).subscribe({
