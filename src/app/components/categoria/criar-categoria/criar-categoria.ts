@@ -1,99 +1,42 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { DespesaService, Categoria } from '../../../services/despesa';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { CommonModule, NgIf, NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-criar-categoria',
   standalone: true,
-  templateUrl: './criar-categoria.html',
-  styleUrls: ['./criar-categoria.css'],
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NgIf, NgFor],
+  templateUrl: './criar-categoria.html'
 })
 export class CriarCategoriaComponent implements OnInit {
-  novaCategoria = {
-    descricao: '',
-    tipoTransacao: 1,
-    categoriaPaiId: '' as string | null // Pode ser string ou null
-  };
+  @Input() categoria: any = { id: '', nome: '', categoriaPaiId: null };
+  @Input() categorias: any[] = [];
+  @Input() editando = false;
 
-  tiposDespesa: Categoria[] = [];
-  naturezasDespesa: Categoria[] = [];
+  @Output() salvar = new EventEmitter<any>();
+  @Output() fechar = new EventEmitter<void>();
 
-  constructor(private despesaService: DespesaService) { }
+  categoriaTipo: 'tipo' | 'natureza' | 'especifica' = 'tipo';
+  tiposDespesa: any[] = [];
+  naturezasDespesa: any[] = [];
 
-  ngOnInit(): void {
-    this.carregarTiposDespesa();
+  ngOnInit() {
+    this.prepararListas();
   }
 
-  carregarTiposDespesa() {
-    this.despesaService.listarCategorias().subscribe({
-      next: (categorias) => {
-        this.tiposDespesa = categorias.filter(
-          c => c.categoriaPaiId === null && c.tipoTransacao === 1
-        );
-      },
-      error: (erro) => console.error('Erro ao carregar tipos de despesa', erro)
-    });
-  }
-
-  onTipoChange() {
-    const tipoId = this.novaCategoria.categoriaPaiId;
-    if (!tipoId) {
-      this.naturezasDespesa = [];
-      return;
-    }
-
-    this.despesaService.listarCategorias().subscribe({
-      next: (categorias) => {
-        this.naturezasDespesa = categorias.filter(
-          c => c.categoriaPaiId === tipoId
-        );
-      },
-      error: (erro) => console.error('Erro ao carregar naturezas de despesa', erro)
-    });
-  }
-
-  onSubmit() {
-    if (!this.formValido()) return;
-
-    let categoriaPaiId: string | null = null;
-
-    categoriaPaiId = this.novaCategoria.categoriaPaiId || null;
-
-    const payload = {
-      descricao: this.novaCategoria.descricao,
-      tipoTransacao: 1,
-      categoriaPaiId: this.novaCategoria.categoriaPaiId
-        ? this.novaCategoria.categoriaPaiId // se tem valor, usa
-        : undefined // se vazio, usa `undefined`, NÃO `null`
-    };
-
-    this.despesaService.criarCategoria(payload).subscribe({
-      next: () => {
-        alert('Categoria cadastrada com sucesso!');
-        this.resetarFormulario();
-      },
-      error: (erro) => {
-        console.error('Erro ao salvar categoria', erro);
-        alert('Erro ao salvar categoria.');
-      }
-    });
-  }
-
-  formValido(): boolean {
-    return !!(
-      this.novaCategoria.descricao &&
-      this.novaCategoria.descricao.trim() !== ''
+  prepararListas() {
+    this.tiposDespesa = this.categorias.filter(c => !c.categoriaPaiId);
+    this.naturezasDespesa = this.categorias.filter(c =>
+      this.tiposDespesa.some(t => t.id === c.categoriaPaiId)
     );
   }
 
-  resetarFormulario() {
-    this.novaCategoria = {
-      descricao: '',
-      tipoTransacao: 1,
-      categoriaPaiId: ''
-    };
-    this.naturezasDespesa = [];
+  salvarCategoria() {
+    if (!this.categoria.nome) return;
+    this.salvar.emit({ ...this.categoria, categoriaTipo: this.categoriaTipo });
+  }
+
+  fecharModal() {
+    this.fechar.emit();
   }
 }

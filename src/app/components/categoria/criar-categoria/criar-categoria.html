@@ -1,46 +1,54 @@
-<div class="container my-4">
-    <!-- Formulário de Cadastro -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Criar Nova Categoria</h5>
-        </div>
-        <div class="card-body">
-            <form (ngSubmit)="onSubmit()">
-                <div class="row g-3">
-                    <!-- Descrição -->
-                    <div class="col-md-6">
-                        <label class="form-label">Descrição</label>
-                        <input type="text" class="form-control" [(ngModel)]="novaCategoria.descricao" name="descricao"
-                            required />
-                    </div>
+<div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,.5)">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ editando ? 'Editar Categoria' : 'Nova Categoria' }}</h5>
+                <button type="button" class="btn-close" (click)="fecharModal()"></button>
+            </div>
 
-                    <!-- Tipo de Despesa -->
-                    <div class="col-md-6">
-                        <label class="form-label">Tipo de Despesa</label>
-                        <select class="form-select" [(ngModel)]="novaCategoria.categoriaPaiId" (change)="onTipoChange()"
-                            name="categoriaPaiId">
-                            <option value="" disabled>Selecione</option>
-                            <option *ngFor="let tipo of tiposDespesa" [value]="tipo.id">{{ tipo.descricao }}</option>
-                        </select>
-                    </div>
+            <div class="modal-body">
+                <!-- Toggle -->
+                <div class="btn-group w-100 mb-3">
+                    <input type="radio" class="btn-check" name="tipo" id="tipo" [(ngModel)]="categoriaTipo"
+                        value="tipo" />
+                    <label class="btn btn-outline-primary" for="tipo">Tipo</label>
 
-                    <!-- Natureza da Despesa -->
-                    <div class="col-md-6">
-                        <label class="form-label">Natureza da Despesa</label>
-                        <select class="form-select" [(ngModel)]="novaCategoria.categoriaPaiId" name="categoriaPaiId"
-                            [disabled]="naturezasDespesa.length === 0">
-                            <option value="" disabled>Selecione</option>
-                            <option *ngFor="let nat of naturezasDespesa" [value]="nat.id">{{ nat.descricao }}</option>
-                        </select>
-                    </div>
+                    <input type="radio" class="btn-check" name="tipo" id="natureza" [(ngModel)]="categoriaTipo"
+                        value="natureza" />
+                    <label class="btn btn-outline-primary" for="natureza">Natureza</label>
 
-                    <!-- Botão -->
-                    <div class="col-12">
-                        <button type="submit" class="btn btn-success" [disabled]="!formValido()">Salvar
-                            Categoria</button>
-                    </div>
+                    <input type="radio" class="btn-check" name="tipo" id="especifica" [(ngModel)]="categoriaTipo"
+                        value="especifica" />
+                    <label class="btn btn-outline-primary" for="especifica">Específica</label>
                 </div>
-            </form>
+
+                <!-- Nome -->
+                <div class="mb-3">
+                    <label class="form-label">Nome</label>
+                    <input type="text" class="form-control" [(ngModel)]="categoria.nome" />
+                </div>
+
+                <!-- Pai Tipo -->
+                <div class="mb-3" *ngIf="categoriaTipo === 'natureza'">
+                    <label class="form-label">Tipo de Despesa (pai)</label>
+                    <select class="form-select" [(ngModel)]="categoria.categoriaPaiId">
+                        <option *ngFor="let t of tiposDespesa" [value]="t.id">{{ t.nome }}</option>
+                    </select>
+                </div>
+
+                <!-- Pai Natureza -->
+                <div class="mb-3" *ngIf="categoriaTipo === 'especifica'">
+                    <label class="form-label">Natureza da Despesa (pai)</label>
+                    <select class="form-select" [(ngModel)]="categoria.categoriaPaiId">
+                        <option *ngFor="let n of naturezasDespesa" [value]="n.id">{{ n.nome }}</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="fecharModal()">Cancelar</button>
+                <button type="button" class="btn btn-success" (click)="salvarCategoria()">Salvar</button>
+            </div>
         </div>
     </div>
 </div>
