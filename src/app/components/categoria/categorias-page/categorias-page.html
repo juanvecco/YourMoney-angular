@@ -1,0 +1,19 @@
+<div class="container my-4">
+    <h3>Categorias</h3>
+    <button class="btn btn-success mb-3" (click)="abrirModalCategoria()">Nova Categoria</button>
+
+    <!-- Listagem -->
+    <ul class="list-group">
+        <li *ngFor="let c of categorias" class="list-group-item d-flex justify-content-between">
+            {{ c.nome }}
+            <button class="btn btn-sm btn-outline-primary" (click)="abrirModalCategoria(c)">
+                Editar
+            </button>
+        </li>
+    </ul>
+</div>
+
+<!-- Modal criar/editar categoria -->
+<app-criar-categoria *ngIf="mostrarModalCategoria" [categoria]="categoriaSelecionada" [categorias]="categorias"
+    [editando]="editando" (salvar)="salvarCategoria($event)" (fechar)="fecharModal()">
+</app-criar-categoria>
