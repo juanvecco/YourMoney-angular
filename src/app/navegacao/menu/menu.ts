@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 @Component({
   selector: 'app-menu',
   imports: [RouterModule],
-  templateUrl: './menu.html'
+  templateUrl: './menu.html',
+  styleUrls: ['./menu.css']
 })
 export class MenuComponent { }

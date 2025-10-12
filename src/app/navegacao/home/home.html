@@ -15,8 +15,9 @@
 
         <!-- Despesa-->
         <div class="col-md-6 d-flex">
-            <div class="card shadow-sm border-0 text-center flex-fill"
-                style="cursor: pointer; background: var(--card-bg);" (click)="navegarPara('/despesas')">
+            <div class="card main-card text-center flex-fill despesa"
+                style="cursor: pointer; background: var(--card-bg); animation-delay: 0.2s;"
+                (click)="navegarPara('/despesas')">
                 <div class="card-body p-5">
                     <i class="bi bi-wallet2" style="font-size: 3rem; color: var(--gold);"></i>
                     <h5 class="mt-3" style="color: var(--blue-president); font-weight: 600;">Despesa</h5>
@@ -25,5 +26,17 @@
             </div>
         </div>
 
+
     </div>
 </div>
+<script>
+    // Adicionar efeito de pulso aos cartões principais
+    document.addEventListener('DOMContentLoaded', function () {
+        const cards = document.querySelectorAll('.main-card');
+        cards.forEach((card, index) => {
+            setTimeout(() => {
+                card.classList.add('pulse');
+            }, index * 500 + 1000);
+        });
+    });
+</script>
