@@ -5,10 +5,11 @@ import { ReceitaPageComponent } from './components/receita/receita-page/receita-
 import { DisponivelPageComponent } from './components/disponivel/disponivel-page/disponivel-page';
 import { InvestimentoPageComponent } from './components/investimento/investimento-page/investimento-page';
 import { ConfiguracaoPageComponent } from './components/configuracao/configuracao-page/configuracao-page';
+import { DashboardPageComponent } from './components/dashboard/dashboard-page/dashboard-page';
 
 
 export const routes: Routes = [
-    { path: '', component: HomeComponent },
+    { path: 'dashboard', component: DashboardPageComponent },
     { path: 'despesas', component: DespesasPageComponent },
     { path: 'receita', component: ReceitaPageComponent },
     { path: 'disponivel', component: DisponivelPageComponent },
