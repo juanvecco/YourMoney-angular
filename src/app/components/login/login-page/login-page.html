@@ -1,0 +1,145 @@
+<div class="login-container">
+    <!-- Seção de Branding/Concierge -->
+    <div class="branding-section">
+        <div class="concierge-icon">
+            <i class="bi bi-person-check"></i>
+        </div>
+
+        <div class="logo">Your Money</div>
+
+        <h1 class="main-title">Seu Futuro Financeiro, Guiado</h1>
+
+        <p class="inspirational-quote" id="inspirationalQuote">
+            Cada decisão conta. Faça-as com inteligência.
+        </p>
+    </div>
+
+    <!-- Seção do Formulário -->
+    <div class="form-section">
+        <div class="login-card fade-in">
+            <h2 class="form-title">Bem-vindo de Volta!</h2>
+            <p class="form-subtitle">Acesse sua conta e continue sua jornada financeira</p>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email" class="form-label">E-mail</label>
+                    <input type="email" class="form-control" id="email" placeholder="seu@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Senha</label>
+                    <div class="password-field">
+                        <input type="password" class="form-control" id="password" placeholder="Sua senha" required>
+                        <button type="button" class="password-toggle" onclick="togglePassword()">
+                            <i class="bi bi-eye" id="passwordIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-login" id="loginBtn">
+                    <i class="bi bi-box-arrow-in-right"></i> Entrar
+                </button>
+            </form>
+
+            <div class="form-links">
+                <a href="#" class="form-link">Esqueceu sua senha?</a>
+            </div>
+
+            <div class="divider text-center">
+                <span>ou</span>
+            </div>
+
+            <button type="button" class="btn btn-register" onclick="goToRegister()">
+                <i class="bi bi-person-plus"></i> Criar uma Nova Conta
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Frases inspiradoras rotativas
+    const inspirationalQuotes = [
+        "Cada decisão conta. Faça-as com inteligência.",
+        "Sua jornada financeira começa aqui. Estamos com você a cada passo.",
+        "Desbloqueie seu potencial financeiro. O futuro é agora.",
+        "Organize, invista, prospere. Seu dinheiro, suas regras.",
+        "O controle está em suas mãos. Nós ajudamos a guiar.",
+        "Transforme sonhos em metas, metas em realidade.",
+        "Cada real economizado é um passo rumo à liberdade financeira."
+    ];
+
+    let currentQuoteIndex = 0;
+
+    // Função para alternar frases inspiradoras
+    function rotateQuote() {
+        const quoteElement = document.getElementById('inspirationalQuote');
+        quoteElement.style.opacity = '0';
+
+        setTimeout(() => {
+            currentQuoteIndex = (currentQuoteIndex + 1) % inspirationalQuotes.length;
+            quoteElement.textContent = inspirationalQuotes[currentQuoteIndex];
+            quoteElement.style.opacity = '1';
+        }, 300);
+    }
+
+    // Alternar frase a cada 4 segundos
+    setInterval(rotateQuote, 4000);
+
+    // Função para mostrar/esconder senha
+    function togglePassword() {
+        const passwordField = document.getElementById('password');
+        const passwordIcon = document.getElementById('passwordIcon');
+
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            passwordIcon.className = 'bi bi-eye-slash';
+        } else {
+            passwordField.type = 'password';
+            passwordIcon.className = 'bi bi-eye';
+        }
+    }
+
+    // Função de login (simulada)
+    document.getElementById('loginForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const loginBtn = document.getElementById('loginBtn');
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        // Validação básica
+        if (!email || !password) {
+            alert('Por favor, preencha todos os campos.');
+            return;
+        }
+
+        // Simular loading
+        loginBtn.classList.add('loading');
+        loginBtn.disabled = true;
+
+        // Simular processo de login
+        setTimeout(() => {
+            loginBtn.classList.remove('loading');
+            loginBtn.disabled = false;
+
+            // Simular sucesso
+            alert('Login realizado com sucesso! Redirecionando...');
+            // window.location.href = '/dashboard'; // Redirecionar para o dashboard
+        }, 2000);
+    });
+
+    // Função para ir para cadastro
+    function goToRegister() {
+        alert('Redirecionando para a página de cadastro...');
+        // window.location.href = '/register'; // Redirecionar para cadastro
+    }
+
+    // Animação de entrada escalonada
+    document.addEventListener('DOMContentLoaded', function () {
+        const elements = document.querySelectorAll('.fade-in');
+        elements.forEach((element, index) => {
+            element.style.animationDelay = `${index * 0.2}s`;
+        });
+    });
+</script>
