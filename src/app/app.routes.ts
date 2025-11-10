@@ -6,6 +6,7 @@ import { DisponivelPageComponent } from './components/disponivel/disponivel-page
 import { InvestimentoPageComponent } from './components/investimento/investimento-page/investimento-page';
 import { ConfiguracaoPageComponent } from './components/configuracao/configuracao-page/configuracao-page';
 import { DashboardPageComponent } from './components/dashboard/dashboard-page/dashboard-page';
+import { LoginPageComponent } from './components/login/login-page/login-page';
 
 
 export const routes: Routes = [
@@ -15,4 +16,5 @@ export const routes: Routes = [
     { path: 'disponivel', component: DisponivelPageComponent },
     { path: 'investimento', component: InvestimentoPageComponent },
     { path: 'configuracao', component: ConfiguracaoPageComponent },
+    { path: 'login', component: LoginPageComponent },
 ];

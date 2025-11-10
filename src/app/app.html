@@ -1,5 +1,5 @@
-<app-menu></app-menu>
-<div class="container my-4">
+<app-menu *ngIf="!isLoginPage()"></app-menu>
+<div [ngClass]="{'full-height': isLoginPage(), 'container my-4': !isLoginPage()}">
     <router-outlet></router-outlet>
 </div>
-<app-footer></app-footer>
+<app-footer *ngIf="!isLoginPage()"></app-footer>
