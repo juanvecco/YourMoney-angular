@@ -40,59 +40,50 @@
 
 <!-- Conteúdo Principal -->
 <div class="main-container pt-5">
-    <div class="container-fluid px-4">
+    <div class="container">
         <!-- Breadcrumb -->
-        <nav aria-label="breadcrumb" class="mb-4 mt-5">
+        <nav aria-label="breadcrumb" class="mb-4">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a routerLink="/" style="color: var(--azul-confianca);">Início</a></li>
                 <li class="breadcrumb-item active" aria-current="page">Despesas</li>
             </ol>
         </nav>
-        <div class="row mt-4">
-            <!-- Grid Principal -->
-            <div class="col-lg-8 mb-4">
-                <!-- Ponto Focal: Total de Despesas -->
-                <div class="focal-point">
-                    <div class="card card-custom card-focal fade-in-up">
-                        <div class="card-body total-despesas">
-                            <h3 class="mb-3">Diagnóstico Financeiro - {{ mesAtual | date:'MMMM yyyy' : 'pt' }}</h3>
-                            <div class="total-valor valor-negativo">R$ {{ totalDespesas | number:'1.2-2' }}</div>
-                            <div class="total-status">Total de despesas este mês</div>
-                            <div class="mt-3">
-                            </div>
 
-                            <!-- ==================== NAVEGAÇÃO COM CALENDÁRIO CLICÁVEL ==================== -->
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(-1)">
-                                    <i class="bi bi-chevron-left"></i>
-                                </button>
+        <!-- Grid Principal -->
+        <div class="despesas-grid">
+            <!-- Ponto Focal: Total de Despesas -->
+            <div class="focal-point">
+                <div class="card card-custom card-focal fade-in-up">
+                    <div class="card-body total-despesas">
+                        <h3 class="mb-3">Diagnóstico Financeiro - {{ mesAtual | date:'MMMM yyyy' : 'pt' }}</h3>
+                        <div class="total-valor valor-negativo">R$ {{ totalDespesas | number:'1.2-2' }}</div>
+                        <div class="total-status">Total de despesas este mês</div>
 
-                                <!-- CLIQUE NO MÊS ABRE O CALENDÁRIO -->
-                                <button type="button" class="btn btn-link p-0 text-decoration-none"
-                                    (click)="abrirCalendario()" style="color: var(--escuro-sofisticado);">
-                                    <i class="bi bi-calendar3"
-                                        style="font-size: 0.95rem; color: var(--azul-confianca);"></i>
+                        <!-- Calendário -->
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(-1)">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <button type="button" class="btn btn-link p-0 text-decoration-none"
+                                (click)="abrirCalendario()" style="color: var(--escuro-sofisticado);">
+                                <i class="bi bi-calendar3"
+                                    style="font-size: 0.95rem; color: var(--azul-confianca);"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(1)">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                        <input type="month" #calendarioInput class="d-none" [value]="(mesAtual | date:'yyyy-MM')"
+                            (change)="selecionarMesDoCalendario($event)">
 
-                                </button>
-
-                                <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(1)">
-                                    <i class="bi bi-chevron-right"></i>
-                                </button>
-                            </div>
-
-                            <!-- INPUT OCULTO PARA CALENDÁRIO -->
-                            <input type="month" #calendarioInput class="d-none" [value]="(mesAtual | date:'yyyy-MM')"
-                                (change)="selecionarMesDoCalendario($event)">
-
-                            <!-- ==================== CARD TOTAL POR CONTA ==================== -->
-                            <div class="d-flex flex-wrap justify-content-center gap-3">
-                                <div *ngFor="let total of totalPorConta" class="category-item">
-                                    <div class="category-value">
-                                        R$ {{ total.valor | number:'1.2-2' }}
-                                    </div>
-                                    <div class="category-name">
-                                        {{ total.descricao }}
-                                    </div>
+                        <!-- ==================== CARD TOTAL POR CONTA ==================== -->
+                        <div class="d-flex flex-wrap justify-content-center gap-3">
+                            <div *ngFor="let total of totalPorConta" class="category-item">
+                                <div class="category-value">
+                                    R$ {{ total.valor | number:'1.2-2' }}
+                                </div>
+                                <div class="category-name">
+                                    {{ total.descricao }}
                                 </div>
                             </div>
                         </div>
@@ -100,152 +91,150 @@
                 </div>
             </div>
             <!-- Sidebar: Ações Rápidas -->
-            <div class="col-lg-4">
-                <div class="sidebar-section">
-                    <div class="card card-custom fade-in-up" style="animation-delay: 0.3s;">
-                        <div class="card-body">
-                            <h5 class="mb-3">
-                                <i class="bi bi-lightning-charge me-2" style="color: var(--dourado-prosperidade);"></i>
-                                Ações Rápidas
-                            </h5>
+            <div class="sidebar-section">
+                <div class="card card-custom fade-in-up" style="animation-delay: 0.3s;">
+                    <div class="card-body">
+                        <h5 class="mb-3">
+                            <i class="bi bi-lightning-charge me-2" style="color: var(--dourado-prosperidade);"></i>
+                            Ações Rápidas
+                        </h5>
 
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-danger-custom" (click)="abrirModalDespesa()">
-                                    <i class="bi bi-plus-circle"></i>
-                                    Nova Despesa
-                                </button>
-                            </div>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-danger-custom" (click)="abrirModalDespesa()">
+                                <i class="bi bi-plus-circle"></i>
+                                Nova Despesa
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <!-- ==================== LISTA DE DESPESAS ==================== -->
-        <ul class="list-group mb-4">
-            <li class="list-group-item d-flex justify-content-between align-items-center py-3 border-0 shadow-sm mb-2 rounded-3"
-                *ngFor="let despesa of despesas; let i = index" [class.bg-light]="i % 2 === 0"
-                style="transition: all 0.2s;" (mouseenter)="mostrarDicaHover(despesa)"
-                (mouseleave)="esconderDicaHover()" [attr.data-despesa-id]="despesa.id">
+            <!-- ==================== LISTA DE DESPESAS ==================== -->
+            <ul class="list-group mb-4">
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3 border-0 shadow-sm mb-2 rounded-3"
+                    *ngFor="let despesa of despesas; let i = index" [class.bg-light]="i % 2 === 0"
+                    style="transition: all 0.2s;" (mouseenter)="mostrarDicaHover(despesa)"
+                    (mouseleave)="esconderDicaHover()" [attr.data-despesa-id]="despesa.id">
 
-                <div class="d-flex flex-column">
-                    <span class="fw-semibold" style="color: var(--escuro-sofisticado);">
-                        {{ despesa.descricao }}
-                    </span>
-                    <small class="text-muted d-flex align-items-center gap-1">
-                        {{ despesa.data | date:'shortDate' }}
-                        <span>•</span>
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1"
-                            style="font-size: 0.7rem;">
-                            {{ obterNomeCategoria(despesa.idCategoria) || 'Sem categoria' }}
+                    <div class="d-flex flex-column">
+                        <span class="fw-semibold" style="color: var(--escuro-sofisticado);">
+                            {{ despesa.descricao }}
                         </span>
-                    </small>
-                </div>
-
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge px-3 py-2 fw-bold"
-                        [style.background-color]="despesa.valor > 500 ? 'rgba(220, 53, 69, 0.15)' : 'rgba(40, 167, 69, 0.15)'"
-                        [style.color]="despesa.valor > 500 ? 'var(--vermelho-alerta)' : 'var(--verde-crescimento)'">
-                        R$ {{ despesa.valor | number:'1.2-2' }}
-                    </span>
-                    <button class="btn btn-sm btn-outline-primary" (click)="abrirModalEditar(despesa)">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" (click)="deletarDespesa(despesa.id)">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
-            </li>
-        </ul>
-
-        <!-- ==================== MODAL ==================== -->
-        <div class="modal fade" id="modalDespesa" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content border-0 shadow-lg">
-                    <div class="modal-header border-0" style="background: var(--azul-confianca); color: white;">
-                        <h5 class="modal-title fw-bold">
-                            <i class="bi bi-receipt me-2"></i>
-                            {{ novaDespesa.id ? 'Editar' : 'Nova' }} Despesa
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        <small class="text-muted d-flex align-items-center gap-1">
+                            {{ despesa.data | date:'shortDate' }}
+                            <span>•</span>
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1"
+                                style="font-size: 0.7rem;">
+                                {{ obterNomeCategoria(despesa.idCategoria) || 'Sem categoria' }}
+                            </span>
+                        </small>
                     </div>
-                    <div class="modal-body pt-4">
-                        <form>
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <label class="form-label fw-semibold">Descrição</label>
-                                    <input type="text" class="form-control" [(ngModel)]="novaDespesa.descricao"
-                                        name="descricao" required />
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Valor (R$)</label>
-                                    <input type="number" step="0.01" class="form-control"
-                                        [(ngModel)]="novaDespesa.valor" name="valor" required />
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Data</label>
-                                    <input type="date" class="form-control" [(ngModel)]="novaDespesa.data" name="data"
-                                        required />
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label fw-semibold">Conta</label>
-                                    <select class="form-select" [(ngModel)]="novaDespesa.idContaFinanceira" name="conta"
-                                        required>
-                                        <option value="" disabled>Selecione uma conta</option>
-                                        <option *ngFor="let conta of contas" [value]="conta.id">{{ conta.descricao
-                                            }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Tipo de Despesa</label>
-                                    <select class="form-select" [(ngModel)]="novaDespesa.idTipoDespesa"
-                                        (change)="onTipoChange()" name="tipo">
-                                        <option value="" disabled>Selecione</option>
-                                        <option *ngFor="let tipo of tiposDespesa" [value]="tipo.id">{{
-                                            tipo.descricao }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Natureza da Despesa</label>
-                                    <select class="form-select" [(ngModel)]="novaDespesa.idNaturezaDespesa"
-                                        (change)="onNaturezaChange()" name="natureza"
-                                        [disabled]="naturezasDespesa.length === 0">
-                                        <option value="" disabled>Selecione</option>
-                                        <option *ngFor="let nat of naturezasDespesa" [value]="nat.id">{{
-                                            nat.descricao }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label fw-semibold">Categoria Específica</label>
-                                    <select class="form-select" [(ngModel)]="novaDespesa.idCategoriaEspecifica"
-                                        name="categoria" [disabled]="categoriasEspecificas.length === 0">
-                                        <option value="" disabled>Selecione</option>
-                                        <option *ngFor="let cat of categoriasEspecificas" [value]="cat.id">{{
-                                            cat.descricao
-                                            }}</option>
-                                    </select>
-                                </div>
-                            </div>
 
-                            <div class="alert alert-light border-start border-warning border-4 mt-4 p-3"
-                                *ngIf="novaDespesa.valor > 200">
-                                <small class="d-block">
-                                    <i class="bi bi-info-circle text-warning"></i>
-                                    <strong>Dica:</strong> Gastos acima de R$ 200 merecem uma categoria específica
-                                    para
-                                    melhor controle.
-                                </small>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer border-0">
-                        <button type="button" class="btn btn-outline-secondary"
-                            data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-success fw-semibold" (click)="salvarDespesa()">
-                            <i class="bi bi-check2"></i> Salvar Despesa
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge px-3 py-2 fw-bold"
+                            [style.background-color]="despesa.valor > 500 ? 'rgba(220, 53, 69, 0.15)' : 'rgba(40, 167, 69, 0.15)'"
+                            [style.color]="despesa.valor > 500 ? 'var(--vermelho-alerta)' : 'var(--verde-crescimento)'">
+                            R$ {{ despesa.valor | number:'1.2-2' }}
+                        </span>
+                        <button class="btn btn-sm btn-outline-primary" (click)="abrirModalEditar(despesa)">
+                            <i class="bi bi-pencil"></i>
                         </button>
+                        <button class="btn btn-sm btn-outline-danger" (click)="deletarDespesa(despesa.id)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </li>
+            </ul>
+
+            <!-- ==================== MODAL ==================== -->
+            <div class="modal fade" id="modalDespesa" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content border-0 shadow-lg">
+                        <div class="modal-header border-0" style="background: var(--azul-confianca); color: white;">
+                            <h5 class="modal-title fw-bold">
+                                <i class="bi bi-receipt me-2"></i>
+                                {{ novaDespesa.id ? 'Editar' : 'Nova' }} Despesa
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body pt-4">
+                            <form>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Descrição</label>
+                                        <input type="text" class="form-control" [(ngModel)]="novaDespesa.descricao"
+                                            name="descricao" required />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Valor (R$)</label>
+                                        <input type="number" step="0.01" class="form-control"
+                                            [(ngModel)]="novaDespesa.valor" name="valor" required />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Data</label>
+                                        <input type="date" class="form-control" [(ngModel)]="novaDespesa.data"
+                                            name="data" required />
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Conta</label>
+                                        <select class="form-select" [(ngModel)]="novaDespesa.idContaFinanceira"
+                                            name="conta" required>
+                                            <option value="" disabled>Selecione uma conta</option>
+                                            <option *ngFor="let conta of contas" [value]="conta.id">{{ conta.descricao
+                                                }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Tipo de Despesa</label>
+                                        <select class="form-select" [(ngModel)]="novaDespesa.idTipoDespesa"
+                                            (change)="onTipoChange()" name="tipo">
+                                            <option value="" disabled>Selecione</option>
+                                            <option *ngFor="let tipo of tiposDespesa" [value]="tipo.id">{{
+                                                tipo.descricao }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Natureza da Despesa</label>
+                                        <select class="form-select" [(ngModel)]="novaDespesa.idNaturezaDespesa"
+                                            (change)="onNaturezaChange()" name="natureza"
+                                            [disabled]="naturezasDespesa.length === 0">
+                                            <option value="" disabled>Selecione</option>
+                                            <option *ngFor="let nat of naturezasDespesa" [value]="nat.id">{{
+                                                nat.descricao }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Categoria Específica</label>
+                                        <select class="form-select" [(ngModel)]="novaDespesa.idCategoriaEspecifica"
+                                            name="categoria" [disabled]="categoriasEspecificas.length === 0">
+                                            <option value="" disabled>Selecione</option>
+                                            <option *ngFor="let cat of categoriasEspecificas" [value]="cat.id">{{
+                                                cat.descricao
+                                                }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="alert alert-light border-start border-warning border-4 mt-4 p-3"
+                                    *ngIf="novaDespesa.valor > 200">
+                                    <small class="d-block">
+                                        <i class="bi bi-info-circle text-warning"></i>
+                                        <strong>Dica:</strong> Gastos acima de R$ 200 merecem uma categoria específica
+                                        para
+                                        melhor controle.
+                                    </small>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer border-0">
+                            <button type="button" class="btn btn-outline-secondary"
+                                data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-success fw-semibold" (click)="salvarDespesa()">
+                                <i class="bi bi-check2"></i> Salvar Despesa
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
