@@ -1,0 +1,33 @@
+// src/styles/_mixins.scss
+
+@mixin card-padrao {
+    background: $branco-puro;
+    border-radius: $border-radius-card;
+    box-shadow: $shadow-subtle;
+    transition: $transition-smooth;
+    overflow: hidden;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: $shadow-elevated;
+    }
+}
+
+@mixin btn-primario {
+    background: linear-gradient(135deg, $azul-confianca 0%, #357abd 100%);
+    border: none;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: $border-radius-button;
+    font-weight: 600;
+    transition: $transition-smooth;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+        color: white;
+    }
+}

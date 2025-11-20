@@ -1,0 +1,126 @@
+/* === SISTEMA DE DESIGN YOUR MONEY 2.0 === */
+@use 'variables' as *;
+
+.navbar-custom {
+    background: rgba(44, 44, 44, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+    padding: 1rem 0;
+}
+
+.navbar-brand-custom {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $dourado-prosperidade !important;
+    text-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
+}
+
+.nav-link-custom {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 500;
+    padding: 0.5rem 1rem !important;
+    border-radius: $border-radius-button;
+    transition: $transition-smooth;
+    position: relative;
+
+    &:hover {
+        color: $dourado-prosperidade !important;
+        background: rgba(212, 175, 55, 0.1);
+    }
+
+    &.active {
+        color: $dourado-prosperidade !important;
+
+        &::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 2px;
+            background: $dourado-prosperidade;
+            border-radius: 1px;
+        }
+    }
+}
+
+.card {
+    border-radius: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+    }
+}
+
+.list-group-item {
+    border: none !important;
+    border-radius: 1rem !important;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background-color: rgba(0, 0, 0, 0.03) !important;
+        transform: translateY(-1px);
+    }
+}
+
+// Badge de valor (verde)
+.badge {
+    font-size: 0.95rem;
+    border-radius: 0.75rem;
+}
+
+// Botões no modal
+.modal-footer .btn {
+    min-width: 110px;
+    font-weight: 600;
+    border-radius: 0.75rem;
+}
+
+// Alertas de dica
+.alert {
+    border-radius: 1rem;
+    font-size: 0.9rem;
+}
+
+// Input oculto do calendário
+input[type="month"].d-none {
+    position: absolute;
+    left: -9999px;
+}
+
+// Tooltip (se quiser usar no futuro)
+.tooltip-dica {
+    position: absolute;
+    background: #333;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    top: 50%;
+    left: 100%;
+    margin-left: 8px;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 10;
+
+    &.show {
+        opacity: 1;
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        right: 100%;
+        margin-top: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: transparent #333 transparent transparent;
+    }
+}

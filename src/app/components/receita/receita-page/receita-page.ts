@@ -1,21 +1,26 @@
-import { Component } from "@angular/core";
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Receita, ReceitaService } from "../../../services/receita";
+import { ReceitaService, Receita } from '../../../services/receita';
 import Swal from 'sweetalert2';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
-    selector: "app-receita-page",
+    selector: 'app-receita-page',
+    standalone: true,
     imports: [CommonModule, FormsModule],
-    templateUrl: "./receita-page.html"
+    templateUrl: './receita-page.html',
+    styleUrls: ['./receita-page.scss']
 })
-export class ReceitaPageComponent {
-    // Lógica do componente
+export class ReceitaPageComponent implements OnInit, OnDestroy {
+    private destroy$ = new Subject<void>();
+
+    // === DADOS ===
     receitas: Receita[] = [];
     mesAtual: Date = new Date();
     totalReceitas = 0;
 
-    //Formulário
+    // === FORMULÁRIO ===
     novaReceita = {
         id: '',
         descricao: '',
@@ -23,9 +28,25 @@ export class ReceitaPageComponent {
         data: new Date().toISOString().split('T')[0]
     };
 
-    constructor(private receitaService: ReceitaService) {
+    editando = false;
+
+    // === GAMIFICAÇÃO ===
+    usuarioCategorizouEsteMes = false;
+
+    // === CALENDÁRIO ===
+    @ViewChild('calendarioInput') calendarioInput!: ElementRef<HTMLInputElement>;
+
+    constructor(private receitaService: ReceitaService) { }
+
+    ngOnInit() {
         this.carregarDadosIniciais();
     }
+
+    ngOnDestroy() {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
     carregarDadosIniciais() {
         this.carregarReceitas();
     }
@@ -33,15 +54,19 @@ export class ReceitaPageComponent {
     carregarReceitas() {
         const mes = this.mesAtual.getMonth() + 1;
         const ano = this.mesAtual.getFullYear();
-        this.receitaService.obterPorReferencia(mes, ano).subscribe({
-            next: (dados) => {
-                this.receitas = dados.sort((a, b) => {
-                    return new Date(b.data).getTime() - new Date(a.data).getTime();
-                });
-                this.totalReceitas = dados.reduce((soma, d) => soma + d.valor, 0);
-            },
-            error: (erro) => console.error('Erro ao carregar receitas', erro)
-        });
+
+        this.receitaService.obterPorReferencia(mes, ano)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (dados) => {
+                    this.receitas = dados.sort((a, b) =>
+                        new Date(b.data).getTime() - new Date(a.data).getTime()
+                    );
+                    this.totalReceitas = dados.reduce((soma, d) => soma + d.valor, 0);
+                    this.verificarTrilhaCrescimento();
+                },
+                error: (erro) => console.error('Erro ao carregar receitas', erro)
+            });
     }
 
     mudarMes(direcao: number) {
@@ -51,37 +76,54 @@ export class ReceitaPageComponent {
         this.carregarReceitas();
     }
 
-    editando: boolean = false;
+    // === CALENDÁRIO ===
+    abrirCalendario() {
+        const input = this.calendarioInput.nativeElement;
+        if (typeof input.showPicker === 'function') {
+            input.showPicker();
+        } else {
+            input.click();
+        }
+    }
 
+    selecionarMesDoCalendario(event: Event) {
+        const input = event.target as HTMLInputElement;
+        const [ano, mes] = input.value.split('-').map(Number);
+        this.mesAtual = new Date(ano, mes - 1, 1);
+        this.carregarReceitas();
+    }
+
+    // === MODAL ===
     abrirModalReceita() {
         this.editando = false;
-        this.novaReceita = {
-            id: '',
-            descricao: '',
-            valor: 0,
-            data: new Date().toISOString().split('T')[0]
-        };
-        const modal = new (window as any).bootstrap.Modal(document.getElementById('modalReceita'));
-        modal.show();
+        this.resetForm();
+        this.abrirModal();
     }
 
     abrirModalEditar(receita: Receita) {
         this.editando = true;
-        this.novaReceita = { ...receita, data: new Date(receita.data).toISOString().split('T')[0] };
+        this.novaReceita = {
+            ...receita,
+            data: new Date(receita.data).toISOString().split('T')[0]
+        };
+        this.abrirModal();
+    }
+
+    private abrirModal() {
         const modal = new (window as any).bootstrap.Modal(document.getElementById('modalReceita'));
         modal.show();
     }
 
+    private resetForm() {
+        this.novaReceita = {
+            id: '', descricao: '', valor: 0, data: new Date().toISOString().split('T')[0]
+        };
+    }
+
+    // === SALVAR ===
     salvarReceita() {
-        if (!this.novaReceita.descricao || !this.novaReceita.valor || !this.novaReceita.data) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Campos obrigatórios!',
-                text: 'Preencha todos os campos antes de salvar.',
-                confirmButtonColor: '#b49452',
-                background: '#f8f8f8',
-                color: '#283b6b',
-            });
+        if (!this.camposObrigatoriosPreenchidos()) {
+            this.mostrarAlertaCamposObrigatorios();
             return;
         }
 
@@ -89,62 +131,60 @@ export class ReceitaPageComponent {
             ? this.receitaService.atualizarReceita(this.novaReceita)
             : this.receitaService.criarReceita(this.novaReceita);
 
-        request$.subscribe({
+        request$.pipe(takeUntil(this.destroy$)).subscribe({
             next: () => {
-                const modal = document.getElementById('modalReceita');
-                (window as any).bootstrap.Modal.getInstance(modal)?.hide();
+                this.fecharModal();
                 this.carregarReceitas();
-
-                Swal.fire({
-                    icon: 'success',
-                    title: this.editando ? 'Receita atualizada!' : 'Receita cadastrada!',
-                    text: this.editando
-                        ? 'Sua receita foi atualizada com sucesso.'
-                        : 'Sua receita foi registrada com sucesso.',
-                    confirmButtonColor: '#b49452',
-                    background: '#f8f8f8',
-                    color: '#283b6b',
-                });
+                this.mostrarSucesso();
             },
-            error: (erro) => {
-                console.error('Erro ao salvar receita', erro);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erro!',
-                    text: this.editando
-                        ? 'Não foi possível atualizar a receita.'
-                        : 'Não foi possível salvar a receita.',
-                    confirmButtonColor: '#b49452',
-                    background: '#f8f8f8',
-                    color: '#283b6b',
-                });
-            }
+            error: () => this.mostrarErro()
         });
+    }
+
+    private camposObrigatoriosPreenchidos(): boolean {
+        return !!(this.novaReceita.descricao && this.novaReceita.valor > 0 && this.novaReceita.data);
+    }
+
+    private mostrarAlertaCamposObrigatorios() {
+        Swal.fire({ icon: 'warning', title: 'Campos obrigatórios!', text: 'Preencha todos os campos.', confirmButtonColor: '#d4af37' });
+    }
+
+    private mostrarSucesso() {
+        Swal.fire({ icon: 'success', title: this.editando ? 'Atualizada!' : 'Cadastrada!', timer: 2000, showConfirmButton: false });
+    }
+
+    private mostrarErro() {
+        Swal.fire({ icon: 'error', title: 'Erro!', text: 'Não foi possível salvar.', confirmButtonColor: '#dc3545' });
+    }
+
+    private fecharModal() {
+        const modal = (window as any).bootstrap.Modal.getInstance(document.getElementById('modalReceita'));
+        modal?.hide();
     }
 
     deletarReceita(id: string) {
         Swal.fire({
-            title: 'Confirmação',
-            text: 'Tem certeza que deseja deletar esta receita?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Sim, deletar',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
+            title: 'Deletar?', text: 'Não pode ser desfeito.', icon: 'warning',
+            showCancelButton: true, confirmButtonText: 'Sim', cancelButtonText: 'Não',
+            confirmButtonColor: '#dc3545'
+        }).then(result => {
             if (result.isConfirmed) {
-                this.receitaService.deletarReceita(id).subscribe({
-                    next: () => {
-                        this.receitas = this.receitas.filter(d => d.id !== id);
-                        this.totalReceitas = this.receitas.reduce((soma, d) => soma + d.valor, 0);
-                        Swal.fire('Deletado!', 'Receita deletada com sucesso.', 'success');
-                    },
-                    error: (erro) => {
-                        console.error('Erro ao deletar receita', erro);
-                        Swal.fire('Erro!', 'Não foi possível deletar a receita.', 'error');
-                    }
-                });
+                this.receitaService.deletarReceita(id)
+                    .pipe(takeUntil(this.destroy$))
+                    .subscribe({
+                        next: () => {
+                            this.receitas = this.receitas.filter(d => d.id !== id);
+                            this.totalReceitas = this.receitas.reduce((s, d) => s + d.valor, 0);
+                            Swal.fire('Deletado!', '', 'success');
+                        },
+                        error: () => Swal.fire('Erro!', '', 'error')
+                    });
             }
         });
     }
 
+    // === TRILHA ===
+    verificarTrilhaCrescimento() {
+        this.usuarioCategorizouEsteMes = this.receitas.length > 0;
+    }
 }

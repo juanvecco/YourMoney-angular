@@ -9,7 +9,7 @@ import Swal from 'sweetalert2';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './investimento-page.html',
-  styleUrls: ['./investimento-page.css']
+  styleUrls: ['./investimento-page.scss']
 })
 export class InvestimentoPageComponent {
 
