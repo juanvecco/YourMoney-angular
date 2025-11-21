@@ -1,0 +1,383 @@
+/* === SISTEMA DE DESIGN YOUR MONEY 2.0 === */
+@use 'variables' as *;
+
+.navbar-custom {
+    background: rgba(44, 44, 44, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+    padding: 1rem 0;
+}
+
+.navbar-brand-custom {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $yellow !important;
+    text-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
+}
+
+.nav-link-custom {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 500;
+    padding: 0.5rem 1rem !important;
+    border-radius: $border-radius-button;
+    transition: $transition-smooth;
+    position: relative;
+}
+
+.nav-link-custom:hover {
+    color: $yellow !important;
+    background: rgba(212, 175, 55, 0.1);
+}
+
+.nav-link-custom.active {
+    color: $yellow !important;
+}
+
+.nav-link-custom.active::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 2px;
+    background: $yellow;
+    border-radius: 1px;
+}
+
+/* === LAYOUT PRINCIPAL === */
+.main-container {
+    padding: 2rem 0;
+    min-height: calc(100vh - 80px);
+}
+
+.receitas-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 1.5rem;
+    grid-template-areas:
+        "focal sidebar"
+        "chart sidebar"
+        "transactions insights";
+}
+
+.focal-point {
+    grid-area: focal;
+}
+
+.chart-section {
+    grid-area: chart;
+}
+
+.sidebar-section {
+    grid-area: sidebar;
+}
+
+.transactions-section {
+    grid-area: transactions;
+}
+
+.insights-section {
+    grid-area: insights;
+}
+
+/* === COMPONENTES DE CARD === */
+.card-custom {
+    background: $branco-puro;
+    border: none;
+    border-radius: $border-radius-card;
+    box-shadow: $shadow-subtle;
+    transition: $transition-smooth;
+    overflow: hidden;
+    height: 100%;
+}
+
+.card-custom:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-elevated;
+}
+
+.card-custom .card-body {
+    padding: 1.5rem;
+}
+
+/* Card de Destaque (Ponto Focal) */
+.card-focal {
+    border: 2px solid $green;
+    box-shadow: 0 4px 16px rgba(40, 167, 69, 0.2);
+    position: relative;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fff9 100%);
+}
+
+.card-focal::before {
+    content: '🚀';
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 1.2rem;
+    z-index: 1;
+}
+
+/* Card de Insight (Trilha de Ensino) */
+.card-insight {
+    background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+    border-left: 4px solid $green;
+}
+
+.card-insight .insight-icon {
+    color: $green;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* === BOTÕES === */
+.btn-success-custom {
+    background: linear-gradient(135deg, $green 0%, #218838 100%);
+    border: none;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: $border-radius-button;
+    font-weight: 600;
+    transition: $transition-smooth;
+}
+
+.btn-success-custom:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+    color: white;
+}
+
+.btn-primary-custom {
+    background: linear-gradient(135deg, $blue 0%, #357abd 100%);
+    border: none;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: $border-radius-button;
+    font-weight: 600;
+    transition: $transition-smooth;
+}
+
+.btn-outline-custom {
+    background: transparent;
+    border: 2px solid $green;
+    color: $green;
+    padding: 0.625rem 1.25rem;
+    border-radius: $border-radius-button;
+    font-weight: 500;
+    transition: $transition-smooth;
+}
+
+.btn-outline-custom:hover {
+    background: $green;
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* === INDICADORES DE VALOR === */
+.valor-positivo {
+    color: $green;
+    font-weight: 600;
+}
+
+.valor-destaque {
+    color: $green;
+    font-weight: 700;
+    font-size: 2rem;
+}
+
+/* === TABELA DE TRANSAÇÕES === */
+.transactions-table {
+    background: $branco-puro;
+    border-radius: $border-radius-card;
+    overflow: hidden;
+    box-shadow: $shadow-subtle;
+}
+
+.table-header {
+    background: linear-gradient(135deg, $green 0%, #218838 100%);
+    color: white;
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+}
+
+.transaction-row {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    transition: $transition-smooth;
+    cursor: pointer;
+}
+
+.transaction-row:hover {
+    background: $cinza-claro;
+}
+
+.transaction-row:last-child {
+    border-bottom: none;
+}
+
+.source-badge {
+    background: $green;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.source-badge.salario {
+    background: #28a745;
+}
+
+.source-badge.freelance {
+    background: #17a2b8;
+}
+
+.source-badge.investimento {
+    background: #6f42c1;
+}
+
+.source-badge.bonus {
+    background: #fd7e14;
+}
+
+.source-badge.outros {
+    background: #6c757d;
+}
+
+/* === GRÁFICO === */
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin: 1rem 0;
+}
+
+/* === ANIMAÇÕES === */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes growthPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+.growth-highlight {
+    animation: growthPulse 3s ease-in-out infinite;
+}
+
+/* === RESPONSIVIDADE === */
+@media (max-width: 1024px) {
+    .receitas-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "focal"
+            "chart"
+            "sidebar"
+            "transactions"
+            "insights";
+    }
+}
+
+@media (max-width: 768px) {
+    .main-container {
+        padding: 1rem 0;
+    }
+}
+
+/* === ELEMENTOS ESPECÍFICOS === */
+.total-receitas {
+    text-align: center;
+    padding: 2rem 1.5rem;
+}
+
+.total-valor {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 1rem 0;
+}
+
+.total-status {
+    font-size: 1rem;
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+.source-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.source-item {
+    text-align: center;
+    padding: 1rem;
+    background: $cinza-claro;
+    border-radius: $border-radius-button;
+    transition: $transition-smooth;
+}
+
+.source-item:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+}
+
+.source-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: $green;
+}
+
+.source-name {
+    font-size: 0.875rem;
+    color: $cinza-medio;
+    margin-top: 0.25rem;
+}
+
+/* Achievement badge */
+.achievement-badge {
+    background: linear-gradient(135deg, $yellow 0%, #f4d03f 100%);
+    color: $escuro-sofisticado;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Diversification indicator */
+.diversification-meter {
+    background: #e9ecef;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0.5rem 0;
+}
+
+.diversification-fill {
+    background: linear-gradient(90deg, $green 0%, $yellow 100%);
+    height: 100%;
+    transition: width 1s ease-out;
+}

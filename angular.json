@@ -4,15 +4,15 @@
   "newProjectRoot": "projects",
   "projects": {
     "yourmoney-app": {
+      "root": "",
+      "sourceRoot": "src",
       "projectType": "application",
+      "prefix": "app",
       "schematics": {
         "@schematics/angular:component": {
           "inlineStyle": true
         }
       },
-      "root": "",
-      "sourceRoot": "src",
-      "prefix": "app",
       "architect": {
         "build": {
           "builder": "@angular/build:application",
@@ -29,8 +29,13 @@
               }
             ],
             "styles": [
-              "src/styles.css"
-            ]
+              "src/styles/_variables.scss"
+            ],
+            "stylePreprocessorOptions": {
+              "includePaths": [
+                "src/styles"
+              ]
+            }
           },
           "configurations": {
             "production": {
@@ -86,8 +91,13 @@
               }
             ],
             "styles": [
-              "src/styles.css"
-            ]
+              "src/styles/_variables.scss"
+            ],
+            "stylePreprocessorOptions": {
+              "includePaths": [
+                "src/styles"
+              ]
+            }
           }
         }
       }

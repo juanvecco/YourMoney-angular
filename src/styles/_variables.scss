@@ -1,0 +1,51 @@
+@use '@angular/material' as mat;
+
+html {
+  @include mat.theme((color: (primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    ));
+}
+
+body {
+  color-scheme: light;
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+  margin: 0;
+}
+
+// ===========================================================
+// _VARIABLES.SCSS – YOUR MONEY 2.0
+// ===========================================================
+
+// === CORES PRINCIPAIS ===
+$yellow: #d4af37;
+$blue: #4a90e2;
+$escuro-sofisticado: #2c2c2c;
+$green: #28a745;
+$red: #dc3545;
+$laranja-atencao: #fd7e14;
+$cinza-claro: #f8f9fa;
+$cinza-medio: #6c757d;
+$branco-puro: #ffffff;
+$purple: #6f42c1;
+
+// === LAYOUT ===
+$border-radius-card: 12px;
+$border-radius-button: 8px;
+$shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.1);
+$shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.15);
+$transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}

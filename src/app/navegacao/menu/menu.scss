@@ -1,0 +1,45 @@
+@use 'variables' as *;
+
+.navbar-custom {
+    background: rgba(44, 44, 44, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+    padding: 1rem 0;
+}
+
+.navbar-brand-custom {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $yellow !important;
+    text-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
+}
+
+.nav-link-custom {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 500;
+    padding: 0.5rem 1rem !important;
+    border-radius: $border-radius-button;
+    transition: $transition-smooth;
+    position: relative;
+
+    &:hover {
+        color: $yellow !important;
+        background: rgba(212, 175, 55, 0.1);
+    }
+
+    &.active {
+        color: $yellow !important;
+
+        &::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 2px;
+            background: $yellow;
+            border-radius: 1px;
+        }
+    }
+}
