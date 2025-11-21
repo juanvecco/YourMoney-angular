@@ -11,7 +11,7 @@
 .navbar-brand-custom {
     font-size: 1.5rem;
     font-weight: 700;
-    color: $dourado-prosperidade !important;
+    color: $yellow !important;
     text-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
 }
 
@@ -25,12 +25,12 @@
 }
 
 .nav-link-custom:hover {
-    color: $dourado-prosperidade !important;
+    color: $yellow !important;
     background: rgba(212, 175, 55, 0.1);
 }
 
 .nav-link-custom.active {
-    color: $dourado-prosperidade !important;
+    color: $yellow !important;
 }
 
 .nav-link-custom.active::after {
@@ -41,7 +41,7 @@
     transform: translateX(-50%);
     width: 30px;
     height: 2px;
-    background: $dourado-prosperidade;
+    background: $yellow;
     border-radius: 1px;
 }
 
@@ -104,7 +104,7 @@
 
 /* Card de Destaque (Ponto Focal) */
 .card-focal {
-    border: 2px solid $verde-crescimento;
+    border: 2px solid $green;
     box-shadow: 0 4px 16px rgba(40, 167, 69, 0.2);
     position: relative;
     background: linear-gradient(135deg, #ffffff 0%, #f8fff9 100%);
@@ -122,18 +122,18 @@
 /* Card de Insight (Trilha de Ensino) */
 .card-insight {
     background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
-    border-left: 4px solid $verde-crescimento;
+    border-left: 4px solid $green;
 }
 
 .card-insight .insight-icon {
-    color: $verde-crescimento;
+    color: $green;
     font-size: 1.5rem;
     margin-bottom: 0.5rem;
 }
 
 /* === BOTÕES === */
 .btn-success-custom {
-    background: linear-gradient(135deg, $verde-crescimento 0%, #218838 100%);
+    background: linear-gradient(135deg, $green 0%, #218838 100%);
     border: none;
     color: white;
     padding: 0.75rem 1.5rem;
@@ -149,7 +149,7 @@
 }
 
 .btn-primary-custom {
-    background: linear-gradient(135deg, $azul-confianca 0%, #357abd 100%);
+    background: linear-gradient(135deg, $blue 0%, #357abd 100%);
     border: none;
     color: white;
     padding: 0.75rem 1.5rem;
@@ -160,8 +160,8 @@
 
 .btn-outline-custom {
     background: transparent;
-    border: 2px solid $verde-crescimento;
-    color: $verde-crescimento;
+    border: 2px solid $green;
+    color: $green;
     padding: 0.625rem 1.25rem;
     border-radius: $border-radius-button;
     font-weight: 500;
@@ -169,19 +169,19 @@
 }
 
 .btn-outline-custom:hover {
-    background: $verde-crescimento;
+    background: $green;
     color: white;
     transform: translateY(-1px);
 }
 
 /* === INDICADORES DE VALOR === */
 .valor-positivo {
-    color: $verde-crescimento;
+    color: $green;
     font-weight: 600;
 }
 
 .valor-destaque {
-    color: $verde-crescimento;
+    color: $green;
     font-weight: 700;
     font-size: 2rem;
 }
@@ -195,7 +195,7 @@
 }
 
 .table-header {
-    background: linear-gradient(135deg, $verde-crescimento 0%, #218838 100%);
+    background: linear-gradient(135deg, $green 0%, #218838 100%);
     color: white;
     padding: 1rem 1.5rem;
     font-weight: 600;
@@ -217,7 +217,7 @@
 }
 
 .source-badge {
-    background: $verde-crescimento;
+    background: $green;
     color: white;
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
@@ -345,7 +345,7 @@
 .source-value {
     font-size: 1.2rem;
     font-weight: 600;
-    color: $verde-crescimento;
+    color: $green;
 }
 
 .source-name {
@@ -356,7 +356,7 @@
 
 /* Achievement badge */
 .achievement-badge {
-    background: linear-gradient(135deg, $dourado-prosperidade 0%, #f4d03f 100%);
+    background: linear-gradient(135deg, $yellow 0%, #f4d03f 100%);
     color: $escuro-sofisticado;
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
@@ -377,7 +377,7 @@
 }
 
 .diversification-fill {
-    background: linear-gradient(90deg, $verde-crescimento 0%, $dourado-prosperidade 100%);
+    background: linear-gradient(90deg, $green 0%, $yellow 100%);
     height: 100%;
     transition: width 1s ease-out;
 }

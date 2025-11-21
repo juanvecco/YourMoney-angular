@@ -44,7 +44,7 @@
         <!-- Breadcrumb -->
         <nav aria-label="breadcrumb" class="mb-4">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a routerLink="/" style="color: var(--azul-confianca);">Início</a></li>
+                <li class="breadcrumb-item"><a routerLink="/" style="color: var(--blue);">Início</a></li>
                 <li class="breadcrumb-item active" aria-current="page">Despesas</li>
             </ol>
         </nav>
@@ -66,8 +66,7 @@
                             </button>
                             <button type="button" class="btn btn-link p-0 text-decoration-none"
                                 (click)="abrirCalendario()" style="color: var(--escuro-sofisticado);">
-                                <i class="bi bi-calendar3"
-                                    style="font-size: 0.95rem; color: var(--azul-confianca);"></i>
+                                <i class="bi bi-calendar3" style="font-size: 0.95rem; color: var(--blue);"></i>
                             </button>
                             <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(1)">
                                 <i class="bi bi-chevron-right"></i>
@@ -95,7 +94,7 @@
                 <div class="card card-custom fade-in-up" style="animation-delay: 0.3s;">
                     <div class="card-body">
                         <h5 class="mb-3">
-                            <i class="bi bi-lightning-charge me-2" style="color: var(--dourado-prosperidade);"></i>
+                            <i class="bi bi-lightning-charge me-2" style="color: var(--yellow);"></i>
                             Ações Rápidas
                         </h5>
 
@@ -132,7 +131,7 @@
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge px-3 py-2 fw-bold"
                             [style.background-color]="despesa.valor > 500 ? 'rgba(220, 53, 69, 0.15)' : 'rgba(40, 167, 69, 0.15)'"
-                            [style.color]="despesa.valor > 500 ? 'var(--vermelho-alerta)' : 'var(--verde-crescimento)'">
+                            [style.color]="despesa.valor > 500 ? 'var(--red)' : 'var(--green)'">
                             R$ {{ despesa.valor | number:'1.2-2' }}
                         </span>
                         <button class="btn btn-sm btn-outline-primary" (click)="abrirModalEditar(despesa)">
@@ -149,7 +148,7 @@
             <div class="modal fade" id="modalDespesa" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content border-0 shadow-lg">
-                        <div class="modal-header border-0" style="background: var(--azul-confianca); color: white;">
+                        <div class="modal-header border-0" style="background: var(--blue); color: white;">
                             <h5 class="modal-title fw-bold">
                                 <i class="bi bi-receipt me-2"></i>
                                 {{ novaDespesa.id ? 'Editar' : 'Nova' }} Despesa

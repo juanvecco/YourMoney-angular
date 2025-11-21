@@ -10,7 +10,7 @@
 .navbar-brand-custom {
     font-size: 1.5rem;
     font-weight: 700;
-    color: $dourado-prosperidade !important;
+    color: $yellow !important;
     text-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
 }
 
@@ -23,12 +23,12 @@
     position: relative;
 
     &:hover {
-        color: $dourado-prosperidade !important;
+        color: $yellow !important;
         background: rgba(212, 175, 55, 0.1);
     }
 
     &.active {
-        color: $dourado-prosperidade !important;
+        color: $yellow !important;
 
         &::after {
             content: '';
@@ -38,7 +38,7 @@
             transform: translateX(-50%);
             width: 30px;
             height: 2px;
-            background: $dourado-prosperidade;
+            background: $yellow;
             border-radius: 1px;
         }
     }

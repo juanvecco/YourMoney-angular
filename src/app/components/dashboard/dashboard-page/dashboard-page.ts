@@ -31,8 +31,8 @@ export class DashboardPageComponent implements AfterViewInit {
 
     tarefas = [
         { descricao: 'Revisar gastos com alimentação', cor: 'var(--laranja-atencao)' },
-        { descricao: 'Atualizar meta de reserva', cor: 'var(--azul-confianca)' },
-        { descricao: 'Considerar novo investimento', cor: 'var(--verde-crescimento)' }
+        { descricao: 'Atualizar meta de reserva', cor: 'var(--blue)' },
+        { descricao: 'Considerar novo investimento', cor: 'var(--green)' }
     ];
 
     // Dados do usuário (mock - use AuthService)
@@ -136,7 +136,7 @@ export class DashboardPageComponent implements AfterViewInit {
     private highlightGoalCreation() {
         const goalCard = document.querySelector('.sidebar-section .card-custom');
         if (goalCard) {
-            this.renderer.setStyle(goalCard, 'border', '2px solid var(--dourado-prosperidade)');
+            this.renderer.setStyle(goalCard, 'border', '2px solid var(--yellow)');
             this.renderer.setStyle(goalCard, 'animation', 'pulse 2s ease-in-out 3');
 
             setTimeout(() => {

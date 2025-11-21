@@ -1,264 +1,412 @@
-/* === SISTEMA DE DESIGN YOUR MONEY 2.0 === */
-@use 'variables' as *;
+        /* === SISTEMA DE DESIGN YOUR MONEY 2.0 === */
+        @use 'variables' as *;
 
-.navbar-custom {
-  background: rgba(44, 44, 44, 0.95);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-  padding: 1rem 0;
-}
+        .navbar-custom {
+          background: rgba(44, 44, 44, 0.95);
+          backdrop-filter: blur(10px);
+          border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+          padding: 1rem 0;
+        }
 
-.navbar-brand-custom {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: $dourado-prosperidade !important;
-  text-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
-}
+        .navbar-brand-custom {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: $yellow !important;
+          text-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
+        }
 
-.nav-link-custom {
-  color: rgba(255, 255, 255, 0.9) !important;
-  font-weight: 500;
-  padding: 0.5rem 1rem !important;
-  border-radius: $border-radius-button;
-  transition: $transition-smooth;
-  position: relative;
+        .nav-link-custom {
+          color: rgba(255, 255, 255, 0.9) !important;
+          font-weight: 500;
+          padding: 0.5rem 1rem !important;
+          border-radius: $border-radius-button;
+          transition: $transition-smooth;
+          position: relative;
+        }
 
-  &:hover {
-    color: $dourado-prosperidade !important;
-    background: rgba(212, 175, 55, 0.1);
-  }
+        .nav-link-custom:hover {
+          color: $yellow !important;
+          background: rgba(212, 175, 55, 0.1);
+        }
 
-  &.active {
-    color: $dourado-prosperidade !important;
+        .nav-link-custom.active {
+          color: $yellow !important;
+        }
 
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: -8px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 30px;
-      height: 2px;
-      background: $dourado-prosperidade;
-      border-radius: 1px;
-    }
-  }
-}
+        .nav-link-custom.active::after {
+          content: '';
+          position: absolute;
+          bottom: -8px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 30px;
+          height: 2px;
+          background: $yellow;
+          border-radius: 1px;
+        }
 
-.investimento-page {
-  padding: 20px 0;
-}
+        /* === LAYOUT PRINCIPAL === */
+        .main-container {
+          padding: 2rem 0;
+          min-height: calc(100vh - 80px);
+        }
 
-.page-header {
-  margin-bottom: 30px;
-}
+        .investimentos-grid {
+          display: grid;
+          grid-template-columns: 2fr 1fr;
+          grid-template-rows: auto auto auto;
+          gap: 1.5rem;
+          grid-template-areas:
+            "focal sidebar"
+            "evolution sidebar"
+            "portfolio insights";
+        }
 
-.page-title {
-  font-size: 2rem;
-  font-weight: bold;
-  color: #2c2c2c;
-  margin-bottom: 0;
-}
+        .focal-point {
+          grid-area: focal;
+        }
 
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
-}
+        .evolution-section {
+          grid-area: evolution;
+        }
 
-/* Summary Cards */
-.summary-card {
-  border: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
-  height: 100%;
-}
+        .sidebar-section {
+          grid-area: sidebar;
+        }
 
-.summary-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
+        .portfolio-section {
+          grid-area: portfolio;
+        }
 
-.card-icon {
-  width: 48px;
-  height: 48px;
-  background-color: #d4af37;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 15px;
-  font-size: 1.5rem;
-  color: white;
-}
+        .insights-section {
+          grid-area: insights;
+        }
 
-.card-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #6c757d;
-  margin-bottom: 10px;
-}
+        /* === COMPONENTES DE CARD === */
+        .card-custom {
+          background: $branco-puro;
+          border: none;
+          border-radius: $border-radius-card;
+          box-shadow: $shadow-subtle;
+          transition: $transition-smooth;
+          overflow: hidden;
+          height: 100%;
+        }
 
-.card-value {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 10px;
-  color: #2c2c2c;
-}
+        .card-custom:hover {
+          transform: translateY(-2px);
+          box-shadow: $shadow-elevated;
+        }
 
-.card-description {
-  font-size: 0.875rem;
-  color: #6c757d;
-  margin-bottom: 0;
-}
+        .card-custom .card-body {
+          padding: 1.5rem;
+        }
 
-.positive {
-  color: #28a745 !important;
-}
+        /* Card de Destaque (Ponto Focal) */
+        .card-focal {
+          border: 2px solid $purple;
+          box-shadow: 0 4px 16px rgba(111, 66, 193, 0.2);
+          position: relative;
+          background: linear-gradient(135deg, #ffffff 0%, #f8f6ff 100%);
+        }
 
-.negative {
-  color: #dc3545 !important;
-}
+        .card-focal::before {
+          content: '💎';
+          position: absolute;
+          top: 1rem;
+          right: 1rem;
+          font-size: 1.2rem;
+          z-index: 1;
+        }
 
-/* Chart Placeholder */
-.chart-placeholder {
-  height: 300px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #6c757d;
-  font-size: 1.1rem;
-}
+        /* Card de Insight (Trilha de Ensino) */
+        .card-insight {
+          background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+          border-left: 4px solid $yellow;
+        }
 
-.chart-placeholder i {
-  font-size: 3rem;
-  margin-bottom: 15px;
-}
+        .card-insight .insight-icon {
+          color: $yellow;
+          font-size: 1.5rem;
+          margin-bottom: 0.5rem;
+        }
 
-/* Investment Table */
-.table {
-  margin-bottom: 0;
-}
+        /* === BOTÕES === */
+        .btn-investment-custom {
+          background: linear-gradient(135deg, $purple 0%, #5a2d91 100%);
+          border: none;
+          color: white;
+          padding: 0.75rem 1.5rem;
+          border-radius: $border-radius-button;
+          font-weight: 600;
+          transition: $transition-smooth;
+        }
 
-.table th {
-  background-color: #f8f9fa;
-  border-top: none;
-  font-weight: 600;
-  color: #2c2c2c;
-}
+        .btn-investment-custom:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(111, 66, 193, 0.4);
+          color: white;
+        }
 
-.table td {
-  vertical-align: middle;
-}
+        .btn-gold-custom {
+          background: linear-gradient(135deg, $yellow 0%, #b8941f 100%);
+          border: none;
+          color: $escuro-sofisticado;
+          padding: 0.75rem 1.5rem;
+          border-radius: $border-radius-button;
+          font-weight: 600;
+          transition: $transition-smooth;
+        }
 
-.action-buttons {
-  display: flex;
-  gap: 5px;
-}
+        .btn-outline-custom {
+          background: transparent;
+          border: 2px solid $purple;
+          color: $purple;
+          padding: 0.625rem 1.25rem;
+          border-radius: $border-radius-button;
+          font-weight: 500;
+          transition: $transition-smooth;
+        }
 
-.btn-sm {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
-}
+        .btn-outline-custom:hover {
+          background: $purple;
+          color: white;
+          transform: translateY(-1px);
+        }
 
-/* Category Cards */
-.category-card {
-  border: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
-  height: 100%;
-}
+        /* === INDICADORES DE VALOR === */
+        .valor-investimento {
+          color: $purple;
+          font-weight: 600;
+        }
 
-.category-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
+        .valor-destaque {
+          color: $purple;
+          font-weight: 700;
+          font-size: 2rem;
+        }
 
-.category-icon {
-  width: 48px;
-  height: 48px;
-  background-color: #d4af37;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 15px;
-  font-size: 1.5rem;
-  color: white;
-}
+        .rentabilidade-positiva {
+          color: $green;
+          font-weight: 600;
+        }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .investimento-page {
-    padding: 10px 0;
-  }
+        .rentabilidade-negativa {
+          color: $red;
+          font-weight: 600;
+        }
 
-  .page-title {
-    font-size: 1.5rem;
-  }
+        /* === TABELA DE PORTFOLIO === */
+        .portfolio-table {
+          background: $branco-puro;
+          border-radius: $border-radius-card;
+          overflow: hidden;
+          box-shadow: $shadow-subtle;
+        }
 
-  .card-value {
-    font-size: 1.25rem;
-  }
+        .table-header {
+          background: linear-gradient(135deg, $purple 0%, #5a2d91 100%);
+          color: white;
+          padding: 1rem 1.5rem;
+          font-weight: 600;
+        }
 
-  .table-responsive {
-    font-size: 0.875rem;
-  }
+        .portfolio-row {
+          padding: 1rem 1.5rem;
+          border-bottom: 1px solid #e9ecef;
+          transition: $transition-smooth;
+          cursor: pointer;
+        }
 
-  .action-buttons {
-    flex-direction: column;
-    gap: 2px;
-  }
+        .portfolio-row:hover {
+          background: $cinza-claro;
+        }
 
-  .btn-sm {
-    padding: 0.125rem 0.25rem;
-    font-size: 0.75rem;
-  }
-}
+        .portfolio-row:last-child {
+          border-bottom: none;
+        }
 
-/* Card Animations */
-.card {
-  border: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
+        .asset-badge {
+          background: $purple;
+          color: white;
+          padding: 0.25rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
 
-.card-header {
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
-  font-weight: 600;
-}
+        .asset-badge.renda-fixa {
+          background: #17a2b8;
+        }
 
-/* Button Styles */
-.btn-primary {
-  background-color: #4a90e2;
-  border-color: #4a90e2;
-}
+        .asset-badge.acoes {
+          background: #28a745;
+        }
 
-.btn-primary:hover {
-  background-color: #357abd;
-  border-color: #357abd;
-}
+        .asset-badge.fundos {
+          background: #fd7e14;
+        }
 
-.btn-outline-primary {
-  color: #4a90e2;
-  border-color: #4a90e2;
-}
+        .asset-badge.cripto {
+          background: #ffc107;
+          color: #212529;
+        }
 
-.btn-outline-primary:hover {
-  background-color: #4a90e2;
-  border-color: #4a90e2;
-}
+        /* === GRÁFICO === */
+        .chart-container {
+          position: relative;
+          height: 300px;
+          margin: 1rem 0;
+        }
 
-.btn-outline-danger {
-  color: #dc3545;
-  border-color: #dc3545;
-}
+        /* === ANIMAÇÕES === */
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
 
-.btn-outline-danger:hover {
-  background-color: #dc3545;
-  border-color: #dc3545;
-}
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .fade-in-up {
+          animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        @keyframes futureGlow {
+
+          0%,
+          100% {
+            box-shadow: 0 4px 16px rgba(111, 66, 193, 0.2);
+          }
+
+          50% {
+            box-shadow: 0 4px 20px rgba(111, 66, 193, 0.4);
+          }
+        }
+
+        .future-highlight {
+          animation: futureGlow 4s ease-in-out infinite;
+        }
+
+        /* === RESPONSIVIDADE === */
+        @media (max-width: 1024px) {
+          .investimentos-grid {
+            grid-template-columns: 1fr;
+            grid-template-areas:
+              "focal"
+              "evolution"
+              "sidebar"
+              "portfolio"
+              "insights";
+          }
+        }
+
+        @media (max-width: 768px) {
+          .main-container {
+            padding: 1rem 0;
+          }
+        }
+
+        /* === ELEMENTOS ESPECÍFICOS === */
+        .total-investimentos {
+          text-align: center;
+          padding: 2rem 1.5rem;
+        }
+
+        .total-valor {
+          font-size: 2.5rem;
+          font-weight: 700;
+          margin: 1rem 0;
+        }
+
+        .total-status {
+          font-size: 1rem;
+          font-weight: 500;
+          opacity: 0.8;
+        }
+
+        .allocation-summary {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+          gap: 1rem;
+          margin-top: 1.5rem;
+        }
+
+        .allocation-item {
+          text-align: center;
+          padding: 1rem;
+          background: $cinza-claro;
+          border-radius: $border-radius-button;
+          transition: $transition-smooth;
+        }
+
+        .allocation-item:hover {
+          background: #e9ecef;
+          transform: translateY(-2px);
+        }
+
+        .allocation-value {
+          font-size: 1.2rem;
+          font-weight: 600;
+          color: $purple;
+        }
+
+        .allocation-name {
+          font-size: 0.875rem;
+          color: $cinza-medio;
+          margin-top: 0.25rem;
+        }
+
+        /* Achievement badge */
+        .achievement-badge {
+          background: linear-gradient(135deg, $yellow 0%, #f4d03f 100%);
+          color: $escuro-sofisticado;
+          padding: 0.25rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.25rem;
+        }
+
+        /* Risk meter */
+        .risk-meter {
+          background: #e9ecef;
+          height: 8px;
+          border-radius: 4px;
+          overflow: hidden;
+          margin: 0.5rem 0;
+        }
+
+        .risk-fill {
+          background: linear-gradient(90deg, $green 0%, $laranja-atencao 50%, $red 100%);
+          height: 100%;
+          transition: width 1s ease-out;
+        }
+
+        /* Compound interest visualization */
+        .compound-preview {
+          background: linear-gradient(135deg, #f8f6ff 0%, #e8f5e8 100%);
+          border: 1px solid $purple;
+          border-radius: $border-radius-card;
+          padding: 1rem;
+          margin-top: 1rem;
+        }
+
+        .compound-numbers {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 0.5rem;
+        }
+
+        .compound-future {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: $yellow;
+        }

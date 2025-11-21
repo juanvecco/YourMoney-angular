@@ -13,7 +13,7 @@
 .navbar-brand-custom {
     font-size: 1.5rem;
     font-weight: 700;
-    color: $dourado-prosperidade !important;
+    color: $yellow !important;
     text-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
 }
 
@@ -26,12 +26,12 @@
     position: relative;
 
     &:hover {
-        color: $dourado-prosperidade !important;
+        color: $yellow !important;
         background: rgba(212, 175, 55, 0.1);
     }
 
     &.active {
-        color: $dourado-prosperidade !important;
+        color: $yellow !important;
 
         &::after {
             content: '';
@@ -41,7 +41,7 @@
             transform: translateX(-50%);
             width: 30px;
             height: 2px;
-            background: $dourado-prosperidade;
+            background: $yellow;
             border-radius: 1px;
         }
     }
@@ -107,7 +107,7 @@
 }
 
 .card-focal {
-    border: 2px solid $dourado-prosperidade;
+    border: 2px solid $yellow;
     box-shadow: 0 4px 16px rgba(212, 175, 55, 0.2);
     position: relative;
 
@@ -116,7 +116,7 @@
         position: absolute;
         top: 1rem;
         right: 1rem;
-        color: $dourado-prosperidade;
+        color: $yellow;
         font-size: 1.2rem;
         z-index: 1;
     }
@@ -138,7 +138,7 @@
 // ===========================================================
 
 .btn-primary-custom {
-    background: linear-gradient(135deg, $azul-confianca 0%, #357abd 100%);
+    background: linear-gradient(135deg, $blue 0%, #357abd 100%);
     border: none;
     color: white;
     padding: 0.75rem 1.5rem;
@@ -157,7 +157,7 @@
 }
 
 .btn-success-custom {
-    background: linear-gradient(135deg, $verde-crescimento 0%, #20c997 100%);
+    background: linear-gradient(135deg, $green 0%, #20c997 100%);
     border: none;
     color: white;
     padding: 0.75rem 1.5rem;
@@ -168,15 +168,15 @@
 
 .btn-outline-custom {
     background: transparent;
-    border: 2px solid $azul-confianca;
-    color: $azul-confianca;
+    border: 2px solid $blue;
+    color: $blue;
     padding: 0.625rem 1.25rem;
     border-radius: $border-radius-button;
     font-weight: 500;
     transition: $transition-smooth;
 
     &:hover {
-        background: $azul-confianca;
+        background: $blue;
         color: white;
         transform: translateY(-1px);
     }
@@ -187,17 +187,17 @@
 // ===========================================================
 
 .valor-positivo {
-    color: $verde-crescimento;
+    color: $green;
     font-weight: 600;
 }
 
 .valor-negativo {
-    color: $vermelho-alerta;
+    color: $red;
     font-weight: 600;
 }
 
 .valor-destaque {
-    color: $dourado-prosperidade;
+    color: $yellow;
     font-weight: 700;
     font-size: 1.25rem;
 }
@@ -214,12 +214,12 @@
 }
 
 .progress-bar-custom {
-    background: linear-gradient(90deg, $verde-crescimento 0%, #20c997 100%);
+    background: linear-gradient(90deg, $green 0%, #20c997 100%);
     transition: width 0.6s ease;
 }
 
 .achievement-badge {
-    background: linear-gradient(135deg, $dourado-prosperidade 0%, #f4d03f 100%);
+    background: linear-gradient(135deg, $yellow 0%, #f4d03f 100%);
     color: $escuro-sofisticado;
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
@@ -346,7 +346,7 @@
 .action-icon {
     font-size: 2rem;
     margin-bottom: 0.5rem;
-    color: $azul-confianca;
+    color: $blue;
 }
 
 .meta-progress {
@@ -362,7 +362,7 @@
 
 /* Toast personalizado */
 .toast-custom {
-    background: linear-gradient(135deg, $verde-crescimento 0%, #20c997 100%);
+    background: linear-gradient(135deg, $green 0%, #20c997 100%);
     color: white;
     border-radius: $border-radius-button;
     border: none;
@@ -446,7 +446,7 @@
     font-size: 1.75rem;
     font-weight: bold;
     margin-bottom: 15px;
-    color: var(--blue-president);
+    color: $blue;
 }
 
 .card-description-large {

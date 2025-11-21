@@ -11,7 +11,7 @@
 .navbar-brand-custom {
     font-size: 1.5rem;
     font-weight: 700;
-    color: $dourado-prosperidade !important;
+    color: $yellow !important;
     text-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
 }
 
@@ -24,12 +24,12 @@
     position: relative;
 
     &:hover {
-        color: $dourado-prosperidade !important;
+        color: $yellow !important;
         background: rgba(212, 175, 55, 0.1);
     }
 
     &.active {
-        color: $dourado-prosperidade !important;
+        color: $yellow !important;
 
         &::after {
             content: '';
@@ -39,7 +39,7 @@
             transform: translateX(-50%);
             width: 30px;
             height: 2px;
-            background: $dourado-prosperidade;
+            background: $yellow;
             border-radius: 1px;
         }
     }
@@ -104,7 +104,7 @@
 
 /* Card de Destaque (Ponto Focal) */
 .card-focal {
-    border: 2px solid $vermelho-alerta;
+    border: 2px solid $red;
     box-shadow: 0 4px 16px rgba(220, 53, 69, 0.2);
     position: relative;
 }
@@ -132,7 +132,7 @@
 
 /* === BOTÕES === */
 .btn-primary-custom {
-    background: linear-gradient(135deg, $azul-confianca) 0%, #357abd 100%;
+    background: linear-gradient(135deg, $blue) 0%, #357abd 100%;
     border: none;
     color: white;
     padding: 0.75rem 1.5rem;
@@ -151,7 +151,7 @@
 }
 
 .btn-danger-custom {
-    background: linear-gradient(135deg, $vermelho-alerta 0%, #c82333 100%);
+    background: linear-gradient(135deg, $red 0%, #c82333 100%);
     border: none;
     color: white;
     padding: 0.75rem 1.5rem;
@@ -162,8 +162,8 @@
 
 .btn-outline-custom {
     background: transparent;
-    border: 2px solid $azul-confianca;
-    color: $azul-confianca;
+    border: 2px solid $blue;
+    color: $blue;
     padding: 0.625rem 1.25rem;
     border-radius: $border-radius-button;
     font-weight: 500;
@@ -171,19 +171,19 @@
 }
 
 .btn-outline-custom:hover {
-    background: $azul-confianca;
+    background: $blue;
     color: white;
     transform: translateY(-1px);
 }
 
 /* === INDICADORES DE VALOR === */
 .valor-negativo {
-    color: $vermelho-alerta;
+    color: $red;
     font-weight: 600;
 }
 
 .valor-destaque {
-    color: $vermelho-alerta;
+    color: $red;
     font-weight: 700;
     font-size: 2rem;
 }
@@ -219,7 +219,7 @@
 }
 
 .category-badge {
-    background: $azul-confianca;
+    background: $blue;
     color: white;
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
@@ -347,7 +347,7 @@
 .category-value {
     font-size: 1.2rem;
     font-weight: 600;
-    color: $vermelho-alerta;
+    color: $red;
 }
 
 .category-name {
@@ -358,7 +358,7 @@
 
 /* Achievement badge */
 .achievement-badge {
-    background: linear-gradient(135deg, $dourado-prosperidade 0%, #f4d03f 100%);
+    background: linear-gradient(135deg, $yellow 0%, #f4d03f 100%);
     color: $escuro-sofisticado;
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
@@ -377,7 +377,7 @@
     &:hover {
         transform: translateY(-2px);
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
-        border-color: var(--azul-confianca) !important;
+        border-color: var(--blue) !important;
     }
 }
 
@@ -386,7 +386,7 @@
 }
 
 .text-gradient {
-    background: linear-gradient(90deg, var(--azul-confianca), var(--dourado-prosperidade));
+    background: linear-gradient(90deg, var(--blue), var(--yellow));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

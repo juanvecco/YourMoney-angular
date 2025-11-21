@@ -38,271 +38,153 @@
   </div>
 </nav>
 
-<div class="investimento-page">
-  <div class="page-header">
-    <h1 class="page-title">Investimentos</h1>
-  </div>
+<!-- Conteúdo Principal -->
+<div class="main-container">
+  <div class="container">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#" style="color: var(--blue);">Início</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Investimentos</li>
+      </ol>
+    </nav>
 
-  <!-- Loading Spinner -->
-  <!-- <div *ngIf="loading" class="loading-container">
-    <div class="spinner-border text-primary" role="status">
-      <span class="sr-only">Carregando...</span>
-    </div>
-  </div> -->
+    <!-- Grid Principal -->
+    <div class="investimentos-grid">
+      <!-- Ponto Focal: Construção do Futuro -->
+      <div class="focal-point">
+        <div class="card card-custom card-focal fade-in-up future-highlight">
+          <div class="card-body total-investimentos">
+            <h3 class="mb-3">Construção do Futuro - {{ mesAtual | date:'MMMM yyyy' : 'pt' }}</h3>
+            <div class="total-valor valor-investimento">R$ {{ totalInvestimentos | number:'1.2-2' }}</div>
+            <div class="total-status">Total de investimentos este mês</div>
 
-  <!-- Content -->
-  <!-- <div *ngIf="!loading"> -->
-  <!-- Summary Cards -->
-  <!-- <div class="row mb-4">
-      <div class="col-md-4 mb-3">
-        <div class="card summary-card">
-          <div class="card-body">
-            <div class="card-icon">
-              <i class="bi bi-cash-coin"></i>
+            <!-- Calendário -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(-1)">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+              <button type="button" class="btn btn-link p-0 text-decoration-none" (click)="abrirCalendario()"
+                style="color: var(--escuro-sofisticado);">
+                <i class="bi bi-calendar3" style="font-size: 0.95rem; color: var(--blue);"></i>
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(1)">
+                <i class="bi bi-chevron-right"></i>
+              </button>
             </div>
-            <h5 class="card-title">Total Investido</h5>
-            <h3 class="card-value">{{ formatarMoeda(resumo.totalInvestido) }}</h3>
-            <p class="card-description">Valor total aplicado em investimentos</p>
+            <input type="month" #calendarioInput class="d-none" [value]="(mesAtual | date:'yyyy-MM')"
+              (change)="selecionarMesDoCalendario($event)">
           </div>
         </div>
       </div>
 
-      <div class="col-md-4 mb-3">
-        <div class="card summary-card">
+      <!-- Sidebar: Ações Rápidas -->
+      <div class="sidebar-section">
+        <div class="card card-custom fade-in-up" style="animation-delay: 0.3s;">
           <div class="card-body">
-            <div class="card-icon">
-              <i class="bi bi-graph-up"></i>
+            <h5 class="mb-3">
+              <i class="bi bi-gem me-2" style="color: var(--dourado-prosperidade);"></i>
+              Ações Rápidas
+            </h5>
+
+            <div class="d-grid gap-2">
+              <button class="btn btn-investment-custom" (click)="abrirModalInvestimento()">
+                <i class="bi bi-plus-circle"></i>
+                Novo Investimento
+              </button>
             </div>
-            <h5 class="card-title">Rentabilidade</h5>
-            <h3 class="card-value positive">
-              +{{ formatarMoeda(resumo.patrimonioTotal - resumo.totalInvestido) }} 
-              ({{ formatarPercentual(resumo.rentabilidade) }})
-            </h3>
-            <p class="card-description">Ganho acumulado nos últimos 12 meses</p>
           </div>
         </div>
       </div>
 
-      <div class="col-md-4 mb-3">
-        <div class="card summary-card">
-          <div class="card-body">
-            <div class="card-icon">
-              <i class="bi bi-briefcase"></i>
+      <!-- Lista de Investimentos -->
+      <ul class="list-group mb-4">
+        <li *ngFor="let investimento of investimentos"
+          class="list-group-item d-flex justify-content-between align-items-center py-3 border-0 shadow-sm mb-2 rounded-3"
+          style="transition: all 0.2s;">
+          <div class="d-flex flex-column">
+            <span class="fw-semibold" style="color: var(--escuro-sofisticado);">
+              {{ investimento.nome}}
+            </span>
+          </div>
+          <!-- <td>{{ investimento.nome }}</td> -->
+          <!-- <td>{{ investimento.tipo }}</td>
+          <td>{{ investimento.quantidade }} {{ investimento.tipo === 'Renda Variável' ? 'ações' :
+            (investimento.tipo
+            === 'Fundo' ? 'cotas' : 'unidades') }}</td>
+          <td>{{ formatarMoeda(investimento.precoMedio) }}</td>
+          <td>{{ formatarMoeda(investimento.valorAtual) }}</td> -->
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge px-3 py-2 fw-bold" style="background: rgba(40, 167, 69, 0.15); color: var(--purple);">
+              R$ {{ investimento.valorAtual | number:'1.2-2' }}
+            </span>
+            <button class="btn btn-sm btn-outline-primary me-1" (click)="abrirModalEditar(investimento)">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" (click)="deletarInvestimento(investimento.id)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </li>
+      </ul>
+
+      <!-- ==================== MODAL ==================== -->
+      <div class="modal fade" id="modalInvestimento" tabindex="-1" aria-labelledby="modalInvestimentoLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalInvestimentoLabel">Novo Investimento</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
-            <h5 class="card-title">Patrimônio Total</h5>
-            <h3 class="card-value">{{ formatarMoeda(resumo.patrimonioTotal) }}</h3>
-            <p class="card-description">Valor atual da carteira de investimentos</p>
-          </div>
-        </div>
-      </div>
-    </div> -->
-
-  <!-- Performance Chart -->
-  <!-- <div class="card mb-4">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Evolução do Patrimônio</h5>
-        <select class="form-select form-select-sm" style="width: auto;">
-          <option>Últimos 12 meses</option>
-          <option>Últimos 6 meses</option>
-          <option>Últimos 3 meses</option>
-        </select>
-      </div>
-      <div class="card-body">
-        <div class="chart-placeholder">
-          <i class="bi bi-bar-chart-line"></i>
-          <p>Gráfico de evolução do patrimônio (integração futura com biblioteca de gráficos)</p>
-        </div>
-      </div>
-    </div> -->
-
-  <!-- Investment Portfolio -->
-  <div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">Minha Carteira</h5>
-      <button class="btn btn-primary" (click)="abrirModalInvestimento()">
-        <i class="bi bi-plus-circle"></i> Adicionar Investimento
-      </button>
-    </div>
-    <!-- Modal de Cadastro -->
-    <div class="modal fade" id="modalInvestimento" tabindex="-1" aria-labelledby="modalInvestimentoLabel"
-      aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="modalInvestimentoLabel">Novo Investimento</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-          </div>
-          <div class="modal-body">
-            <form>
-              <div class="row g-3">
-                <div class="col-12">
-                  <label class="form-label">Nome</label>
-                  <input type="text" class="form-control" [(ngModel)]="novoInvestimento.nome" name="nome" required />
-                </div>
-                <div class="col-12">
-                  <label class="form-label">Descrição</label>
-                  <input type="text" class="form-control" [(ngModel)]="novoInvestimento.descricao" name="descricao"
-                    required />
-                </div>
-                <div class="col-12">
-                  <label class="form-label">Tipo</label>
-                  <input type="text" class="form-control" [(ngModel)]="novoInvestimento.tipo" name="tipo" required />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Quantidade</label>
-                  <input type="number" step="0.01" class="form-control" [(ngModel)]="novoInvestimento.quantidade"
-                    name="quantidade" required />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Preço Médio (R$)</label>
-                  <input type="number" step="0.01" class="form-control" [(ngModel)]="novoInvestimento.precoMedio"
-                    name="precoMedio" required />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Valor (R$)</label>
-                  <input type="number" step="0.01" class="form-control" [(ngModel)]="novoInvestimento.valorAtual"
-                    name="valor" required />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Data</label>
-                  <input type="date" class="form-control" [(ngModel)]="novoInvestimento.dataInvestimento" name="data"
-                    required />
-                </div>
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn" style="background-color: var(--blue-dark); color: var(--card-bg);"
-              data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn"
-              style="background-color: var(--blue-president); color: var(--card-bg); font-weight: 500;"
-              (click)="salvarInvestimento()">Salvar Investimento</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- Navegação por mês -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(-1)">&lt;</button>
-      <h6 class="mb-0">{{ mesAtual | date:'MMMM/yyyy' : 'pt' }}</h6>
-      <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(1)">&gt;</button>
-    </div>
-    <!-- Lista de Investimentos -->
-    <div class="card-body">
-      <div class="table-responsive">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Tipo</th>
-              <th>Quantidade</th>
-              <th>Preço Médio</th>
-              <th>Valor Atual</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let investimento of investimentos">
-              <td>{{ investimento.nome }}</td>
-              <td>{{ investimento.tipo }}</td>
-              <td>{{ investimento.quantidade }} {{ investimento.tipo === 'Renda Variável' ? 'ações' : (investimento.tipo
-                === 'Fundo' ? 'cotas' : 'unidades') }}</td>
-              <td>{{ formatarMoeda(investimento.precoMedio) }}</td>
-              <td>{{ formatarMoeda(investimento.valorAtual) }}</td>
-              <td>
-                <div class="action-buttons">
-                  <button class="btn btn-sm btn-outline-primary me-1" (click)="abrirModalEditar(investimento)"
-                    title="Editar">
-                    <i class="bi bi-pencil"></i>
-                  </button>
-                  <button class="btn btn-sm btn-outline-danger" (click)="deletarInvestimento(investimento.id)"
-                    title="Excluir">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-  <!-- <div class="card mb-4">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Minha Carteira</h5>
-        <button class="btn btn-primary" (click)="adicionarInvestimento()">
-          <i class="bi bi-plus-circle"></i> Adicionar Investimento
-        </button>
-      </div>
-      <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-hover">
-            <thead>
-              <tr>
-                <th>Ativo</th>
-                <th>Tipo</th>
-                <th>Quantidade</th>
-                <th>Preço Médio</th>
-                <th>Valor Atual</th>
-                <th>Rentabilidade</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let investimento of investimentos">
-                <td>{{ investimento.ativo }}</td>
-                <td>{{ investimento.tipo }}</td>
-                <td>{{ investimento.quantidade }} {{ investimento.tipo === 'Renda Variável' ? 'ações' : (investimento.tipo === 'Fundo' ? 'cotas' : 'unidades') }}</td>
-                <td>{{ formatarMoeda(investimento.precoMedio) }}</td>
-                <td>{{ formatarMoeda(investimento.valorAtual) }}</td>
-                <td [class]="obterClasseRentabilidade(investimento.rentabilidade)">
-                  {{ formatarPercentual(investimento.rentabilidade) }}
-                </td>
-                <td>
-                  <div class="action-buttons">
-                    <button class="btn btn-sm btn-outline-primary me-1" 
-                            (click)="editarInvestimento(investimento.id)"
-                            title="Editar">
-                      <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" 
-                            (click)="excluirInvestimento(investimento.id)"
-                            title="Excluir">
-                      <i class="bi bi-trash"></i>
-                    </button>
+            <div class="modal-body">
+              <form>
+                <div class="row g-3">
+                  <div class="col-12">
+                    <label class="form-label">Nome</label>
+                    <input type="text" class="form-control" [(ngModel)]="novoInvestimento.nome" name="nome" required />
                   </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div> -->
-
-  <!-- Investment Categories -->
-  <!-- <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">Distribuição por Categoria</h5>
-      </div>
-      <div class="card-body">
-        <div class="row">
-          <div class="col-md-4 mb-3" *ngFor="let categoria of distribuicao">
-            <div class="card category-card">
-              <div class="card-body text-center">
-                <div class="category-icon">
-                  <i class="bi" [ngClass]="{
-                    'bi-bank': categoria.categoria === 'Renda Fixa',
-                    'bi-graph-up': categoria.categoria === 'Renda Variável',
-                    'bi-building': categoria.categoria === 'Fundos'
-                  }"></i>
+                  <div class="col-12">
+                    <label class="form-label">Descrição</label>
+                    <input type="text" class="form-control" [(ngModel)]="novoInvestimento.descricao" name="descricao"
+                      required />
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Tipo</label>
+                    <input type="text" class="form-control" [(ngModel)]="novoInvestimento.tipo" name="tipo" required />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Quantidade</label>
+                    <input type="number" step="0.01" class="form-control" [(ngModel)]="novoInvestimento.quantidade"
+                      name="quantidade" required />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Preço Médio (R$)</label>
+                    <input type="number" step="0.01" class="form-control" [(ngModel)]="novoInvestimento.precoMedio"
+                      name="precoMedio" required />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Valor (R$)</label>
+                    <input type="number" step="0.01" class="form-control" [(ngModel)]="novoInvestimento.valorAtual"
+                      name="valor" required />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Data</label>
+                    <input type="date" class="form-control" [(ngModel)]="novoInvestimento.dataInvestimento" name="data"
+                      required />
+                  </div>
                 </div>
-                <h6 class="card-title">{{ categoria.categoria }}</h6>
-                <h4 class="card-value">{{ formatarMoeda(categoria.valor) }}</h4>
-                <p class="card-description">{{ categoria.percentual }}% da carteira</p>
-              </div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn" style="background-color: var(--blue-dark); color: var(--card-bg);"
+                data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn"
+                style="background-color: var(--blue-president); color: var(--card-bg); font-weight: 500;"
+                (click)="salvarInvestimento()">Salvar Investimento</button>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-</div> -->

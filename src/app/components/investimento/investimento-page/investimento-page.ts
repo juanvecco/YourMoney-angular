@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Investimento, InvestimentoService } from '../../../services/investimento';
 import Swal from 'sweetalert2';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-investimento-page',
@@ -11,7 +12,8 @@ import Swal from 'sweetalert2';
   templateUrl: './investimento-page.html',
   styleUrls: ['./investimento-page.scss']
 })
-export class InvestimentoPageComponent {
+export class InvestimentoPageComponent implements OnDestroy {
+  private destroy$ = new Subject<void>();
 
   investimentos: Investimento[] = [];
   mesAtual: Date = new Date();
@@ -30,8 +32,15 @@ export class InvestimentoPageComponent {
     ativo: true
   };
 
+  @ViewChild('calendarioInput') calendarioInput!: ElementRef<HTMLInputElement>;
+
   constructor(private investimentoService: InvestimentoService) {
     this.carregarDadosIniciais();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   carregarDadosIniciais() {
@@ -56,6 +65,23 @@ export class InvestimentoPageComponent {
     const novoMes = new Date(this.mesAtual);
     novoMes.setMonth(novoMes.getMonth() + direcao);
     this.mesAtual = novoMes;
+    this.carregarInvestimentos();
+  }
+
+  // === CALENDÁRIO ===
+  abrirCalendario() {
+    const input = this.calendarioInput.nativeElement;
+    if (typeof input.showPicker === 'function') {
+      input.showPicker();
+    } else {
+      input.click();
+    }
+  }
+
+  selecionarMesDoCalendario(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const [ano, mes] = input.value.split('-').map(Number);
+    this.mesAtual = new Date(ano, mes - 1, 1);
     this.carregarInvestimentos();
   }
 
@@ -138,93 +164,27 @@ export class InvestimentoPageComponent {
       }
     });
   }
+
   deletarInvestimento(id: string) {
     Swal.fire({
-      title: 'Confirmação',
-      text: 'Tem certeza que deseja deletar este investimento?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sim, deletar',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
+      title: 'Deletar?', text: 'Não pode ser desfeito.', icon: 'warning',
+      showCancelButton: true, confirmButtonText: 'Sim', cancelButtonText: 'Não',
+      confirmButtonColor: '#dc3545'
+    }).then(result => {
       if (result.isConfirmed) {
-        this.investimentoService.deletarInvestimento(id).subscribe({
-          next: () => {
-            this.investimentos = this.investimentos.filter(d => d.id !== id);
-            this.totalInvestimentos = this.investimentos.reduce((soma, d) => soma + d.valorAtual, 0);
-            Swal.fire('Deletado!', 'Investimento deletado com sucesso.', 'success');
-          },
-          error: (erro) => {
-            console.error('Erro ao deletar investimento', erro);
-            Swal.fire('Erro!', 'Não foi possível deletar o investimento.', 'error');
-          }
-        });
+        this.investimentoService.deletarInvestimento(id)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.investimentos = this.investimentos.filter(d => d.id !== id);
+              this.totalInvestimentos = this.investimentos.reduce((s, d) => s + d.valorAtual, 0);
+              Swal.fire('Deletado!', '', 'success');
+            },
+            error: () => Swal.fire('Erro!', '', 'error')
+          });
       }
     });
   }
-
-  // carregarDados() {
-  // this.loading = true;
-
-  // Simulando dados para demonstração
-  // Em uma implementação real, estes dados viriam do serviço
-  // this.investimentos = [
-  //   {
-  //     id: 1,
-  //     ativo: 'Tesouro Selic 2029',
-  //     tipo: 'Renda Fixa',
-  //     quantidade: 10,
-  //     precoMedio: 950.00,
-  //     valorAtual: 10200.00,
-  //     rentabilidade: 2.6,
-  //     dataCompra: new Date('2024-01-15')
-  //   },
-  //   {
-  //     id: 2,
-  //     ativo: 'ITUB4',
-  //     tipo: 'Renda Variável',
-  //     quantidade: 200,
-  //     precoMedio: 32.50,
-  //     valorAtual: 6800.00,
-  //     rentabilidade: 4.6,
-  //     dataCompra: new Date('2024-03-10')
-  //   },
-  //   {
-  //     id: 3,
-  //     ativo: 'PETR4',
-  //     tipo: 'Renda Variável',
-  //     quantidade: 150,
-  //     precoMedio: 28.00,
-  //     valorAtual: 4050.00,
-  //     rentabilidade: -3.6,
-  //     dataCompra: new Date('2024-02-20')
-  //   },
-  //   {
-  //     id: 4,
-  //     ativo: 'Fundo Multimercado XP',
-  //     tipo: 'Fundo',
-  //     quantidade: 600,
-  //     precoMedio: 10.00,
-  //     valorAtual: 6100.00,
-  //     rentabilidade: 1.7,
-  //     dataCompra: new Date('2024-01-05')
-  //   }
-  // ];
-
-  // this.resumo = {
-  //   totalInvestido: 25000.00,
-  //   rentabilidade: 8.6,
-  //   patrimonioTotal: 27150.00
-  // };
-
-  // this.distribuicao = [
-  //   { categoria: 'Renda Fixa', valor: 10200.00, percentual: 37.6 },
-  //   { categoria: 'Renda Variável', valor: 10850.00, percentual: 40.0 },
-  //   { categoria: 'Fundos', valor: 6100.00, percentual: 22.4 }
-  // ];
-
-  // this.loading = false;
-  // }
 
   adicionarInvestimento(): void {
     // Implementar lógica para adicionar investimento
