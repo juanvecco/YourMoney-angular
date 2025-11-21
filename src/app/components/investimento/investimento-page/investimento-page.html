@@ -107,13 +107,6 @@
               {{ investimento.nome}}
             </span>
           </div>
-          <!-- <td>{{ investimento.nome }}</td> -->
-          <!-- <td>{{ investimento.tipo }}</td>
-          <td>{{ investimento.quantidade }} {{ investimento.tipo === 'Renda Variável' ? 'ações' :
-            (investimento.tipo
-            === 'Fundo' ? 'cotas' : 'unidades') }}</td>
-          <td>{{ formatarMoeda(investimento.precoMedio) }}</td>
-          <td>{{ formatarMoeda(investimento.valorAtual) }}</td> -->
           <div class="d-flex align-items-center gap-2">
             <span class="badge px-3 py-2 fw-bold" style="background: rgba(40, 167, 69, 0.15); color: var(--purple);">
               R$ {{ investimento.valorAtual | number:'1.2-2' }}

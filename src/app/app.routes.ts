@@ -10,6 +10,7 @@ import { LoginPageComponent } from './components/login/login-page/login-page';
 
 
 export const routes: Routes = [
+    { path: '', component: HomeComponent },
     { path: 'dashboard', component: DashboardPageComponent },
     { path: 'despesas', component: DespesasComponent },
     { path: 'receitas', component: ReceitaPageComponent },
