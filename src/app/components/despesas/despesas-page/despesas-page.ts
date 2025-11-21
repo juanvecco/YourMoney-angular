@@ -1,17 +1,21 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DespesaService, Despesa, Categoria } from '../../../services/despesa';
 import Swal from 'sweetalert2';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
     selector: 'app-despesas-page',
     standalone: true,
     imports: [CommonModule, FormsModule],
-    templateUrl: './despesas-page.html'
+    templateUrl: './despesas-page.html',
+    styleUrls: ['./despesas-page.scss']
 })
-export class DespesasPageComponent {
-    //Formulário
+export class DespesasComponent implements OnInit, OnDestroy {
+    private destroy$ = new Subject<void>();
+
+    // === FORMULÁRIO ===
     novaDespesa = {
         id: '',
         descricao: '',
@@ -23,93 +27,139 @@ export class DespesasPageComponent {
         idCategoriaEspecifica: ''
     };
 
-    //Dados
-    contas: any[] = [];
-    tiposDespesa: any[] = [];
-    naturezasDespesa: any[] = [];
-    categoriasEspecificas: any[] = [];
+    editando = false;
 
-    // Lista de despesas
+    // === DADOS ===
+    contas: any[] = [];
+    tiposDespesa: Categoria[] = [];
+    naturezasDespesa: Categoria[] = [];
+    categoriasEspecificas: Categoria[] = [];
+
     despesas: Despesa[] = [];
     mesAtual: Date = new Date();
     totalDespesas = 0;
-
-    // Editar
     totalPorConta: { descricao: string; valor: number }[] = [];
-    tiposDespesaCategoria: Categoria[] = [];
-    naturezaDespesaCategoria: Categoria[] = [];
-    categoriasEspecificasCategoria: Categoria[] = [];
 
-    constructor(private despesaService: DespesaService) {
+    // === TRILHA & GAMIFICAÇÃO ===
+    mostrarDicaCategorizacao = false;
+    dicaDespesaHover: Despesa | null = null;
+    usuarioCategorizouEsteMes = false;
+    badgeOrganizadorDesbloqueado = false;
+
+    // === CALENDÁRIO ===
+    @ViewChild('calendarioInput') calendarioInput!: ElementRef<HTMLInputElement>;
+
+    constructor(private despesaService: DespesaService) { }
+
+    ngOnInit() {
         this.carregarDadosIniciais();
     }
 
+    ngOnDestroy() {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
+    // ==============================================================
+    // CARREGAMENTO
+    // ==============================================================
+
     carregarDadosIniciais() {
         this.carregarContas();
-        this.carregarTiposDespesa();
+        this.carregarCategoriasCompletas();
         this.carregarDespesas();
-        this.calcularTotalPorConta();
     }
 
     carregarContas() {
-        this.despesaService.listarContas().subscribe({
-            next: (contas) => this.contas = contas,
-            error: (erro) => console.error('Erro ao carregar contas', erro)
-        });
+        this.despesaService.listarContas()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (contas) => this.contas = contas,
+                error: (erro) => console.error('Erro ao carregar contas', erro)
+            });
     }
 
-    carregarTiposDespesa() {
-        this.despesaService.listarCategorias().subscribe({
-            next: (categorias) => {
-                this.tiposDespesa = categorias.filter(c => c.categoriaPaiId === null && c.tipoTransacao === 1);
-            },
-            error: (erro) => console.error('Erro ao carregar tipos de despesa', erro)
-        });
-    }
-
-    calcularTotalPorConta() {
-        const totalMap: { [id: string]: number } = {};
-
-        this.despesas.forEach(despesa => {
-            const idConta = despesa.idContaFinanceira;
-            if (!totalMap[idConta]) {
-                totalMap[idConta] = 0;
-            }
-            totalMap[idConta] += despesa.valor;
-        });
-
-        this.totalPorConta = Object.keys(totalMap).map(id => {
-            const conta = this.contas.find(c => c.id === id);
-            return {
-                descricao: conta?.descricao || 'Conta Desconhecida',
-                valor: totalMap[id]
-            };
-        });
+    carregarCategoriasCompletas() {
+        this.despesaService.listarCategorias()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (categorias) => {
+                    this.despesaService.setCategorias(categorias);
+                    this.tiposDespesa = categorias.filter(c =>
+                        c.categoriaPaiId === null && c.tipoTransacao === 1
+                    );
+                },
+                error: (erro) => console.error('Erro ao carregar categorias', erro)
+            });
     }
 
     carregarDespesas() {
         const mes = this.mesAtual.getMonth() + 1;
         const ano = this.mesAtual.getFullYear();
-        this.despesaService.obterPorReferencia(mes, ano).subscribe({
-            next: (dados) => {
-                this.despesas = dados.sort((a, b) => {
-                    return new Date(b.data).getTime() - new Date(a.data).getTime();
-                });
-                this.totalDespesas = dados.reduce((soma, d) => soma + d.valor, 0);
-                this.calcularTotalPorConta();
-            },
-            error: (erro) => console.error('Erro ao carregar despesas', erro)
-        });
+
+        this.despesaService.obterPorReferencia(mes, ano)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (dados) => {
+                    this.despesas = dados.sort((a, b) =>
+                        new Date(b.data).getTime() - new Date(a.data).getTime()
+                    );
+                    this.totalDespesas = dados.reduce((soma, d) => soma + d.valor, 0);
+                    this.calcularTotalPorConta();
+                    this.verificarTrilhaOrganizador();
+                },
+                error: (erro) => console.error('Erro ao carregar despesas', erro)
+            });
     }
 
-    mudarMes(direcao: number) {
-        const novoMes = new Date(this.mesAtual);
-        novoMes.setMonth(novoMes.getMonth() + direcao);
-        this.mesAtual = novoMes;
+    calcularTotalPorConta() {
+        const totalMap: { [id: string]: number } = {};
+        this.despesas.forEach(d => {
+            totalMap[d.idContaFinanceira] = (totalMap[d.idContaFinanceira] || 0) + d.valor;
+        });
+
+        this.totalPorConta = Object.entries(totalMap).map(([id, valor]) => ({
+            descricao: this.contas.find(c => c.id === id)?.descricao || 'Conta Desconhecida',
+            valor
+        }));
+    }
+
+    // ==============================================================
+    // NAVEGAÇÃO
+    // ==============================================================
+
+    public mudarMes(direcao: number) {
+        const novo = new Date(this.mesAtual);
+        novo.setMonth(novo.getMonth() + direcao);
+        this.mesAtual = novo;
         this.carregarDespesas();
     }
 
-    editando: boolean = false;
+    public abrirCalendario() {
+        const el = this.calendarioInput.nativeElement as HTMLInputElement & { showPicker?: () => void };
+        if (typeof el.showPicker === 'function') {
+            el.showPicker();
+        } else {
+            el.click();
+        }
+    }
+
+    public selecionarMesDoCalendario(event: Event) {
+        const input = event.target as HTMLInputElement;
+        const [ano, mes] = input.value.split('-').map(Number);
+        this.mesAtual = new Date(ano, mes - 1, 1);
+        this.carregarDespesas();
+    }
+
+    // ==============================================================
+    // MODAL
+    // ==============================================================
+
+    abrirModalDespesa() {
+        this.editando = false;
+        this.resetForm();
+        this.abrirModal();
+    }
 
     abrirModalEditar(despesa: Despesa) {
         this.editando = true;
@@ -123,81 +173,59 @@ export class DespesasPageComponent {
             idNaturezaDespesa: '',
             idCategoriaEspecifica: ''
         };
+        this.carregarCascataCategoria(despesa.idCategoria);
+        this.abrirModal();
+    }
 
-        const categoria = this.despesaService.listarTodasCategorias.find(c => c.id === despesa.idCategoria);
-
-        if (categoria) {
-            if (!categoria.categoriaPaiId) {
-                // categoria é um Tipo
-                this.novaDespesa.idTipoDespesa = categoria.id;
-                this.naturezasDespesa = this.despesaService.listarTodasCategorias.filter(c => c.categoriaPaiId === categoria.id);
-            } else {
-                const pai = this.despesaService.listarTodasCategorias.find(c => c.id === categoria.categoriaPaiId);
-                if (pai) {
-                    if (!pai.categoriaPaiId) {
-                        // categoria é Natureza
-                        this.novaDespesa.idTipoDespesa = pai.id;
-                        this.novaDespesa.idNaturezaDespesa = categoria.id;
-                        this.naturezasDespesa = this.despesaService.listarTodasCategorias.filter(c => c.categoriaPaiId === pai.id);
-                        this.categoriasEspecificas = this.despesaService.listarTodasCategorias.filter(c => c.categoriaPaiId === categoria.id);
-                    } else {
-                        // categoria é Específica
-                        const avo = this.despesaService.listarTodasCategorias.find(c => c.id === pai.categoriaPaiId);
-                        this.novaDespesa.idTipoDespesa = avo?.id || '';
-                        this.novaDespesa.idNaturezaDespesa = pai.id;
-                        this.novaDespesa.idCategoriaEspecifica = categoria.id;
-
-                        this.naturezasDespesa = this.despesaService.listarTodasCategorias.filter(c => c.categoriaPaiId === avo?.id);
-                        this.categoriasEspecificas = this.despesaService.listarTodasCategorias.filter(c => c.categoriaPaiId === pai.id);
-                    }
-                }
-            }
-        }
-
+    private abrirModal() {
         const modal = new (window as any).bootstrap.Modal(document.getElementById('modalDespesa'));
         modal.show();
     }
 
-    deletarDespesa(id: string) {
-        Swal.fire({
-            title: 'Confirmação',
-            text: 'Tem certeza que deseja deletar esta despesa?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Sim, deletar',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                this.despesaService.deletarDespesa(id).subscribe({
-                    next: () => {
-                        this.despesas = this.despesas.filter(d => d.id !== id);
-                        this.totalDespesas = this.despesas.reduce((soma, d) => soma + d.valor, 0);
-                        this.calcularTotalPorConta();
-                        Swal.fire('Deletado!', 'Despesa deletada com sucesso.', 'success');
-                    },
-                    error: (erro) => {
-                        console.error('Erro ao deletar despesa', erro);
-                        Swal.fire('Erro!', 'Não foi possível deletar a despesa.', 'error');
-                    }
-                });
-            }
-        });
+    private resetForm() {
+        this.novaDespesa = {
+            id: '', descricao: '', valor: 0, data: new Date().toISOString().split('T')[0],
+            idContaFinanceira: '', idTipoDespesa: '', idNaturezaDespesa: '', idCategoriaEspecifica: ''
+        };
+        this.naturezasDespesa = [];
+        this.categoriasEspecificas = [];
     }
-    // --- Lógica do Modal ---
+
+    // ==============================================================
+    // CASCATA
+    // ==============================================================
+
+    private carregarCascataCategoria(idCategoria: string) {
+        const todas = this.despesaService.todasCategorias;
+        const cat = todas.find(c => c.id === idCategoria);
+        if (!cat) return;
+
+        if (!cat.categoriaPaiId) {
+            this.novaDespesa.idTipoDespesa = cat.id;
+            this.naturezasDespesa = todas.filter(c => c.categoriaPaiId === cat.id);
+        } else {
+            const pai = todas.find(c => c.id === cat.categoriaPaiId);
+            if (pai && !pai.categoriaPaiId) {
+                this.novaDespesa.idTipoDespesa = pai.id;
+                this.novaDespesa.idNaturezaDespesa = cat.id;
+                this.naturezasDespesa = todas.filter(c => c.categoriaPaiId === pai.id);
+                this.categoriasEspecificas = todas.filter(c => c.categoriaPaiId === cat.id);
+            } else {
+                const avo = todas.find(c => c.id === pai?.categoriaPaiId);
+                this.novaDespesa.idTipoDespesa = avo?.id || '';
+                this.novaDespesa.idNaturezaDespesa = pai?.id || '';
+                this.novaDespesa.idCategoriaEspecifica = cat.id;
+                this.naturezasDespesa = todas.filter(c => c.categoriaPaiId === avo?.id);
+                this.categoriasEspecificas = todas.filter(c => c.categoriaPaiId === pai?.id);
+            }
+        }
+    }
 
     onTipoChange() {
         const tipoId = this.novaDespesa.idTipoDespesa;
-        if (!tipoId) {
-            this.naturezasDespesa = [];
-            this.categoriasEspecificas = [];
-            this.novaDespesa.idNaturezaDespesa = '';
-            this.novaDespesa.idCategoriaEspecifica = '';
-            return;
-        }
-
-        this.naturezasDespesa = this.despesaService.listarTodasCategorias
-            .filter(c => c.categoriaPaiId === tipoId);
-
+        this.naturezasDespesa = tipoId
+            ? this.despesaService.todasCategorias.filter(c => c.categoriaPaiId === tipoId)
+            : [];
         this.novaDespesa.idNaturezaDespesa = '';
         this.novaDespesa.idCategoriaEspecifica = '';
         this.categoriasEspecificas = [];
@@ -205,49 +233,25 @@ export class DespesasPageComponent {
 
     onNaturezaChange() {
         const naturezaId = this.novaDespesa.idNaturezaDespesa;
-        if (!naturezaId) {
-            this.categoriasEspecificas = [];
-            this.novaDespesa.idCategoriaEspecifica = '';
-            return;
-        }
-
-        this.categoriasEspecificas = this.despesaService.listarTodasCategorias
-            .filter(c => c.categoriaPaiId === naturezaId);
-
+        this.categoriasEspecificas = naturezaId
+            ? this.despesaService.todasCategorias.filter(c => c.categoriaPaiId === naturezaId)
+            : [];
         this.novaDespesa.idCategoriaEspecifica = '';
     }
 
-    abrirModalDespesa() {
-        this.editando = false;
-        this.novaDespesa = {
-            id: '',
-            descricao: '',
-            valor: 0,
-            data: new Date().toISOString().split('T')[0],
-            idContaFinanceira: '',
-            idTipoDespesa: '',
-            idNaturezaDespesa: '',
-            idCategoriaEspecifica: ''
-        };
-        this.naturezasDespesa = [];
-        this.categoriasEspecificas = [];
-
-        const modal = new (window as any).bootstrap.Modal(document.getElementById('modalDespesa'));
-        modal.show();
-    }
+    // ==============================================================
+    // SALVAR
+    // ==============================================================
 
     salvarDespesa() {
-        if (!this.novaDespesa.descricao || !this.novaDespesa.valor || !this.novaDespesa.data || !this.novaDespesa.idContaFinanceira || !this.novaDespesa.idTipoDespesa) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Campos obrigatórios!',
-                text: 'Preencha todos os campos antes de salvar.',
-                confirmButtonColor: '#b49452',
-                background: '#f8f8f8',
-                color: '#283b6b',
-            });
+        if (!this.camposObrigatoriosPreenchidos()) {
+            this.mostrarAlertaCamposObrigatorios();
             return;
         }
+
+        const idCategoriaFinal = this.novaDespesa.idCategoriaEspecifica ||
+            this.novaDespesa.idNaturezaDespesa ||
+            this.novaDespesa.idTipoDespesa;
 
         const payload = {
             id: this.novaDespesa.id,
@@ -255,54 +259,126 @@ export class DespesasPageComponent {
             valor: this.novaDespesa.valor,
             data: this.novaDespesa.data,
             idContaFinanceira: this.novaDespesa.idContaFinanceira,
-            idCategoria: this.novaDespesa.idCategoriaEspecifica ||
-                this.novaDespesa.idNaturezaDespesa ||
-                this.novaDespesa.idTipoDespesa
+            idCategoria: idCategoriaFinal
         };
 
         const request$ = this.editando
             ? this.despesaService.atualizarDespesa(payload)
-            : this.despesaService.criarDespesa({
-                descricao: this.novaDespesa.descricao,
-                valor: this.novaDespesa.valor,
-                data: this.novaDespesa.data,
-                idContaFinanceira: this.novaDespesa.idContaFinanceira,
-                idCategoria: this.novaDespesa.idCategoriaEspecifica ||
-                    this.novaDespesa.idNaturezaDespesa ||
-                    this.novaDespesa.idTipoDespesa
-            });
+            : this.despesaService.criarDespesa(payload);
 
-        request$.subscribe({
+        request$.pipe(takeUntil(this.destroy$)).subscribe({
             next: () => {
-                const modal = document.querySelector('#modalDespesa');
-                (window as any).bootstrap.Modal.getInstance(modal)?.hide();
+                this.fecharModal();
                 this.carregarDespesas();
-
-                // ✅ Alerta mais elegante
-                Swal.fire({
-                    icon: 'success',
-                    title: this.editando ? 'Despesa atualizada!' : 'Despesa cadastrada!',
-                    text: this.editando
-                        ? 'Sua despesa foi atualizada com sucesso.'
-                        : 'Sua despesa foi registrada com sucesso.',
-                    confirmButtonColor: '#b49452',
-                    background: '#f8f8f8',
-                    color: '#283b6b',
-                });
+                this.mostrarSucesso();
+                this.verificarBadgeOrganizador();
             },
-            error: (erro) => {
-                console.error('Erro ao salvar despesa', erro);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erro!',
-                    text: this.editando
-                        ? 'Não foi possível atualizar a despesa.'
-                        : 'Não foi possível salvar a despesa.',
-                    confirmButtonColor: '#b49452',
-                    background: '#f8f8f8',
-                    color: '#283b6b',
-                });
+            error: () => this.mostrarErro()
+        });
+    }
+
+    private camposObrigatoriosPreenchidos(): boolean {
+        return !!(
+            this.novaDespesa.descricao &&
+            this.novaDespesa.valor > 0 &&
+            this.novaDespesa.data &&
+            this.novaDespesa.idContaFinanceira &&
+            this.novaDespesa.idTipoDespesa
+        );
+    }
+
+    private mostrarAlertaCamposObrigatorios() {
+        Swal.fire({ icon: 'warning', title: 'Campos obrigatórios!', text: 'Preencha todos os campos.', confirmButtonColor: '#d4af37' });
+    }
+
+    private mostrarSucesso() {
+        Swal.fire({ icon: 'success', title: this.editando ? 'Atualizada!' : 'Cadastrada!', timer: 2000, showConfirmButton: false });
+    }
+
+    private mostrarErro() {
+        Swal.fire({ icon: 'error', title: 'Erro!', text: 'Não foi possível salvar.', confirmButtonColor: '#dc3545' });
+    }
+
+    private fecharModal() {
+        const modal = (window as any).bootstrap.Modal.getInstance(document.getElementById('modalDespesa'));
+        modal?.hide();
+    }
+
+    deletarDespesa(id: string) {
+        Swal.fire({
+            title: 'Deletar?', text: 'Não pode ser desfeito.', icon: 'warning',
+            showCancelButton: true, confirmButtonText: 'Sim', cancelButtonText: 'Não',
+            confirmButtonColor: '#dc3545'
+        }).then(result => {
+            if (result.isConfirmed) {
+                this.despesaService.deletarDespesa(id)
+                    .pipe(takeUntil(this.destroy$))
+                    .subscribe({
+                        next: () => {
+                            this.despesas = this.despesas.filter(d => d.id !== id);
+                            this.totalDespesas = this.despesas.reduce((s, d) => s + d.valor, 0);
+                            this.calcularTotalPorConta();
+                            Swal.fire('Deletado!', '', 'success');
+                        },
+                        error: () => Swal.fire('Erro!', '', 'error')
+                    });
             }
         });
+    }
+
+    // ==============================================================
+    // TRILHA & GAMIFICAÇÃO
+    // ==============================================================
+
+    verificarTrilhaOrganizador() {
+        const semCatEspecifica = this.despesas.filter(d =>
+            !d.idCategoria || this.isCategoriaTipoOuNatureza(d.idCategoria)
+        );
+        this.usuarioCategorizouEsteMes = semCatEspecifica.length === 0 && this.despesas.length > 0;
+        this.mostrarDicaCategorizacao = this.despesas.length > 3 && !this.usuarioCategorizouEsteMes;
+    }
+
+    private isCategoriaTipoOuNatureza(id: string): boolean {
+        const cat = this.despesaService.todasCategorias.find(c => c.id === id);
+        if (!cat) return true;
+        if (!cat.categoriaPaiId) return true;
+        const pai = this.despesaService.todasCategorias.find(c => c.id === cat.categoriaPaiId);
+        return !pai?.categoriaPaiId;
+    }
+
+    verificarBadgeOrganizador() {
+        if (this.despesas.length >= 10 && this.usuarioCategorizouEsteMes && !this.badgeOrganizadorDesbloqueado) {
+            this.badgeOrganizadorDesbloqueado = true;
+            this.celebrarBadge('Organizador Financeiro');
+        }
+    }
+
+    private celebrarBadge(nome: string) {
+        Swal.fire({
+            icon: 'success', title: 'Conquista!', html: `<strong>${nome}</strong><br><small>10+ despesas categorizadas!</small>`,
+            timer: 3000, showConfirmButton: false, background: '#fff8e1'
+        });
+    }
+
+    // ==============================================================
+    // HOVER
+    // ==============================================================
+
+    mostrarDicaHover(despesa: Despesa) {
+        if (!despesa.idCategoria || this.isCategoriaTipoOuNatureza(despesa.idCategoria)) {
+            this.dicaDespesaHover = despesa;
+        }
+    }
+
+    esconderDicaHover() {
+        this.dicaDespesaHover = null;
+    }
+
+    // ==============================================================
+    // UTIL
+    // ==============================================================
+
+    obterNomeCategoria(id: string): string {
+        return this.despesaService.todasCategorias.find(c => c.id === id)?.descricao || 'Sem categoria';
     }
 }

@@ -1,0 +1,525 @@
+// ===========================================================
+// LAYOUT PRINCIPAL
+// ===========================================================
+@use 'variables' as *;
+
+.navbar-custom {
+    background: rgba(44, 44, 44, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+    padding: 1rem 0;
+}
+
+.navbar-brand-custom {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $yellow !important;
+    text-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
+}
+
+.nav-link-custom {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 500;
+    padding: 0.5rem 1rem !important;
+    border-radius: $border-radius-button;
+    transition: $transition-smooth;
+    position: relative;
+
+    &:hover {
+        color: $yellow !important;
+        background: rgba(212, 175, 55, 0.1);
+    }
+
+    &.active {
+        color: $yellow !important;
+
+        &::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 2px;
+            background: $yellow;
+            border-radius: 1px;
+        }
+    }
+}
+
+.main-container {
+    padding: 2rem 0;
+    min-height: calc(100vh - 80px);
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 1.5rem;
+    grid-template-areas:
+        "focal focal sidebar"
+        "cards cards sidebar"
+        "charts charts insights";
+}
+
+.focal-point {
+    grid-area: focal;
+}
+
+.cards-section {
+    grid-area: cards;
+}
+
+.sidebar-section {
+    grid-area: sidebar;
+}
+
+.charts-section {
+    grid-area: charts;
+}
+
+.insights-section {
+    grid-area: insights;
+}
+
+// ===========================================================
+// COMPONENTES DE CARD
+// ===========================================================
+
+.card-custom {
+    background: $branco-puro;
+    border: none;
+    border-radius: $border-radius-card;
+    box-shadow: $shadow-subtle;
+    transition: $transition-smooth;
+    overflow: hidden;
+    height: 100%;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: $shadow-elevated;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+}
+
+.card-focal {
+    border: 2px solid $yellow;
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.2);
+    position: relative;
+
+    &::before {
+        content: '★';
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        color: $yellow;
+        font-size: 1.2rem;
+        z-index: 1;
+    }
+}
+
+.card-insight {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border-left: 4px solid $laranja-atencao;
+
+    .insight-icon {
+        color: $laranja-atencao;
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+}
+
+// ===========================================================
+// BOTÕES
+// ===========================================================
+
+.btn-primary-custom {
+    background: linear-gradient(135deg, $blue 0%, #357abd 100%);
+    border: none;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: $border-radius-button;
+    font-weight: 600;
+    transition: $transition-smooth;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+        color: white;
+    }
+}
+
+.btn-success-custom {
+    background: linear-gradient(135deg, $green 0%, #20c997 100%);
+    border: none;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: $border-radius-button;
+    font-weight: 600;
+    transition: $transition-smooth;
+}
+
+.btn-outline-custom {
+    background: transparent;
+    border: 2px solid $blue;
+    color: $blue;
+    padding: 0.625rem 1.25rem;
+    border-radius: $border-radius-button;
+    font-weight: 500;
+    transition: $transition-smooth;
+
+    &:hover {
+        background: $blue;
+        color: white;
+        transform: translateY(-1px);
+    }
+}
+
+// ===========================================================
+// INDICADORES DE VALOR
+// ===========================================================
+
+.valor-positivo {
+    color: $green;
+    font-weight: 600;
+}
+
+.valor-negativo {
+    color: $red;
+    font-weight: 600;
+}
+
+.valor-destaque {
+    color: $yellow;
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+// ===========================================================
+// PROGRESSO E METAS
+// ===========================================================
+
+.progress-custom {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar-custom {
+    background: linear-gradient(90deg, $green 0%, #20c997 100%);
+    transition: width 0.6s ease;
+}
+
+.achievement-badge {
+    background: linear-gradient(135deg, $yellow 0%, #f4d03f 100%);
+    color: $escuro-sofisticado;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+// ===========================================================
+// ANIMAÇÕES
+// ===========================================================
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.pulse-highlight {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+// ===========================================================
+// RESPONSIVIDADE
+// ===========================================================
+
+@media (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+            "focal focal"
+            "cards sidebar"
+            "charts insights";
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "focal"
+            "sidebar"
+            "cards"
+            "charts"
+            "insights";
+    }
+
+    .main-container {
+        padding: 1rem 0;
+    }
+}
+
+// ===========================================================
+// ELEMENTOS ESPECÍFICOS
+// ===========================================================
+
+.saldo-card {
+    text-align: center;
+    padding: 2rem 1.5rem;
+}
+
+.saldo-valor {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 1rem 0;
+}
+
+.saldo-status {
+    font-size: 1rem;
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.action-card {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    background: $branco-puro;
+    border-radius: $border-radius-card;
+    box-shadow: $shadow-subtle;
+    transition: $transition-smooth;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: $shadow-elevated;
+        color: inherit;
+        text-decoration: none;
+    }
+}
+
+.action-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: $blue;
+}
+
+.meta-progress {
+    margin-top: 1rem;
+}
+
+.meta-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+/* Toast personalizado */
+.toast-custom {
+    background: linear-gradient(135deg, $green 0%, #20c997 100%);
+    color: white;
+    border-radius: $border-radius-button;
+    border: none;
+}
+
+/* Skeleton loading */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 4px;
+    height: 1rem;
+    margin: 0.25rem 0;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Container principal (do seu CSS original) */
+.main-container {
+    padding-top: 80px;
+    padding-bottom: 40px;
+    min-height: calc(100vh - 140px);
+    display: flex;
+    align-items: center;
+}
+
+/* Cartões principais melhorados (do seu CSS original) */
+.main-card {
+    border: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    height: 100%;
+    border-radius: 16px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+
+    &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    }
+
+    &.receita:hover {
+        box-shadow: 0 8px 32px rgba(40, 167, 69, 0.2);
+    }
+
+    &.despesa:hover {
+        box-shadow: 0 8px 32px rgba(220, 53, 69, 0.2);
+    }
+}
+
+.card-icon-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 2.5rem;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-icon-large.receita {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.card-icon-large.despesa {
+    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+}
+
+.card-title-large {
+    font-size: 1.75rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: $blue;
+}
+
+.card-description-large {
+    font-size: 1.1rem;
+    color: #6c757d;
+    line-height: 1.6;
+    margin-bottom: 0;
+}
+
+.card-body-large {
+    padding: 40px;
+    text-align: center;
+}
+
+/* Animação de entrada (original) */
+.fade-in {
+    animation: fadeIn 0.8s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsividade (original) */
+@media (max-width: 768px) {
+    .main-container {
+        padding-top: 100px;
+        padding-bottom: 80px;
+    }
+
+    .card-icon-large {
+        width: 60px;
+        height: 60px;
+        font-size: 2rem;
+        margin-bottom: 15px;
+    }
+
+    .card-title-large {
+        font-size: 1.5rem;
+    }
+
+    .card-description-large {
+        font-size: 1rem;
+    }
+
+    .card-body-large {
+        padding: 30px 20px;
+    }
+}
+
+/* Efeito de pulso sutil (original) */
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}

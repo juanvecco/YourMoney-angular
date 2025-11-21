@@ -1,62 +1,221 @@
-<div class="container main-container">
-    <div class="row justify-content-center">
-        <!-- Receita-->
-        <div class="col-lg-5 col-md-6 mb-4 fade-in">
-            <div class="card main-card receita" (click)="navegarPara('/receita')">
-                <div class="card-body-large">
-                    <div class="card-icon-large receita">
-                        <i class="bi bi-cash-stack"></i>
-                    </div>
-                    <h2 class="card-title-large">Receita</h2>
-                    <p class="card-description-large">Clique para gerenciar suas receitas</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Despesa-->
-        <div class="col-lg-5 col-md-6 mb-4 fade-in">
-            <div class="card main-card text-center flex-fill despesa"
-                style="cursor: pointer; background: var(--card-bg); animation-delay: 0.2s;"
-                (click)="navegarPara('/despesas')">
-                <div class="card-body p-5">
-                    <div class="card-icon-large despesa">
-                        <i class="bi bi-wallet2"></i>
-                    </div>
-                    <h5 class="mt-3" style="color: var(--blue-president); font-weight: 600;">Despesa</h5>
-                    <p class="text-muted small mt-2">Clique para gerenciar suas despesas</p>
-                </div>
-            </div>
+<nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+    <div class="container">
+        <a class="navbar-brand navbar-brand-custom" routerLink="/">
+            <i class="bi bi-piggy-bank-fill me-2"></i>Your Money 2.0
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link nav-link-custom active" href="/dashboard">
+                        <i class="bi bi-house-door me-1"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-custom" href="/receitas">
+                        <i class="bi bi-arrow-up-circle me-1"></i>Receitas
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-custom" href="/despesas">
+                        <i class="bi bi-arrow-down-circle me-1"></i>Despesas
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-custom" href="/investimento">
+                        <i class="bi bi-graph-up-arrow me-1"></i>Investimentos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-custom" href="/metas">
+                        <i class="bi bi-bullseye me-1"></i>Metas
+                    </a>
+                </li>
+            </ul>
         </div>
     </div>
+</nav>
 
-    <!-- Seção de acesso rápido (opcional) -->
-    <div class="row justify-content-center mt-4 fade-in" style="animation-delay: 0.4s;">
-        <div class="col-lg-10">
-            <div class="text-center">
-                <h5 class="text-muted mb-3">Acesso Rápido</h5>
-                <div class="d-flex justify-content-center gap-3 flex-wrap">
-                    <button class="btn btn-outline-primary" (click)="navegarPara('/disponivel')">
-                        <i class="bi bi-graph-up"></i> Disponível
-                    </button>
-                    <button class="btn btn-outline-success" (click)="navegarPara('/investimento')">
-                        <i class="bi bi-briefcase"></i> Investimentos
-                    </button>
-                    <button class="btn btn-outline-secondary" (click)="navegarPara('/configuracao')">
-                        <i class="bi bi-gear"></i> Configurações
-                    </button>
+<!-- Conteúdo Principal -->
+<div class="main-container">
+    <div class="container">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a routerLink="/" style="color: var(--blue);">Início</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+            </ol>
+        </nav>
+
+        <!-- Grid Principal -->
+        <div class="dashboard-grid">
+            <!-- Ponto Focal: Saldo Atual -->
+            <div class="focal-point">
+                <div class="card card-custom card-focal fade-in-up">
+                    <div class="card-body saldo-card">
+                        <h3 class="mb-3">Seu Controle Financeiro</h3>
+                        <div class="saldo-valor" [ngClass]="{'valor-positivo': saldo > 0, 'valor-negativo': saldo < 0}">
+                            R$ {{ saldo | number:'1.2-2' }}
+                        </div>
+                        <div class="saldo-status">Saldo disponível este mês</div>
+                        <div class="mt-3">
+                            <span class="achievement-badge">
+                                <i class="bi bi-trophy-fill"></i>
+                                Meta de Novembro: {{ progressoMeta }}% atingida
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção de Cards: Ações Rápidas -->
+            <div class="cards-section">
+                <div class="quick-actions fade-in-up" style="animation-delay: 0.2s;">
+                    <a class="action-card" (click)="adicionarReceita()">
+                        <div class="action-icon">
+                            <i class="bi bi-plus-circle-fill" style="color: var(--green);"></i>
+                        </div>
+                        <h6>Adicionar Receita</h6>
+                        <small class="text-muted">Registre uma nova entrada</small>
+                    </a>
+
+                    <a class="action-card" (click)="adicionarDespesa()">
+                        <div class="action-icon">
+                            <i class="bi bi-dash-circle-fill" style="color: var(--red);"></i>
+                        </div>
+                        <h6>Registrar Despesa</h6>
+                        <small class="text-muted">Anote um novo gasto</small>
+                    </a>
+
+                    <a class="action-card" (click)="verInvestimentos()">
+                        <div class="action-icon">
+                            <i class="bi bi-graph-up-arrow" style="color: var(--yellow);"></i>
+                        </div>
+                        <h6>Investir</h6>
+                        <small class="text-muted">Faça seu dinheiro crescer</small>
+                    </a>
+
+                    <a class="action-card" (click)="criarMeta()">
+                        <div class="action-icon">
+                            <i class="bi bi-bullseye"></i>
+                        </div>
+                        <h6>Nova Meta</h6>
+                        <small class="text-muted">Defina um objetivo</small>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Sidebar: Próximas Metas -->
+            <div class="sidebar-section">
+                <div class="card card-custom fade-in-up" style="animation-delay: 0.3s;">
+                    <div class="card-body">
+                        <h5 class="mb-3">
+                            <i class="bi bi-bullseye me-2" style="color: var(--blue);"></i>
+                            Suas Metas
+                        </h5>
+
+                        <div class="mb-4" *ngFor="let meta of metas">
+                            <div class="meta-info">
+                                <span>{{ meta.nome }}</span>
+                                <span [ngClass]="{'valor-positivo': meta.atual > meta.meta / 2}">
+                                    R$ {{ meta.atual | number:'1.2-2' }} / R$ {{ meta.meta | number:'1.2-2' }}
+                                </span>
+                            </div>
+                            <div class="progress progress-custom">
+                                <div class="progress-bar progress-bar-custom" [style.width.%]="meta.progresso"></div>
+                            </div>
+                            <small class="text-muted">{{ meta.mensagem }}</small>
+                        </div>
+
+                        <button class="btn btn-outline-custom w-100" (click)="verTodasMetas()">
+                            Ver Todas as Metas
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção de Gráficos: Resumo Mensal -->
+            <div class="charts-section">
+                <div class="card card-custom fade-in-up" style="animation-delay: 0.4s;">
+                    <div class="card-body">
+                        <h5 class="mb-3">
+                            <i class="bi bi-bar-chart-line me-2" style="color: var(--blue);"></i>
+                            Resumo de Novembro
+                        </h5>
+
+                        <div class="row">
+                            <div class="col-md-4 text-center mb-3">
+                                <div class="valor-positivo" style="font-size: 1.5rem;">R$ {{ resumo.receitas |
+                                    number:'1.2-2' }}</div>
+                                <small class="text-muted">Receitas</small>
+                            </div>
+                            <div class="col-md-4 text-center mb-3">
+                                <div class="valor-negativo" style="font-size: 1.5rem;">R$ {{ resumo.despesas |
+                                    number:'1.2-2' }}</div>
+                                <small class="text-muted">Despesas</small>
+                            </div>
+                            <div class="col-md-4 text-center mb-3">
+                                <div class="valor-destaque" style="font-size: 1.5rem;">R$ {{ resumo.sobrou |
+                                    number:'1.2-2' }}</div>
+                                <small class="text-muted">Sobrou</small>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <button class="btn btn-primary-custom" (click)="verRelatorio()">
+                                <i class="bi bi-file-earmark-text"></i>
+                                Ver Relatório Completo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insights: Trilha de Ensino -->
+            <div class="insights-section">
+                <div class="card card-custom card-insight fade-in-up" style="animation-delay: 0.5s;">
+                    <div class="card-body">
+                        <div class="insight-icon">
+                            <i class="bi bi-lightbulb-fill"></i>
+                        </div>
+                        <h6>💡 Dica Financeira</h6>
+                        <p class="mb-3">Parabéns! Você economizou R$ {{ resumo.sobrou | number:'1.2-2' }} este mês. Que
+                            tal investir parte desse valor?</p>
+                        <button class="btn btn-success-custom btn-sm pulse-highlight"
+                            (click)="descobrirInvestimentos()">
+                            <i class="bi bi-arrow-right"></i>
+                            Descobrir Investimentos
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card card-custom mt-3 fade-in-up" style="animation-delay: 0.6s;">
+                    <div class="card-body">
+                        <h6>
+                            <i class="bi bi-calendar-check me-2" style="color: var(--green);"></i>
+                            Próximas Tarefas
+                        </h6>
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2" *ngFor="let tarefa of tarefas">
+                                <i class="bi bi-circle me-2" [style.color]="tarefa.cor"></i>
+                                {{ tarefa.descricao }}
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-<script>
-    // Adicionar efeito de pulso aos cartões principais
-    document.addEventListener('DOMContentLoaded', function () {
-        const cards = document.querySelectorAll('.main-card');
-        cards.forEach((card, index) => {
-            setTimeout(() => {
-                card.classList.add('pulse');
-            }, index * 500 + 1000);
-        });
-    });
-</script>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="successToast" class="toast toast-custom" role="alert">
+        <div class="toast-body">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span id="toastMessage">Ação realizada com sucesso!</span>
+        </div>
+    </div>
+</div>

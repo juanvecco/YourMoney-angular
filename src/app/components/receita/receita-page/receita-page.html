@@ -1,86 +1,183 @@
-<div class="container my-4">
-    <h1>Receitas</h1>
-    <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Minha Carteira</h5>
-            <button class="btn btn-primary" (click)="abrirModalReceita()">
-                <i class="bi bi-plus-circle"></i> Adicionar Receita
-            </button>
+<nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+    <div class="container">
+        <a class="navbar-brand navbar-brand-custom" href="#">
+            <i class="bi bi-piggy-bank-fill me-2"></i>Your Money 2.0
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link nav-link-custom" href="/dashboard">
+                        <i class="bi bi-house-door me-1"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-custom active" href="/receitas">
+                        <i class="bi bi-arrow-up-circle me-1"></i>Receitas
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-custom" href="/despesas">
+                        <i class="bi bi-arrow-down-circle me-1"></i>Despesas
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-custom" href="/investimento">
+                        <i class="bi bi-graph-up-arrow me-1"></i>Investimentos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-custom" href="/metas">
+                        <i class="bi bi-bullseye me-1"></i>Metas
+                    </a>
+                </li>
+            </ul>
         </div>
-        <!-- Modal de Cadastro -->
-        <div class="modal fade" id="modalReceita" tabindex="-1" aria-labelledby="modalReceitaLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modalReceitaLabel">Nova Receita</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form>
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <label class="form-label">Descrição</label>
-                                    <input type="text" class="form-control" [(ngModel)]="novaReceita.descricao"
-                                        name="descricao" required />
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Valor (R$)</label>
-                                    <input type="number" step="0.01" class="form-control"
-                                        [(ngModel)]="novaReceita.valor" name="valor" required />
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Data</label>
-                                    <input type="date" class="form-control" [(ngModel)]="novaReceita.data" name="data"
-                                        required />
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn"
-                            style="background-color: var(--blue-dark); color: var(--card-bg);"
-                            data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn"
-                            style="background-color: var(--blue-president); color: var(--card-bg); font-weight: 500;"
-                            (click)="salvarReceita()">Salvar Receita</button>
+    </div>
+</nav>
+
+<!-- Conteúdo Principal -->
+<div class="main-container">
+    <div class="container">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#" style="color: var(--blue);">Início</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Receitas</li>
+            </ol>
+        </nav>
+
+        <!-- Grid Principal -->
+        <div class="receitas-grid">
+            <!-- Ponto Focal: Receitas -->
+            <div class="focal-point">
+                <div class="card card-custom card-focal fade-in-up growth-highlight">
+                    <div class="card-body total-receitas">
+                        <h3 class="mb-3">Motor do Crescimento - {{ mesAtual | date:'MMMM yyyy' : 'pt' }}</h3>
+                        <div class="total-valor valor-positivo">R$ {{ totalReceitas | number:'1.2-2' }}</div>
+                        <div class="total-status">Total de receitas este mês</div>
+
+                        <!-- Calendário -->
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(-1)">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <button type="button" class="btn btn-link p-0 text-decoration-none"
+                                (click)="abrirCalendario()" style="color: var(--escuro-sofisticado);">
+                                <i class="bi bi-calendar3" style="font-size: 0.95rem; color: var(--blue);"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(1)">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                        <input type="month" #calendarioInput class="d-none" [value]="(mesAtual | date:'yyyy-MM')"
+                            (change)="selecionarMesDoCalendario($event)">
                     </div>
                 </div>
             </div>
-        </div>
-        <!-- Navegação por mês -->
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(-1)">&lt;</button>
-            <h6 class="mb-0">{{ mesAtual | date:'MMMM/yyyy' : 'pt' }}</h6>
-            <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(1)">&gt;</button>
-        </div>
-        <!-- Lista de Receitas -->
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Descrição</th>
-                            <th>Valor</th>
-                            <th>Data</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let receita of receitas">
-                            <td>{{ receita.descricao }}</td>
-                            <td>{{ receita.valor | currency:'BRL':'symbol':'1.2-2':'pt' }}</td>
-                            <td>{{ receita.data | date:'shortDate' : 'pt' }}</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" (click)="abrirModalEditar(receita)">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" (click)="deletarReceita(receita.id)">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+
+            <!-- Sidebar: Ações Rápidas -->
+            <div class="sidebar-section">
+                <div class="card card-custom fade-in-up" style="animation-delay: 0.3s;">
+                    <div class="card-body">
+                        <h5 class="mb-3">
+                            <i class="bi bi-rocket-takeoff me-2" style="color: var(--yellow);"></i>
+                            Ações Rápidas
+                        </h5>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success-custom" (click)="abrirModalReceita()">
+                                <i class="bi bi-plus-circle"></i>
+                                Nova Receita
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== LISTA DE RECEITAS ==================== -->
+            <ul class="list-group mb-4">
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3 border-0 shadow-sm mb-2 rounded-3"
+                    *ngFor="let receita of receitas; let i = index" [class.bg-light]="i % 2 === 0"
+                    style="transition: all 0.2s;">
+
+                    <div class="d-flex flex-column">
+                        <span class="fw-semibold" style="color: var(--escuro-sofisticado);">
+                            {{ receita.descricao }}
+                        </span>
+                        <small class="text-muted d-flex align-items-center gap-1">
+                            {{ receita.data | date:'shortDate' }}
+                        </small>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge px-3 py-2 fw-bold"
+                            style="background: rgba(40, 167, 69, 0.15); color: var(--green);">
+                            R$ {{ receita.valor | number:'1.2-2' }}
+                        </span>
+                        <button class="btn btn-sm btn-outline-primary" (click)="abrirModalEditar(receita)">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" (click)="deletarReceita(receita.id)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </li>
+            </ul>
+
+            <!-- ==================== MODAL ==================== -->
+            <div class="modal fade" id="modalReceita" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content border-0 shadow-lg">
+                        <div class="modal-header border-0" style="background: var(--blue); color: white;">
+                            <h5 class="modal-title fw-bold">
+                                <i class="bi bi-cash-stack me-2"></i>
+                                {{ novaReceita.id ? 'Editar' : 'Nova' }} Receita
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body pt-4">
+                            <form>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Descrição</label>
+                                        <input type="text" class="form-control" [(ngModel)]="novaReceita.descricao"
+                                            name="descricao" required />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Valor (R$)</label>
+                                        <input type="number" step="0.01" class="form-control"
+                                            [(ngModel)]="novaReceita.valor" name="valor" required />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Data</label>
+                                        <input type="date" class="form-control" [(ngModel)]="novaReceita.data"
+                                            name="data" required />
+                                    </div>
+                                </div>
+
+                                <!-- Dica educativa -->
+                                <div class="alert alert-light border-start border-success border-4 mt-4 p-3"
+                                    *ngIf="novaReceita.valor > 1000">
+                                    <small class="d-block">
+                                        <i class="bi bi-info-circle text-success"></i>
+                                        <strong>Dica:</strong> Receitas acima de R$ 1.000 merecem uma categoria
+                                        específica!
+                                    </small>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer border-0">
+                            <button type="button" class="btn btn-outline-secondary"
+                                data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-success fw-semibold" (click)="salvarReceita()">
+                                <i class="bi bi-check2"></i> Salvar Receita
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

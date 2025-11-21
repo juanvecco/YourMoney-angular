@@ -30,7 +30,15 @@ export interface Categoria {
 export class DespesaService {
   private baseUrl = environment.apiUrl;
 
-  private todasCategorias: Categoria[] = [];
+  private _todasCategorias: Categoria[] = [];
+
+  get todasCategorias(): Categoria[] {
+    return this._todasCategorias;
+  }
+
+  setCategorias(categorias: Categoria[]) {
+    this._todasCategorias = categorias;
+  }
 
   constructor(private http: HttpClient) { }
 
@@ -73,7 +81,7 @@ export class DespesaService {
   listarCategorias(): Observable<Categoria[]> {
     return this.http.get<Categoria[]>(`${this.baseUrl}/Categoria`).pipe(
       tap(categorias => {
-        this.todasCategorias = categorias;
+        this.setCategorias(categorias);
       })
     );
   }
