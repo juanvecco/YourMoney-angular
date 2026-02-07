@@ -1,3 +1,4 @@
+import { AuthGuard } from './guards/auth.guard';
 import { Routes } from '@angular/router';
 import { HomeComponent } from './navegacao/home/home';
 import { DespesasComponent } from './components/despesas/despesas-page/despesas-page';
@@ -8,14 +9,42 @@ import { ConfiguracaoPageComponent } from './components/configuracao/configuraca
 import { DashboardPageComponent } from './components/dashboard/dashboard-page/dashboard-page';
 import { LoginPageComponent } from './components/login/login-page/login-page';
 
-
 export const routes: Routes = [
     { path: '', component: HomeComponent },
-    { path: 'dashboard', component: DashboardPageComponent },
-    { path: 'despesas', component: DespesasComponent },
-    { path: 'receitas', component: ReceitaPageComponent },
-    { path: 'disponivel', component: DisponivelPageComponent },
-    { path: 'investimento', component: InvestimentoPageComponent },
-    { path: 'configuracao', component: ConfiguracaoPageComponent },
+
     { path: 'login', component: LoginPageComponent },
+
+    {
+        path: 'dashboard',
+        component: DashboardPageComponent,
+        canActivate: [AuthGuard]
+    },
+    {
+        path: 'despesas',
+        component: DespesasComponent,
+        canActivate: [AuthGuard]
+    },
+    {
+        path: 'receitas',
+        component: ReceitaPageComponent,
+        canActivate: [AuthGuard]
+    },
+    {
+        path: 'disponivel',
+        component: DisponivelPageComponent,
+        canActivate: [AuthGuard]
+    },
+    {
+        path: 'investimento',
+        component: InvestimentoPageComponent,
+        canActivate: [AuthGuard]
+    },
+    {
+        path: 'configuracao',
+        component: ConfiguracaoPageComponent,
+        canActivate: [AuthGuard]
+    },
+
+    // fallback
+    { path: '**', redirectTo: '' }
 ];

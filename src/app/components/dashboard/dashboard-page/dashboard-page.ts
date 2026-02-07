@@ -4,6 +4,7 @@ import { CommonModule, DecimalPipe } from '@angular/common';
 import { ReceitaService, Receita } from '../../../services/receita';
 import { DespesaService, Despesa } from '../../../services/despesa';
 import Swal from 'sweetalert2';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
     selector: 'app-dashboard-page',
@@ -46,7 +47,8 @@ export class DashboardPageComponent implements AfterViewInit {
         private router: Router,
         private renderer: Renderer2,
         private receitaService: ReceitaService,
-        private despesaService: DespesaService
+        private despesaService: DespesaService,
+        private authService: AuthService
     ) { }
 
     ngOnInit(): void {
@@ -189,9 +191,13 @@ export class DashboardPageComponent implements AfterViewInit {
     private showWelcomeModal() {
         // Implemente um modal de boas-vindas (use NgBootstrap ou vanilla)
         Swal.fire({
-            title: 'Bem-vindo ao Your Money 2.0!',
+            title: 'Bem-vindo ao Your Money!',
             text: 'Vamos começar sua jornada financeira.',
             icon: 'success'
         });
+    }
+    logout(): void {
+        this.authService.logout();
+        this.router.navigate(['/login']);
     }
 }

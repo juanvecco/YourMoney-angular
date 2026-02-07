@@ -1,62 +1,113 @@
-<div class="container main-container">
-    <div class="row justify-content-center">
-        <!-- Receita-->
-        <div class="col-lg-5 col-md-6 mb-4 fade-in">
-            <div class="card main-card receita" (click)="navegarPara('/receitas')">
-                <div class="card-body-large">
-                    <div class="card-icon-large receita">
-                        <i class="bi bi-cash-stack"></i>
-                    </div>
-                    <h2 class="card-title-large">Receita</h2>
-                    <p class="card-description-large">Clique para gerenciar suas receitas</p>
+<!-- Header minimalista -->
+<header class="py-3 px-5"
+    style="background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid rgba(0, 0, 0, 0.06);">
+    <div class="d-flex justify-content-between align-items-center" style="max-width: 1400px; margin: 0 auto;">
+        <div class="fw-semibold fs-5" style="letter-spacing: -0.5px;">
+            YourMoney
+        </div>
+        <button class="btn btn-sm px-4" (click)="goToLogin()"
+            style="background: #007AFF; color: white; border: none; border-radius: 20px; font-size: 14px; padding: 8px 20px; font-weight: 600;">
+            Entrar
+        </button>
+    </div>
+</header>
+
+<!-- Hero Section -->
+<section class="text-center"
+    style="padding: 120px 40px 100px; background: linear-gradient(180deg, #ffffff 0%, #f5f5f7 100%);">
+    <div style="max-width: 1200px; margin: 0 auto;">
+        <h1 class="fw-bold mb-3"
+            style="font-size: clamp(48px, 7vw, 80px); line-height: 1.05; letter-spacing: -2px; color: #1d1d1f;">
+            Controle total<br />do seu dinheiro.
+        </h1>
+
+        <p class="mx-auto mb-5"
+            style="font-size: clamp(21px, 3vw, 28px); line-height: 1.4; color: #6e6e73; max-width: 600px; font-weight: 400;">
+            Acompanhe para onde cada real vai.
+        </p>
+
+        <button class="btn btn-lg px-5 mb-2" (click)="goToLogin()"
+            style="background: #007AFF; color: white; border: none; border-radius: 30px; font-size: 17px; padding: 14px 40px; font-weight: 500; box-shadow: 0 4px 16px rgba(0, 122, 255, 0.25);">
+            Acessar meu painel
+        </button>
+
+        <div class="mt-2" style="font-size: 14px; color: #86868b;">
+            Gratuito para começar
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5" style="background: #f5f5f7;">
+    <div class="container" style="max-width: 1200px; padding: 60px 20px;">
+        <div class="row g-4">
+            <!-- Feature 1 -->
+            <div class="col-md-4">
+                <div class="text-center p-4"
+                    style="background: white; border-radius: 18px; height: 100%; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);">
+                    <div class="mb-3" style="font-size: 48px;">📊</div>
+                    <h5 class="fw-semibold mb-3" style="font-size: 24px; letter-spacing: -0.5px; color: #1d1d1f;">
+                        Clareza total
+                    </h5>
+                    <p style="font-size: 17px; line-height: 1.5; color: #6e6e73;">
+                        Veja exatamente para onde seu dinheiro vai.
+                    </p>
                 </div>
             </div>
-        </div>
 
-        <!-- Despesa-->
-        <div class="col-lg-5 col-md-6 mb-4 fade-in">
-            <div class="card main-card text-center flex-fill despesa"
-                style="cursor: pointer; background: var(--card-bg); animation-delay: 0.2s;"
-                (click)="navegarPara('/despesas')">
-                <div class="card-body p-5">
-                    <div class="card-icon-large despesa">
-                        <i class="bi bi-wallet2"></i>
-                    </div>
-                    <h5 class="mt-3" style="color: var(--blue-president); font-weight: 600;">Despesa</h5>
-                    <p class="text-muted small mt-2">Clique para gerenciar suas despesas</p>
+            <!-- Feature 2 -->
+            <div class="col-md-4">
+                <div class="text-center p-4"
+                    style="background: white; border-radius: 18px; height: 100%; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);">
+                    <div class="mb-3" style="font-size: 48px;">🎯</div>
+                    <h5 class="fw-semibold mb-3" style="font-size: 24px; letter-spacing: -0.5px; color: #1d1d1f;">
+                        Decida com dados reais
+                    </h5>
+                    <p style="font-size: 17px; line-height: 1.5; color: #6e6e73;">
+                        Planeje com dados, não com suposições.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="col-md-4">
+                <div class="text-center p-4"
+                    style="background: white; border-radius: 18px; height: 100%; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);">
+                    <div class="mb-3" style="font-size: 48px;">✨</div>
+                    <h5 class="fw-semibold mb-3" style="font-size: 24px; letter-spacing: -0.5px; color: #1d1d1f;">
+                        Evite surpresas no fim do mês
+                    </h5>
+                    <p style="font-size: 17px; line-height: 1.5; color: #6e6e73;">
+                        Saiba exatamente quanto pode gastar.
+                    </p>
                 </div>
             </div>
         </div>
     </div>
+</section>
 
-    <!-- Seção de acesso rápido (opcional) -->
-    <div class="row justify-content-center mt-4 fade-in" style="animation-delay: 0.4s;">
-        <div class="col-lg-10">
-            <div class="text-center">
-                <h5 class="text-muted mb-3">Acesso Rápido</h5>
-                <div class="d-flex justify-content-center gap-3 flex-wrap">
-                    <button class="btn btn-outline-primary" (click)="navegarPara('/disponivel')">
-                        <i class="bi bi-graph-up"></i> Disponível
-                    </button>
-                    <button class="btn btn-outline-success" (click)="navegarPara('/investimento')">
-                        <i class="bi bi-briefcase"></i> Investimentos
-                    </button>
-                    <button class="btn btn-outline-secondary" (click)="navegarPara('/configuracao')">
-                        <i class="bi bi-gear"></i> Configurações
-                    </button>
-                </div>
-            </div>
-        </div>
+<!-- CTA Section -->
+<section class="text-center" style="padding: 80px 20px; background: white;">
+    <div class="container" style="max-width: 800px;">
+        <h2 class="fw-bold mb-4"
+            style="font-size: clamp(36px, 5vw, 56px); line-height: 1.1; letter-spacing: -1.5px; color: #1d1d1f;">
+            Comece hoje mesmo.
+        </h2>
+        <p class="mb-4" style="font-size: 21px; line-height: 1.4; color: #6e6e73;">
+            Simples, rápido e totalmente gratuito.
+        </p>
+        <button class="btn btn-lg px-5" (click)="goToLogin()"
+            style="background: #007AFF; color: white; border: none; border-radius: 30px; font-size: 17px; padding: 14px 40px; font-weight: 500;">
+            Acessar meu painel
+        </button>
     </div>
-</div>
-<script>
-    // Adicionar efeito de pulso aos cartões principais
-    document.addEventListener('DOMContentLoaded', function () {
-        const cards = document.querySelectorAll('.main-card');
-        cards.forEach((card, index) => {
-            setTimeout(() => {
-                card.classList.add('pulse');
-            }, index * 500 + 1000);
-        });
-    });
-</script>
+</section>
+
+<!-- Footer -->
+<footer class="text-center py-4" style="background: #f5f5f7; border-top: 1px solid rgba(0, 0, 0, 0.06);">
+    <div class="container">
+        <p class="mb-0" style="font-size: 12px; color: #86868b;">
+            © {{ anoAtual }} YourMoney. Todos os direitos reservados.
+        </p>
+    </div>
+</footer>

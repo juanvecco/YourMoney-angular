@@ -381,4 +381,17 @@ export class DespesasComponent implements OnInit, OnDestroy {
     obterNomeCategoria(id: string): string {
         return this.despesaService.todasCategorias.find(c => c.id === id)?.descricao || 'Sem categoria';
     }
+
+    calcularMediaDiaria(): number {
+        const diasDoMes = this.obterDiasDoMes();
+        return diasDoMes > 0 ? this.totalDespesas / diasDoMes : 0;
+    }
+
+    obterDiasDoMes(): number {
+        return new Date(
+            this.mesAtual.getFullYear(),
+            this.mesAtual.getMonth() + 1,
+            0
+        ).getDate();
+    }
 }
