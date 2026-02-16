@@ -1,0 +1,353 @@
+// ===========================================================
+// _MIXINS-EXECUTIVE.SCSS – Your Money
+// Mixins para componentes executivos
+// ===========================================================
+
+@use 'variables-executive' as exec;
+
+// === CARDS EXECUTIVOS ===
+@mixin card-executive {
+    background: exec.$glass-bg-primary;
+    backdrop-filter: blur(10px);
+    border: 1px solid exec.$glass-border;
+    border-radius: exec.$border-radius-executive-card;
+    padding: exec.$spacing-lg;
+    transition: exec.$transition-executive-smooth;
+
+    &:hover {
+        transform: translateY(-4px);
+        border-color: exec.$glass-border-hover;
+        box-shadow: exec.$shadow-executive-elevated;
+    }
+}
+
+@mixin card-executive-flat {
+    background: exec.$glass-bg-primary;
+    backdrop-filter: blur(10px);
+    border: 1px solid exec.$glass-border;
+    border-radius: exec.$border-radius-executive-card;
+    padding: exec.$spacing-lg;
+}
+
+// === BOTÕES EXECUTIVOS ===
+@mixin btn-executive-primary {
+    background: exec.$gradient-button-primary;
+    color: #fff;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: exec.$border-radius-executive-button;
+    font-weight: exec.$font-weight-executive-semibold;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: exec.$transition-executive-fast;
+    display: inline-flex;
+    align-items: center;
+    gap: exec.$spacing-xs;
+
+    &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: exec.$shadow-executive-button;
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+@mixin btn-executive-success {
+    background: exec.$gradient-button-success;
+    color: #fff;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: exec.$border-radius-executive-button;
+    font-weight: exec.$font-weight-executive-semibold;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: exec.$transition-executive-fast;
+    display: inline-flex;
+    align-items: center;
+    gap: exec.$spacing-xs;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 200, 83, 0.4);
+    }
+}
+
+@mixin btn-executive-danger {
+    background: exec.$gradient-button-danger;
+    color: #fff;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: exec.$border-radius-executive-button;
+    font-weight: exec.$font-weight-executive-semibold;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: exec.$transition-executive-fast;
+    display: inline-flex;
+    align-items: center;
+    gap: exec.$spacing-xs;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(211, 47, 47, 0.4);
+    }
+}
+
+@mixin btn-executive-outline {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid exec.$glass-border;
+    padding: 0.5rem 1rem;
+    border-radius: exec.$border-radius-executive-button;
+    font-weight: exec.$font-weight-executive-medium;
+    cursor: pointer;
+    transition: exec.$transition-executive-fast;
+
+    &:hover {
+        background: rgba(48, 79, 254, 0.2);
+        border-color: exec.$executive-accent;
+        color: #fff;
+    }
+}
+
+// === INPUTS EXECUTIVOS ===
+@mixin input-executive {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: exec.$border-radius-executive-input;
+    background: #f8f9fa;
+    transition: exec.$transition-executive-fast;
+    color: #2c2c2c;
+
+    &:focus {
+        outline: none;
+        border-color: exec.$executive-accent;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(48, 79, 254, 0.1);
+    }
+}
+
+@mixin input-executive-dark {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+    border: 1px solid exec.$glass-border;
+    border-radius: exec.$border-radius-executive-input;
+    background: exec.$glass-bg-secondary;
+    color: white;
+    transition: exec.$transition-executive-fast;
+
+    &:focus {
+        outline: none;
+        border-color: exec.$executive-accent;
+        background: exec.$glass-bg-primary;
+        box-shadow: 0 0 0 3px rgba(48, 79, 254, 0.15);
+    }
+
+    &::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+}
+
+// === BADGES EXECUTIVOS ===
+@mixin badge-executive {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 0.25rem 0.75rem;
+    border-radius: exec.$border-radius-executive-badge;
+    font-size: 0.75rem;
+    font-weight: exec.$font-weight-executive-medium;
+}
+
+// === KPI CARDS ===
+@mixin kpi-card {
+    @include card-executive;
+
+    .kpi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: exec.$spacing-md;
+    }
+
+    .kpi-label {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.85rem;
+        font-weight: exec.$font-weight-executive-medium;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .kpi-value {
+        font-size: 2.2rem;
+        font-weight: exec.$font-weight-executive-bold;
+        margin-bottom: exec.$spacing-xs;
+        letter-spacing: -1px;
+    }
+}
+
+// === NAVEGAÇÃO EXECUTIVA ===
+@mixin nav-executive {
+    background: rgba(10, 14, 39, 0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid exec.$glass-border;
+    padding: 1.2rem 0;
+    position: sticky;
+    top: 0;
+    z-index: exec.$z-index-nav;
+}
+
+@mixin nav-link-executive {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: exec.$font-weight-executive-medium;
+    padding: exec.$spacing-xs exec.$spacing-md;
+    border-radius: exec.$border-radius-executive-button;
+    transition: exec.$transition-executive-fast;
+
+    &:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    &.active {
+        color: #fff;
+        background: rgba(48, 79, 254, 0.2);
+        border: 1px solid rgba(48, 79, 254, 0.3);
+    }
+}
+
+// === MODAL EXECUTIVO ===
+@mixin modal-executive {
+    .modal-content {
+        background: rgba(10, 14, 39, 0.98);
+        border: 1px solid exec.$glass-border;
+        border-radius: exec.$border-radius-executive-card;
+    }
+
+    .modal-header {
+        background: exec.$gradient-button-primary;
+        border: none;
+        padding: exec.$spacing-lg;
+    }
+
+    .modal-body {
+        padding: exec.$spacing-xl;
+        color: white;
+    }
+
+    .modal-footer {
+        border: none;
+        padding: exec.$spacing-lg exec.$spacing-xl;
+    }
+}
+
+// === RESPONSIVIDADE ===
+@mixin mobile {
+    @media (max-width: exec.$breakpoint-mobile) {
+        @content;
+    }
+}
+
+@mixin tablet {
+    @media (max-width: exec.$breakpoint-tablet) {
+        @content;
+    }
+}
+
+@mixin desktop {
+    @media (max-width: exec.$breakpoint-desktop) {
+        @content;
+    }
+}
+
+@mixin wide {
+    @media (min-width: exec.$breakpoint-wide) {
+        @content;
+    }
+}
+
+// === ANIMAÇÕES ===
+@mixin fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
+@mixin float-animation {
+    animation: float 3s ease-in-out infinite;
+
+    @keyframes float {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+}
+
+@mixin pulse-animation {
+    animation: pulse 2s ease-in-out infinite;
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+            opacity: 0.5;
+        }
+
+        50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+        }
+    }
+}
+
+// === SCROLLBAR EXECUTIVO ===
+@mixin scrollbar-executive {
+    &::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: exec.$glass-bg-secondary;
+        border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: exec.$glass-border;
+        border-radius: 4px;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    }
+}
+
+// === GLASSMORPHISM ===
+@mixin glassmorphism($blur: 10px, $opacity: 0.05) {
+    background: rgba(255, 255, 255, $opacity);
+    backdrop-filter: blur($blur);
+    border: 1px solid exec.$glass-border;
+}

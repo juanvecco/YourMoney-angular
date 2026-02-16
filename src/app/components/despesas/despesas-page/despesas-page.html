@@ -1,242 +1,286 @@
-<nav class="navbar navbar-expand-lg navbar-custom fixed-top">
-    <div class="container">
-        <a class="navbar-brand navbar-brand-custom" href="#">
-            <i class="bi bi-piggy-bank-fill me-2"></i>Your Money 2.0
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link nav-link-custom" href="/dashboard">
-                        <i class="bi bi-house-door me-1"></i>Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link nav-link-custom" href="/receitas">
-                        <i class="bi bi-arrow-up-circle me-1"></i>Receitas
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link nav-link-custom active" href="/despesas">
-                        <i class="bi bi-arrow-down-circle me-1"></i>Despesas
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link nav-link-custom" href="/investimento">
-                        <i class="bi bi-graph-up-arrow me-1"></i>Investimentos
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link nav-link-custom" href="/metas">
-                        <i class="bi bi-bullseye me-1"></i>Metas
-                    </a>
-                </li>
-            </ul>
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Money - Despesa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+
+<body>
+    <nav class="executive-nav">
+        <div class="executive-container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="nav-brand">Your Money</div>
+                <div class="nav-links">
+                    <a href="/dashboard" class="nav-link-item">Dashboard</a>
+                    <a href="/receitas" class="nav-link-item">Receitas</a>
+                    <a href="/despesas" class="nav-link-item active">Despesas</a>
+                    <a href="/investimento" class="nav-link-item">Investimentos</a>
+                    <a href="/metas" class="nav-link-item">Metas</a>
+                </div>
+            </div>
         </div>
-    </div>
-</nav>
+    </nav>
 
-<!-- Conteúdo Principal -->
-<div class="main-container pt-5">
-    <div class="container">
-        <!-- Breadcrumb -->
-        <nav aria-label="breadcrumb" class="mb-4">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a routerLink="/" style="color: var(--blue);">Início</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Despesas</li>
-            </ol>
-        </nav>
+    <div class="executive-container">
+        <div class="dashboard-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="header-title">Análise de Despesas</h1>
+                    <p class="header-subtitle">Visão executiva do seu fluxo financeiro</p>
+                </div>
+                <div class="date-selector">
+                    <button (click)="mudarMes(-1)">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button type="button" (click)="abrirCalendario()"
+                        style="background: transparent; border: none; color: inherit; cursor: pointer;">
+                        <span class="date-display">{{ mesAtual | date:'MMMM yyyy' : 'pt' }}</span>
+                    </button>
+                    <button (click)="mudarMes(1)">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+                <input type="month" #calendarioInput class="d-none" [value]="(mesAtual | date:'yyyy-MM')"
+                    (change)="selecionarMesDoCalendario($event)">
+            </div>
+        </div>
 
-        <!-- Grid Principal -->
-        <div class="despesas-grid">
-            <!-- Ponto Focal: Total de Despesas -->
-            <div class="focal-point">
-                <div class="card card-custom card-focal fade-in-up">
-                    <div class="card-body total-despesas">
-                        <h3 class="mb-3">Diagnóstico Financeiro - {{ mesAtual | date:'MMMM yyyy' : 'pt' }}</h3>
-                        <div class="total-valor valor-negativo">R$ {{ totalDespesas | number:'1.2-2' }}</div>
-                        <div class="total-status">Total de despesas este mês</div>
-
-                        <!-- Calendário -->
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(-1)">
-                                <i class="bi bi-chevron-left"></i>
-                            </button>
-                            <button type="button" class="btn btn-link p-0 text-decoration-none"
-                                (click)="abrirCalendario()" style="color: var(--escuro-sofisticado);">
-                                <i class="bi bi-calendar3" style="font-size: 0.95rem; color: var(--blue);"></i>
-                            </button>
-                            <button class="btn btn-outline-secondary btn-sm" (click)="mudarMes(1)">
-                                <i class="bi bi-chevron-right"></i>
-                            </button>
-                        </div>
-                        <input type="month" #calendarioInput class="d-none" [value]="(mesAtual | date:'yyyy-MM')"
-                            (change)="selecionarMesDoCalendario($event)">
-
-                        <!-- ==================== CARD TOTAL POR CONTA ==================== -->
-                        <div class="d-flex flex-wrap justify-content-center gap-3">
-                            <div *ngFor="let total of totalPorConta" class="category-item">
-                                <div class="category-value">
-                                    R$ {{ total.valor | number:'1.2-2' }}
-                                </div>
-                                <div class="category-name">
-                                    {{ total.descricao }}
-                                </div>
-                            </div>
-                        </div>
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-label">Total de Despesas</span>
+                    <div class="kpi-icon" style="background: rgba(211, 47, 47, 0.2); color: var(--executive-danger);">
+                        <i class="bi bi-arrow-down"></i>
                     </div>
                 </div>
-            </div>
-            <!-- Sidebar: Ações Rápidas -->
-            <div class="sidebar-section">
-                <div class="card card-custom fade-in-up" style="animation-delay: 0.3s;">
-                    <div class="card-body">
-                        <h5 class="mb-3">
-                            <i class="bi bi-lightning-charge me-2" style="color: var(--yellow);"></i>
-                            Ações Rápidas
-                        </h5>
-
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-danger-custom" (click)="abrirModalDespesa()">
-                                <i class="bi bi-plus-circle"></i>
-                                Nova Despesa
-                            </button>
-                        </div>
-                    </div>
+                <div class="kpi-value" style="color: var(--executive-danger);">
+                    R$ {{ totalDespesas | number:'1.2-2' }}
+                </div>
+                <div class="kpi-trend">
+                    <span style="color: rgba(255, 255, 255, 0.6);">{{ despesas.length }} transações</span>
                 </div>
             </div>
-            <!-- ==================== LISTA DE DESPESAS ==================== -->
-            <ul class="list-group mb-4">
-                <li class="list-group-item d-flex justify-content-between align-items-center py-3 border-0 shadow-sm mb-2 rounded-3"
-                    *ngFor="let despesa of despesas; let i = index" [class.bg-light]="i % 2 === 0"
-                    style="transition: all 0.2s;" (mouseenter)="mostrarDicaHover(despesa)"
-                    (mouseleave)="esconderDicaHover()" [attr.data-despesa-id]="despesa.id">
 
-                    <div class="d-flex flex-column">
-                        <span class="fw-semibold" style="color: var(--escuro-sofisticado);">
-                            {{ despesa.descricao }}
-                        </span>
-                        <small class="text-muted d-flex align-items-center gap-1">
-                            {{ despesa.data | date:'shortDate' }}
-                            <span>•</span>
-                            <span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1"
-                                style="font-size: 0.7rem;">
-                                {{ obterNomeCategoria(despesa.idCategoria) || 'Sem categoria' }}
-                            </span>
-                        </small>
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-label">Média Diária</span>
+                    <div class="kpi-icon" style="background: rgba(255, 160, 0, 0.2); color: var(--executive-warning);">
+                        <i class="bi bi-calendar-day"></i>
                     </div>
+                </div>
+                <div class="kpi-value">
+                    R$ {{ calcularMediaDiaria() | number:'1.2-2' }}
+                </div>
+                <div class="kpi-trend">
+                    <span style="color: rgba(255, 255, 255, 0.6);">{{ obterDiasDoMes() }} dias no mês</span>
+                </div>
+            </div>
 
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="badge px-3 py-2 fw-bold"
-                            [style.background-color]="despesa.valor > 500 ? 'rgba(220, 53, 69, 0.15)' : 'rgba(40, 167, 69, 0.15)'"
-                            [style.color]="despesa.valor > 500 ? 'var(--red)' : 'var(--green)'">
-                            R$ {{ despesa.valor | number:'1.2-2' }}
-                        </span>
-                        <button class="btn btn-sm btn-outline-primary" (click)="abrirModalEditar(despesa)">
+            <div class="kpi-card" *ngIf="totalPorConta.length > 0">
+                <div class="kpi-header">
+                    <span class="kpi-label">Principal Conta</span>
+                    <div class="kpi-icon" style="background: rgba(48, 79, 254, 0.2); color: var(--executive-accent);">
+                        <i class="bi bi-wallet2"></i>
+                    </div>
+                </div>
+                <div class="kpi-value">
+                    R$ {{ totalPorConta[0].valor | number:'1.2-2' }}
+                </div>
+                <div class="kpi-trend">
+                    <span style="color: rgba(255, 255, 255, 0.6);">{{ totalPorConta[0].descricao }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="expense-section">
+                <div class="section-header">
+                    <h2 class="section-title">Transações Recentes</h2>
+                    <button class="btn-primary-executive" (click)="abrirModalDespesa()">
+                        <i class="bi bi-plus-lg"></i>
+                        Nova Despesa
+                    </button>
+                </div>
+
+                <div *ngIf="despesas.length === 0" class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <p>Nenhuma despesa registrada neste período</p>
+                </div>
+
+                <div *ngFor="let despesa of despesas" class="expense-item">
+                    <div class="expense-info">
+                        <div class="expense-description">{{ despesa.descricao }}</div>
+                        <div class="expense-meta">
+                            <span><i class="bi bi-calendar3"></i> {{ despesa.data | date:'dd/MM/yyyy' }}</span>
+                            <span class="category-badge">{{ obterNomeCategoria(despesa.idCategoria) }}</span>
+                        </div>
+                    </div>
+                    <div class="expense-actions">
+                        <span class="expense-amount">R$ {{ despesa.valor | number:'1.2-2' }}</span>
+                        <button class="action-btn" (click)="abrirModalEditar(despesa)">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" (click)="deletarDespesa(despesa.id)">
+                        <button class="action-btn" (click)="deletarDespesa(despesa.id)">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
-                </li>
-            </ul>
+                </div>
+            </div>
 
-            <!-- ==================== MODAL ==================== -->
-            <div class="modal fade" id="modalDespesa" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content border-0 shadow-lg">
-                        <div class="modal-header border-0" style="background: var(--blue); color: white;">
-                            <h5 class="modal-title fw-bold">
-                                <i class="bi bi-receipt me-2"></i>
-                                {{ novaDespesa.id ? 'Editar' : 'Nova' }} Despesa
-                            </h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body pt-4">
-                            <form>
-                                <div class="row g-3">
-                                    <div class="col-12">
-                                        <label class="form-label fw-semibold">Descrição</label>
-                                        <input type="text" class="form-control" [(ngModel)]="novaDespesa.descricao"
-                                            name="descricao" required />
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Valor (R$)</label>
-                                        <input type="number" step="0.01" class="form-control"
-                                            [(ngModel)]="novaDespesa.valor" name="valor" required />
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Data</label>
-                                        <input type="date" class="form-control" [(ngModel)]="novaDespesa.data"
-                                            name="data" required />
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label fw-semibold">Conta</label>
-                                        <select class="form-select" [(ngModel)]="novaDespesa.idContaFinanceira"
-                                            name="conta" required>
-                                            <option value="" disabled>Selecione uma conta</option>
-                                            <option *ngFor="let conta of contas" [value]="conta.id">{{ conta.descricao
-                                                }}
-                                            </option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Tipo de Despesa</label>
-                                        <select class="form-select" [(ngModel)]="novaDespesa.idTipoDespesa"
-                                            (change)="onTipoChange()" name="tipo">
-                                            <option value="" disabled>Selecione</option>
-                                            <option *ngFor="let tipo of tiposDespesa" [value]="tipo.id">{{
-                                                tipo.descricao }}
-                                            </option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Natureza da Despesa</label>
-                                        <select class="form-select" [(ngModel)]="novaDespesa.idNaturezaDespesa"
-                                            (change)="onNaturezaChange()" name="natureza"
-                                            [disabled]="naturezasDespesa.length === 0">
-                                            <option value="" disabled>Selecione</option>
-                                            <option *ngFor="let nat of naturezasDespesa" [value]="nat.id">{{
-                                                nat.descricao }}
-                                            </option>
-                                        </select>
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label fw-semibold">Categoria Específica</label>
-                                        <select class="form-select" [(ngModel)]="novaDespesa.idCategoriaEspecifica"
-                                            name="categoria" [disabled]="categoriasEspecificas.length === 0">
-                                            <option value="" disabled>Selecione</option>
-                                            <option *ngFor="let cat of categoriasEspecificas" [value]="cat.id">{{
-                                                cat.descricao
-                                                }}</option>
-                                        </select>
-                                    </div>
-                                </div>
+            <div class="insights-panel">
+                <div class="insight-card">
+                    <h3 class="insight-title">Distribuição por Conta</h3>
+                    <div *ngIf="totalPorConta.length === 0" class="text-center"
+                        style="color: rgba(255, 255, 255, 0.5); padding: 1rem;">
+                        Sem dados
+                    </div>
+                    <div *ngFor="let total of totalPorConta" class="metric-row">
+                        <span class="metric-label">{{ total.descricao }}</span>
+                        <span class="metric-value">R$ {{ total.valor | number:'1.2-2' }}</span>
+                    </div>
+                </div>
 
-                                <div class="alert alert-light border-start border-warning border-4 mt-4 p-3"
-                                    *ngIf="novaDespesa.valor > 200">
-                                    <small class="d-block">
-                                        <i class="bi bi-info-circle text-warning"></i>
-                                        <strong>Dica:</strong> Gastos acima de R$ 200 merecem uma categoria específica
-                                        para
-                                        melhor controle.
-                                    </small>
-                                </div>
-                            </form>
+                <div class="insight-card" *ngIf="despesas.length > 0">
+                    <h3 class="insight-title">Insights Estratégicos</h3>
+                    <div style="padding: 1rem 0;">
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <i class="bi bi-graph-up" style="color: var(--executive-success);"></i>
+                                <strong>Performance</strong>
+                            </div>
+                            <p style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.7); line-height: 1.5;">
+                                Total de {{ despesas.length }} transações registradas este mês.
+                            </p>
                         </div>
-                        <div class="modal-footer border-0">
-                            <button type="button" class="btn btn-outline-secondary"
-                                data-bs-dismiss="modal">Cancelar</button>
-                            <button type="button" class="btn btn-success fw-semibold" (click)="salvarDespesa()">
-                                <i class="bi bi-check2"></i> Salvar Despesa
-                            </button>
+                        <div *ngIf="!usuarioCategorizouEsteMes && despesas.length > 3">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <i class="bi bi-lightbulb" style="color: var(--executive-warning);"></i>
+                                <strong>Oportunidade</strong>
+                            </div>
+                            <p style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.7); line-height: 1.5;">
+                                Categorize suas despesas para melhor controle financeiro.
+                            </p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Modal de Despesa -->
+    <div class="modal fade" id="modalDespesa" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content"
+                style="background: rgba(10, 14, 39, 0.98); border: 1px solid rgba(255, 255, 255, 0.1);">
+                <div class="modal-header border-0"
+                    style="background: linear-gradient(135deg, var(--executive-accent) 0%, #536dfe 100%);">
+                    <h5 class="modal-title fw-bold" style="color: white;">
+                        <i class="bi bi-receipt me-2"></i>
+                        {{ novaDespesa.id ? 'Editar' : 'Nova' }} Despesa
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body pt-4">
+                    <form>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold"
+                                    style="color: rgba(255, 255, 255, 0.9);">Descrição</label>
+                                <input type="text" class="form-control" [(ngModel)]="novaDespesa.descricao"
+                                    name="descricao" required
+                                    style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: white;" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" style="color: rgba(255, 255, 255, 0.9);">Valor
+                                    (R$)</label>
+                                <input type="number" step="0.01" class="form-control" [(ngModel)]="novaDespesa.valor"
+                                    name="valor" required
+                                    style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: white;" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold"
+                                    style="color: rgba(255, 255, 255, 0.9);">Data</label>
+                                <input type="date" class="form-control" [(ngModel)]="novaDespesa.data" name="data"
+                                    required
+                                    style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: white;" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold"
+                                    style="color: rgba(255, 255, 255, 0.9);">Conta</label>
+                                <select class="form-select" [(ngModel)]="novaDespesa.idContaFinanceira" name="conta"
+                                    required
+                                    style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: white;">
+                                    <option value="" disabled>Selecione uma conta</option>
+                                    <option *ngFor="let conta of contas" [value]="conta.id">{{ conta.descricao }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" style="color: rgba(255, 255, 255, 0.9);">Tipo de
+                                    Despesa</label>
+                                <select class="form-select" [(ngModel)]="novaDespesa.idTipoDespesa"
+                                    (change)="onTipoChange()" name="tipo"
+                                    style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: white;">
+                                    <option value="" disabled>Selecione</option>
+                                    <option *ngFor="let tipo of tiposDespesa" [value]="tipo.id">{{ tipo.descricao }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" style="color: rgba(255, 255, 255, 0.9);">Natureza
+                                    da Despesa</label>
+                                <select class="form-select" [(ngModel)]="novaDespesa.idNaturezaDespesa"
+                                    (change)="onNaturezaChange()" name="natureza"
+                                    [disabled]="naturezasDespesa.length === 0"
+                                    style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: white;">
+                                    <option value="" disabled>Selecione</option>
+                                    <option *ngFor="let nat of naturezasDespesa" [value]="nat.id">{{ nat.descricao }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold" style="color: rgba(255, 255, 255, 0.9);">Categoria
+                                    Específica</label>
+                                <select class="form-select" [(ngModel)]="novaDespesa.idCategoriaEspecifica"
+                                    name="categoria" [disabled]="categoriasEspecificas.length === 0"
+                                    style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: white;">
+                                    <option value="" disabled>Selecione</option>
+                                    <option *ngFor="let cat of categoriasEspecificas" [value]="cat.id">{{ cat.descricao
+                                        }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-light border-start border-warning border-4 mt-4 p-3"
+                            *ngIf="novaDespesa.valor > 200"
+                            style="background: rgba(255, 160, 0, 0.1); border-color: var(--executive-warning) !important; color: rgba(255, 255, 255, 0.8);">
+                            <small class="d-block">
+                                <i class="bi bi-info-circle text-warning"></i>
+                                <strong>Dica:</strong> Gastos acima de R$ 200 merecem uma categoria específica para
+                                melhor controle.
+                            </small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"
+                        style="border-color: rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.7);">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn fw-semibold" (click)="salvarDespesa()"
+                        style="background: linear-gradient(135deg, var(--executive-success) 0%, #00e676 100%); color: white; border: none;">
+                        <i class="bi bi-check2"></i> Salvar Despesa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
