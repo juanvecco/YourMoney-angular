@@ -8,6 +8,7 @@ export interface Receita {
     descricao: string;
     valor: number;
     data: string;
+    mesReferencia?: string;
 }
 
 @Injectable({
@@ -28,6 +29,7 @@ export class ReceitaService {
         descricao: string;
         valor: number;
         data: string;
+        mesReferencia: string;
     }): Observable<Receita> {
         return this.http.post<Receita>(`${this.baseUrl}/Receitas`, receita);
     }
@@ -37,6 +39,7 @@ export class ReceitaService {
         descricao: string;
         valor: number;
         data: string;
+        mesReferencia: string;
     }): Observable<Receita> {
         return this.http.put<Receita>(`${this.baseUrl}/Receitas/${receita.id}`, receita);
     }

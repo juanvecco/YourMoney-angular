@@ -6,6 +6,7 @@ import { environment } from '../../environments/environment';
 export interface Despesa {
   id: string;
   data: string;
+  mesReferencia?: string;
   descricao: string;
   valor: number;
   idContaFinanceira: string;
@@ -52,6 +53,7 @@ export class DespesaService {
     descricao: string;
     valor: number;
     data: string;
+    mesReferencia: string;
     idContaFinanceira: string;
     idCategoria: string;
   }): Observable<Despesa> {
@@ -63,6 +65,7 @@ export class DespesaService {
     descricao: string;
     valor: number;
     data: string;
+    mesReferencia: string;
     idContaFinanceira: string;
     idCategoria: string;
   }): Observable<Despesa> {

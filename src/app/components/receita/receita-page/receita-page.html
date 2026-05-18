@@ -60,6 +60,7 @@
                                 <h3 class="ym-list-title">{{ receita.descricao }}</h3>
                                 <div class="ym-list-meta">
                                     <span><i class="bi bi-calendar3"></i> {{ receita.data | date:'dd/MM/yyyy' }}</span>
+                                    <span><i class="bi bi-calendar-month"></i> Ref. {{ obterMesReferenciaTexto(receita.mesReferencia || receita.data) }}</span>
                                 </div>
                             </div>
                             <div class="ym-list-actions accent-success">
@@ -115,6 +116,11 @@
                             <label class="form-label">Data</label>
                             <input type="date" class="form-control" [(ngModel)]="novaReceita.data" name="data"
                                 required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Mês de Referência</label>
+                            <input type="month" class="form-control" [(ngModel)]="novaReceita.mesReferencia"
+                                name="mesReferencia" required />
                         </div>
                     </div>
                 </form>
