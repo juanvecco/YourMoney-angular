@@ -25,7 +25,8 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         id: '',
         descricao: '',
         valor: 0,
-        data: new Date().toISOString().split('T')[0]
+        data: new Date().toISOString().split('T')[0],
+        mesReferencia: this.obterMesReferenciaInput(new Date())
     };
 
     editando = false;
@@ -104,7 +105,8 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         this.editando = true;
         this.novaReceita = {
             ...receita,
-            data: new Date(receita.data).toISOString().split('T')[0]
+            data: new Date(receita.data).toISOString().split('T')[0],
+            mesReferencia: this.obterMesReferenciaInput(receita.mesReferencia || receita.data)
         };
         this.abrirModal();
     }
@@ -116,7 +118,11 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
 
     private resetForm() {
         this.novaReceita = {
-            id: '', descricao: '', valor: 0, data: new Date().toISOString().split('T')[0]
+            id: '',
+            descricao: '',
+            valor: 0,
+            data: new Date().toISOString().split('T')[0],
+            mesReferencia: this.obterMesReferenciaInput(this.mesAtual)
         };
     }
 
@@ -127,9 +133,14 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
             return;
         }
 
+        const payload = {
+            ...this.novaReceita,
+            mesReferencia: this.converterMesReferenciaParaApi(this.novaReceita.mesReferencia)
+        };
+
         const request$ = this.editando
-            ? this.receitaService.atualizarReceita(this.novaReceita)
-            : this.receitaService.criarReceita(this.novaReceita);
+            ? this.receitaService.atualizarReceita(payload)
+            : this.receitaService.criarReceita(payload);
 
         request$.pipe(takeUntil(this.destroy$)).subscribe({
             next: () => {
@@ -142,7 +153,34 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     }
 
     private camposObrigatoriosPreenchidos(): boolean {
-        return !!(this.novaReceita.descricao && this.novaReceita.valor > 0 && this.novaReceita.data);
+        return !!(
+            this.novaReceita.descricao &&
+            this.novaReceita.valor > 0 &&
+            this.novaReceita.data &&
+            this.novaReceita.mesReferencia
+        );
+    }
+
+    obterMesReferenciaTexto(mesReferencia?: string): string {
+        if (!mesReferencia) return 'Sem referência';
+
+        const data = new Date(`${this.obterMesReferenciaInput(mesReferencia)}-01T00:00:00`);
+        return data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    }
+
+    private obterMesReferenciaInput(data: Date | string): string {
+        if (typeof data === 'string' && /^\d{4}-\d{2}/.test(data)) {
+            return data.substring(0, 7);
+        }
+
+        const valor = data instanceof Date ? data : new Date(data);
+        const ano = valor.getFullYear();
+        const mes = String(valor.getMonth() + 1).padStart(2, '0');
+        return `${ano}-${mes}`;
+    }
+
+    private converterMesReferenciaParaApi(mesReferencia: string): string {
+        return `${mesReferencia}-01`;
     }
 
     private mostrarAlertaCamposObrigatorios() {

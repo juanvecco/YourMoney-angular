@@ -21,6 +21,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         descricao: '',
         valor: 0,
         data: new Date().toISOString().split('T')[0],
+        mesReferencia: this.obterMesReferenciaInput(new Date()),
         idContaFinanceira: '',
         idTipoDespesa: '',
         idNaturezaDespesa: '',
@@ -171,6 +172,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
             descricao: despesa.descricao,
             valor: despesa.valor,
             data: new Date(despesa.data).toISOString().split('T')[0],
+            mesReferencia: this.obterMesReferenciaInput(despesa.mesReferencia || despesa.data),
             idContaFinanceira: despesa.idContaFinanceira || '',
             idTipoDespesa: '',
             idNaturezaDespesa: '',
@@ -188,6 +190,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     private resetForm() {
         this.novaDespesa = {
             id: '', descricao: '', valor: 0, data: new Date().toISOString().split('T')[0],
+            mesReferencia: this.obterMesReferenciaInput(this.mesAtual),
             idContaFinanceira: '', idTipoDespesa: '', idNaturezaDespesa: '', idCategoriaEspecifica: ''
         };
         this.naturezasDespesa = [];
@@ -261,6 +264,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
             descricao: this.novaDespesa.descricao,
             valor: this.novaDespesa.valor,
             data: this.novaDespesa.data,
+            mesReferencia: this.converterMesReferenciaParaApi(this.novaDespesa.mesReferencia),
             idContaFinanceira: this.novaDespesa.idContaFinanceira,
             idCategoria: idCategoriaFinal
         };
@@ -290,6 +294,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
             this.novaDespesa.descricao &&
             this.novaDespesa.valor > 0 &&
             this.novaDespesa.data &&
+            this.novaDespesa.mesReferencia &&
             this.novaDespesa.idContaFinanceira &&
             this.novaDespesa.idTipoDespesa
         );
@@ -314,6 +319,28 @@ export class DespesasComponent implements OnInit, OnDestroy {
             descricao: '',
             valor: 0
         };
+    }
+
+    obterMesReferenciaTexto(mesReferencia?: string): string {
+        if (!mesReferencia) return 'Sem referência';
+
+        const data = new Date(`${this.obterMesReferenciaInput(mesReferencia)}-01T00:00:00`);
+        return data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    }
+
+    private obterMesReferenciaInput(data: Date | string): string {
+        if (typeof data === 'string' && /^\d{4}-\d{2}/.test(data)) {
+            return data.substring(0, 7);
+        }
+
+        const valor = data instanceof Date ? data : new Date(data);
+        const ano = valor.getFullYear();
+        const mes = String(valor.getMonth() + 1).padStart(2, '0');
+        return `${ano}-${mes}`;
+    }
+
+    private converterMesReferenciaParaApi(mesReferencia: string): string {
+        return `${mesReferencia}-01`;
     }
 
     private fecharModal() {
