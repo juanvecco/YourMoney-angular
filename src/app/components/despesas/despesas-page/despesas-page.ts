@@ -28,6 +28,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     };
 
     editando = false;
+    criarMultiplasDespesas = false;
 
     // === DADOS ===
     contas: any[] = [];
@@ -157,12 +158,14 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
     abrirModalDespesa() {
         this.editando = false;
+        this.criarMultiplasDespesas = false;
         this.resetForm();
         this.abrirModal();
     }
 
     abrirModalEditar(despesa: Despesa) {
         this.editando = true;
+        this.criarMultiplasDespesas = false;
         this.novaDespesa = {
             id: despesa.id,
             descricao: despesa.descricao,
@@ -268,7 +271,12 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
         request$.pipe(takeUntil(this.destroy$)).subscribe({
             next: () => {
-                this.fecharModal();
+                if (this.editando || !this.criarMultiplasDespesas) {
+                    this.fecharModal();
+                } else {
+                    this.prepararProximaDespesa();
+                }
+
                 this.carregarDespesas();
                 this.mostrarSucesso();
                 this.verificarBadgeOrganizador();
@@ -297,6 +305,15 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
     private mostrarErro() {
         Swal.fire({ icon: 'error', title: 'Erro!', text: 'Não foi possível salvar.', confirmButtonColor: '#dc3545' });
+    }
+
+    private prepararProximaDespesa() {
+        this.novaDespesa = {
+            ...this.novaDespesa,
+            id: '',
+            descricao: '',
+            valor: 0
+        };
     }
 
     private fecharModal() {
