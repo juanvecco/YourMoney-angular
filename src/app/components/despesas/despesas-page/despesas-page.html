@@ -180,6 +180,13 @@
                                 <option *ngFor="let cat of categoriasEspecificas" [value]="cat.id">{{ cat.descricao }}</option>
                             </select>
                         </div>
+                        <div class="col-12" *ngIf="!editando">
+                            <label class="ym-check-row">
+                                <input type="checkbox" [(ngModel)]="criarMultiplasDespesas"
+                                    name="criarMultiplasDespesas" />
+                                <span>Cadastrar outra despesa após salvar</span>
+                            </label>
+                        </div>
                     </div>
                 </form>
             </div>
