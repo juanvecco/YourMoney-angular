@@ -77,6 +77,7 @@
                             <h3 class="ym-list-title">{{ despesa.descricao }}</h3>
                             <div class="ym-list-meta">
                                 <span><i class="bi bi-calendar3"></i> {{ despesa.data | date:'dd/MM/yyyy' }}</span>
+                                <span><i class="bi bi-calendar-month"></i> Ref. {{ obterMesReferenciaTexto(despesa.mesReferencia || despesa.data) }}</span>
                                 <span class="ym-chip">{{ obterNomeCategoria(despesa.idCategoria) }}</span>
                             </div>
                         </div>
@@ -146,6 +147,11 @@
                             <label class="form-label">Data</label>
                             <input type="date" class="form-control" [(ngModel)]="novaDespesa.data" name="data"
                                 required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Mês de Referência</label>
+                            <input type="month" class="form-control" [(ngModel)]="novaDespesa.mesReferencia"
+                                name="mesReferencia" required />
                         </div>
                         <div class="col-12">
                             <label class="form-label">Conta</label>
