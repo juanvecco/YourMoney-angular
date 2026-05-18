@@ -65,5 +65,37 @@
                 <button class="ym-button primary" type="button" (click)="investir()">Investir saldo</button>
             </article>
         </section>
+
+        <section class="ym-grid">
+            <article class="ym-card ym-card-pad">
+                <div class="ym-section-header">
+                    <h2 class="ym-section-title">Despesas por tipo</h2>
+                </div>
+
+                <div *ngIf="despesasPorTipo.length === 0" class="ym-empty">
+                    Nenhuma despesa registrada neste período.
+                </div>
+
+                <div *ngFor="let item of despesasPorTipo" class="ym-metric-row accent-danger">
+                    <span>{{ item.descricao }}</span>
+                    <strong class="ym-amount">R$ {{ item.valor | number:'1.2-2' }}</strong>
+                </div>
+            </article>
+
+            <article class="ym-card ym-card-pad">
+                <div class="ym-section-header">
+                    <h2 class="ym-section-title">Despesas por natureza</h2>
+                </div>
+
+                <div *ngIf="despesasPorNatureza.length === 0" class="ym-empty">
+                    Nenhuma despesa registrada neste período.
+                </div>
+
+                <div *ngFor="let item of despesasPorNatureza" class="ym-metric-row accent-warning">
+                    <span>{{ item.descricao }}</span>
+                    <strong class="ym-amount">R$ {{ item.valor | number:'1.2-2' }}</strong>
+                </div>
+            </article>
+        </section>
     </div>
 </main>
