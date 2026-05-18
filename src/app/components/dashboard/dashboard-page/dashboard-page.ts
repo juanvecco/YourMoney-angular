@@ -3,6 +3,7 @@ import { CommonModule, DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { ReceitaService, Receita } from '../../../services/receita';
 import { DespesaService, Despesa } from '../../../services/despesa';
+import { InvestimentoService, Investimento } from '../../../services/investimento';
 
 @Component({
     selector: 'app-dashboard-page',
@@ -15,14 +16,22 @@ export class DashboardPageComponent implements OnInit {
 
     receitas: Receita[] = [];
     despesas: Despesa[] = [];
-    resumo = { receitas: 0, despesas: 0, sobrou: 0 };
+    investimentos: Investimento[] = [];
+
+    resumo = {
+        receitas: 0,
+        despesas: 0,
+        investimentos: 0,
+        sobrou: 0
+    };
+
     mesAtual = new Date();
-    saldo = 0;
 
     constructor(
         private router: Router,
         private receitaService: ReceitaService,
-        private despesaService: DespesaService
+        private despesaService: DespesaService,
+        private investimentoService: InvestimentoService
     ) { }
 
     ngOnInit(): void {
@@ -36,33 +45,41 @@ export class DashboardPageComponent implements OnInit {
         this.receitaService.obterPorReferencia(mes, ano).subscribe({
             next: (receitas) => {
                 this.receitas = receitas;
-                this.atualizarSaldo();
+                this.atualizarResumo();
             },
-            error: (erro) => {
-                console.error('Erro ao carregar receitas:', erro);
-            }
+            error: (erro) => console.error('Erro ao carregar receitas:', erro)
         });
 
         this.despesaService.obterPorReferencia(mes, ano).subscribe({
             next: (despesas) => {
                 this.despesas = despesas;
-                this.atualizarSaldo();
+                this.atualizarResumo();
             },
             error: (erro) => {
                 console.error('Erro ao carregar despesas:', erro);
             }
         });
+
+        this.investimentoService.obterPorReferencia(mes, ano).subscribe({
+            next: (investimentos) => {
+                this.investimentos = investimentos;
+                this.atualizarResumo();
+            },
+            error: (erro) => {
+                console.error('Erro ao carregar investimentos:', erro);
+            }
+        });
     }
 
-    atualizarSaldo() {
+    atualizarResumo() {
         const totalReceitas = this.receitas.reduce((soma, r) => soma + r.valor, 0);
         const totalDespesas = this.despesas.reduce((soma, d) => soma + d.valor, 0);
-        this.saldo = totalReceitas - totalDespesas;
-
+        const totalInvestimentos = this.investimentos.reduce((soma, i) => soma + i.valorAtual, 0);
         this.resumo = {
             receitas: totalReceitas,
             despesas: totalDespesas,
-            sobrou: this.saldo
+            investimentos: totalInvestimentos,
+            sobrou: totalReceitas - totalDespesas
         };
     }
 
@@ -74,18 +91,25 @@ export class DashboardPageComponent implements OnInit {
         this.router.navigate(['/despesas']);
     }
 
-    mesAnterior() {
+    verCarteira(): void {
+        this.router.navigate(['/investimento']);
+    }
+
+    investir(): void {
+        this.router.navigate(['/investimento']);
+    }
+
+    mesAnterior(): void {
         const data = new Date(this.mesAtual);
         data.setMonth(data.getMonth() - 1);
         this.mesAtual = data;
         this.carregarDadosMesAtual();
     }
 
-    proximoMes() {
+    proximoMes(): void {
         const data = new Date(this.mesAtual);
         data.setMonth(data.getMonth() + 1);
         this.mesAtual = data;
         this.carregarDadosMesAtual();
     }
-
 }
