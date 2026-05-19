@@ -186,18 +186,61 @@
                                 <option *ngFor="let cat of categoriasEspecificas" [value]="cat.id">{{ cat.descricao }}</option>
                             </select>
                         </div>
-                        <div class="col-12" *ngIf="!editando">
-                            <label class="ym-check-row">
-                                <input type="checkbox" [(ngModel)]="criarMultiplasDespesas"
-                                    name="criarMultiplasDespesas" />
-                                <span>Cadastrar outra despesa após salvar</span>
-                            </label>
-                        </div>
                     </div>
                 </form>
+
+                <div class="ym-batch-panel" *ngIf="!editando">
+                    <div class="ym-section-header">
+                        <div>
+                            <h6 class="ym-section-title">Lote de despesas</h6>
+                            <p class="ym-subtitle">Adicione despesas à lista e salve todas juntas.</p>
+                        </div>
+                        <button type="button" class="ym-button" (click)="adicionarDespesaAoLote()">
+                            <i class="bi bi-list-plus"></i>Adicionar ao lote
+                        </button>
+                    </div>
+
+                    <div *ngIf="despesasEmLote.length === 0" class="ym-empty compact">
+                        Nenhuma despesa adicionada ao lote.
+                    </div>
+
+                    <div class="ym-batch-list" *ngIf="despesasEmLote.length > 0">
+                        <div class="ym-batch-item" *ngFor="let despesa of despesasEmLote; let i = index">
+                            <div class="ym-list-main">
+                                <h6 class="ym-list-title">{{ despesa.descricao }}</h6>
+                                <div class="ym-list-meta">
+                                    <span><i class="bi bi-calendar3"></i> {{ despesa.data | date:'dd/MM/yyyy' }}</span>
+                                    <span><i class="bi bi-calendar-month"></i> Ref. {{ obterMesReferenciaTexto(despesa.mesReferencia) }}</span>
+                                    <span>{{ despesa.contaDescricao }}</span>
+                                    <span class="ym-chip">{{ despesa.categoriaDescricao }}</span>
+                                </div>
+                            </div>
+                            <div class="ym-list-actions accent-danger">
+                                <strong class="ym-amount">R$ {{ despesa.valor | number:'1.2-2' }}</strong>
+                                <button type="button" class="ym-icon-button" (click)="removerDespesaDoLote(i)"
+                                    aria-label="Remover despesa do lote">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="ym-batch-total accent-danger">
+                            <span>Total do lote</span>
+                            <strong class="ym-amount">R$ {{ obterTotalLote() | number:'1.2-2' }}</strong>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="ym-button" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="ym-button" *ngIf="!editando && despesasEmLote.length > 0"
+                    (click)="limparLote()">
+                    Limpar lote
+                </button>
+                <button type="button" class="ym-button primary" *ngIf="!editando && despesasEmLote.length > 0"
+                    (click)="salvarLoteDespesas()">
+                    <i class="bi bi-check2-all"></i>Salvar lote ({{ despesasEmLote.length }})
+                </button>
                 <button type="button" class="ym-button primary" (click)="salvarDespesa()">
                     <i class="bi bi-check2"></i>Salvar Despesa
                 </button>

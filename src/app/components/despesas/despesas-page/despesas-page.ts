@@ -3,7 +3,18 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DespesaService, Despesa, Categoria } from '../../../services/despesa';
 import Swal from 'sweetalert2';
-import { Subject, takeUntil } from 'rxjs';
+import { forkJoin, Subject, takeUntil } from 'rxjs';
+
+type DespesaLote = {
+    descricao: string;
+    valor: number;
+    data: string;
+    mesReferencia: string;
+    idContaFinanceira: string;
+    idCategoria: string;
+    contaDescricao: string;
+    categoriaDescricao: string;
+};
 
 @Component({
     selector: 'app-despesas-page',
@@ -29,7 +40,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     };
 
     editando = false;
-    criarMultiplasDespesas = false;
+    despesasEmLote: DespesaLote[] = [];
 
     // === DADOS ===
     contas: any[] = [];
@@ -159,14 +170,13 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
     abrirModalDespesa() {
         this.editando = false;
-        this.criarMultiplasDespesas = false;
+        this.limparLote();
         this.resetForm();
         this.abrirModal();
     }
 
     abrirModalEditar(despesa: Despesa) {
         this.editando = true;
-        this.criarMultiplasDespesas = false;
         this.novaDespesa = {
             id: despesa.id,
             descricao: despesa.descricao,
@@ -255,19 +265,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
             return;
         }
 
-        const idCategoriaFinal = this.novaDespesa.idCategoriaEspecifica ||
-            this.novaDespesa.idNaturezaDespesa ||
-            this.novaDespesa.idTipoDespesa;
-
-        const payload = {
-            id: this.novaDespesa.id,
-            descricao: this.novaDespesa.descricao,
-            valor: this.novaDespesa.valor,
-            data: this.novaDespesa.data,
-            mesReferencia: this.converterMesReferenciaParaApi(this.novaDespesa.mesReferencia),
-            idContaFinanceira: this.novaDespesa.idContaFinanceira,
-            idCategoria: idCategoriaFinal
-        };
+        const payload = this.montarPayloadDespesa();
 
         const request$ = this.editando
             ? this.despesaService.atualizarDespesa(payload)
@@ -275,18 +273,108 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
         request$.pipe(takeUntil(this.destroy$)).subscribe({
             next: () => {
-                if (this.editando || !this.criarMultiplasDespesas) {
-                    this.fecharModal();
-                } else {
-                    this.prepararProximaDespesa();
-                }
-
+                this.fecharModal();
                 this.carregarDespesas();
                 this.mostrarSucesso();
                 this.verificarBadgeOrganizador();
             },
             error: () => this.mostrarErro()
         });
+    }
+
+    adicionarDespesaAoLote() {
+        if (this.editando) return;
+
+        if (!this.camposObrigatoriosPreenchidos()) {
+            this.mostrarAlertaCamposObrigatorios();
+            return;
+        }
+
+        const payload = this.montarPayloadDespesa();
+
+        this.despesasEmLote = [
+            ...this.despesasEmLote,
+            {
+                descricao: payload.descricao,
+                valor: payload.valor,
+                data: payload.data,
+                mesReferencia: payload.mesReferencia,
+                idContaFinanceira: payload.idContaFinanceira,
+                idCategoria: payload.idCategoria,
+                contaDescricao: this.obterNomeConta(payload.idContaFinanceira),
+                categoriaDescricao: this.obterNomeCategoria(payload.idCategoria)
+            }
+        ];
+
+        this.prepararProximaDespesa();
+    }
+
+    removerDespesaDoLote(index: number) {
+        this.despesasEmLote = this.despesasEmLote.filter((_, i) => i !== index);
+    }
+
+    limparLote() {
+        this.despesasEmLote = [];
+    }
+
+    salvarLoteDespesas() {
+        if (this.despesasEmLote.length === 0) return;
+
+        const requests = this.despesasEmLote.map(despesa =>
+            this.despesaService.criarDespesa({
+                descricao: despesa.descricao,
+                valor: despesa.valor,
+                data: despesa.data,
+                mesReferencia: despesa.mesReferencia,
+                idContaFinanceira: despesa.idContaFinanceira,
+                idCategoria: despesa.idCategoria
+            })
+        );
+
+        forkJoin(requests)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    this.limparLote();
+                    this.fecharModal();
+                    this.carregarDespesas();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Lote cadastrado!',
+                        text: 'Todas as despesas do lote foram salvas.',
+                        timer: 2200,
+                        showConfirmButton: false
+                    });
+                },
+                error: () => Swal.fire({
+                    icon: 'error',
+                    title: 'Erro!',
+                    text: 'Não foi possível salvar todas as despesas do lote.',
+                    confirmButtonColor: '#dc3545'
+                })
+            });
+    }
+
+    obterTotalLote(): number {
+        return this.despesasEmLote.reduce((total, despesa) => total + despesa.valor, 0);
+    }
+
+    private montarPayloadDespesa() {
+        return {
+            id: this.novaDespesa.id,
+            descricao: this.novaDespesa.descricao,
+            valor: this.novaDespesa.valor,
+            data: this.novaDespesa.data,
+            mesReferencia: this.converterMesReferenciaParaApi(this.novaDespesa.mesReferencia),
+            idContaFinanceira: this.novaDespesa.idContaFinanceira,
+            idCategoria: this.obterIdCategoriaFinal()
+        };
+    }
+
+    private obterIdCategoriaFinal(): string {
+        return this.novaDespesa.idCategoriaEspecifica ||
+            this.novaDespesa.idNaturezaDespesa ||
+            this.novaDespesa.idTipoDespesa;
     }
 
     private camposObrigatoriosPreenchidos(): boolean {
@@ -326,6 +414,10 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
         const data = new Date(`${this.obterMesReferenciaInput(mesReferencia)}-01T00:00:00`);
         return data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    }
+
+    obterNomeConta(id: string): string {
+        return this.contas.find(c => c.id === id)?.descricao || 'Conta Desconhecida';
     }
 
     private obterMesReferenciaInput(data: Date | string): string {
