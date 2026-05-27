@@ -1,53 +1,40 @@
-<div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,.5)">
-    <div class="modal-dialog">
+<div class="modal fade show d-block ym-modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">{{ editando ? 'Editar Categoria' : 'Nova Categoria' }}</h5>
-                <button type="button" class="btn-close" (click)="fecharModal()"></button>
+                <h5 class="modal-title">{{ editando ? 'Editar categoria específica' : 'Nova categoria específica' }}</h5>
+                <button type="button" class="btn-close btn-close-white" aria-label="Fechar" (click)="fecharModal()"></button>
             </div>
 
             <div class="modal-body">
-                <!-- Toggle -->
-                <div class="btn-group w-100 mb-3">
-                    <input type="radio" class="btn-check" name="tipo" id="tipo" [(ngModel)]="categoriaTipo"
-                        value="tipo" />
-                    <label class="btn btn-outline-primary" for="tipo">Tipo</label>
-
-                    <input type="radio" class="btn-check" name="tipo" id="natureza" [(ngModel)]="categoriaTipo"
-                        value="natureza" />
-                    <label class="btn btn-outline-primary" for="natureza">Natureza</label>
-
-                    <input type="radio" class="btn-check" name="tipo" id="especifica" [(ngModel)]="categoriaTipo"
-                        value="especifica" />
-                    <label class="btn btn-outline-primary" for="especifica">Específica</label>
-                </div>
-
-                <!-- Nome -->
                 <div class="mb-3">
-                    <label class="form-label">Nome</label>
-                    <input type="text" class="form-control" [(ngModel)]="categoria.nome" />
-                </div>
-
-                <!-- Pai Tipo -->
-                <div class="mb-3" *ngIf="categoriaTipo === 'natureza'">
-                    <label class="form-label">Tipo de Despesa (pai)</label>
-                    <select class="form-select" [(ngModel)]="categoria.categoriaPaiId">
-                        <option *ngFor="let t of tiposDespesa" [value]="t.id">{{ t.nome }}</option>
+                    <label class="form-label" for="categoriaTipo">Tipo</label>
+                    <select id="categoriaTipo" class="form-select" [(ngModel)]="tipoId" (ngModelChange)="atualizarNaturezas()">
+                        <option value="" disabled>Selecione</option>
+                        <option *ngFor="let tipo of tiposDespesa" [value]="tipo.id">{{ tipo.descricao }}</option>
                     </select>
                 </div>
 
-                <!-- Pai Natureza -->
-                <div class="mb-3" *ngIf="categoriaTipo === 'especifica'">
-                    <label class="form-label">Natureza da Despesa (pai)</label>
-                    <select class="form-select" [(ngModel)]="categoria.categoriaPaiId">
-                        <option *ngFor="let n of naturezasDespesa" [value]="n.id">{{ n.nome }}</option>
+                <div class="mb-3">
+                    <label class="form-label" for="categoriaNatureza">Natureza</label>
+                    <select id="categoriaNatureza" class="form-select" [(ngModel)]="naturezaId" [disabled]="naturezasDespesa.length === 0">
+                        <option value="" disabled>Selecione</option>
+                        <option *ngFor="let natureza of naturezasDespesa" [value]="natureza.id">{{ natureza.descricao }}</option>
                     </select>
+                </div>
+
+                <div class="mb-0">
+                    <label class="form-label" for="categoriaDescricao">Categoria específica</label>
+                    <input id="categoriaDescricao" type="text" class="form-control" [(ngModel)]="descricao" maxlength="120" autofocus />
                 </div>
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" (click)="fecharModal()">Cancelar</button>
-                <button type="button" class="btn btn-success" (click)="salvarCategoria()">Salvar</button>
+                <button type="button" class="ym-button" (click)="fecharModal()">Cancelar</button>
+                <button type="button" class="ym-button primary" (click)="salvarCategoria()" [disabled]="!descricao.trim() || !naturezaId">
+                    <i class="bi bi-check-lg"></i>
+                    Salvar
+                </button>
             </div>
         </div>
     </div>
