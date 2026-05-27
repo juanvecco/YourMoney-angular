@@ -2,28 +2,27 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
+import {
+  AtualizarDespesaRequest,
+  Categoria,
+  ContaFinanceira,
+  CriarDespesaRequest,
+  CriarParcelamentoRequest,
+  CriarParcelamentoResponse,
+  Despesa
+} from '../models/despesa.model';
 
-export interface Despesa {
-  id: string;
-  data: string;
-  mesReferencia?: string;
-  descricao: string;
-  valor: number;
-  idContaFinanceira: string;
-  idCategoria: string;
-}
-
-export interface ContaFinanceira {
-  id: string;
-  descricao: string;
-}
-
-export interface Categoria {
-  id: string;
-  descricao: string;
-  tipoTransacao: number;
-  categoriaPaiId?: string | null;
-}
+export type {
+  AtualizarDespesaRequest,
+  Categoria,
+  ContaFinanceira,
+  CriarDespesaRequest,
+  CriarParcelamentoRequest,
+  CriarParcelamentoResponse,
+  Despesa,
+  ParcelaDespesa,
+  ParcelaPreview
+} from '../models/despesa.model';
 
 @Injectable({
   providedIn: 'root',
@@ -49,26 +48,15 @@ export class DespesaService {
     });
   }
 
-  criarDespesa(despesa: {
-    descricao: string;
-    valor: number;
-    data: string;
-    mesReferencia: string;
-    idContaFinanceira: string;
-    idCategoria: string;
-  }): Observable<Despesa> {
+  criarDespesa(despesa: CriarDespesaRequest): Observable<Despesa> {
     return this.http.post<Despesa>(`${this.baseUrl}/Despesas`, despesa);
   }
 
-  atualizarDespesa(despesa: {
-    id: string;
-    descricao: string;
-    valor: number;
-    data: string;
-    mesReferencia: string;
-    idContaFinanceira: string;
-    idCategoria: string;
-  }): Observable<Despesa> {
+  criarParcelamento(request: CriarParcelamentoRequest): Observable<CriarParcelamentoResponse> {
+    return this.http.post<CriarParcelamentoResponse>(`${this.baseUrl}/Despesas/parcelamento`, request);
+  }
+
+  atualizarDespesa(despesa: AtualizarDespesaRequest): Observable<Despesa> {
     return this.http.put<Despesa>(`${this.baseUrl}/Despesas/${despesa.id}`, despesa);
   }
 

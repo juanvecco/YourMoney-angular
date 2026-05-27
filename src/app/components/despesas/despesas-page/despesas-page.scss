@@ -1,1 +1,30 @@
 
+.ym-installment-preview {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--ym-border);
+}
+
+.ym-installment-chip {
+  gap: 6px;
+  color: var(--ym-text);
+  background: color-mix(in srgb, var(--ym-warning) 22%, transparent);
+}
+
+.ym-installment-total {
+  min-height: 38px;
+  border: 1px solid var(--ym-border);
+  border-radius: var(--ym-radius-sm);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  color: var(--ym-danger);
+  background: rgba(255, 255, 255, 0.06);
+  font-weight: 800;
+}
+
+.ym-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}

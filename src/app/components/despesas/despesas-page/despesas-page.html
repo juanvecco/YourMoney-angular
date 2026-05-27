@@ -76,8 +76,11 @@
                         <div class="ym-list-main">
                             <h3 class="ym-list-title">{{ despesa.descricao }}</h3>
                             <div class="ym-list-meta">
-                                <span><i class="bi bi-calendar3"></i> {{ despesa.data | date:'dd/MM/yyyy' }}</span>
+                                <span><i class="bi bi-calendar3"></i> {{ formatarData(despesa.data) }}</span>
                                 <span><i class="bi bi-calendar-month"></i> Ref. {{ obterMesReferenciaTexto(despesa.mesReferencia || despesa.data) }}</span>
+                                <span class="ym-chip ym-installment-chip" *ngIf="temParcelamento(despesa)">
+                                    <i class="bi bi-layers"></i>{{ obterRotuloParcela(despesa) }}
+                                </span>
                                 <span class="ym-chip">{{ obterNomeCategoria(despesa.idCategoria) }}</span>
                             </div>
                         </div>
@@ -141,12 +144,12 @@
                         <div class="col-md-6">
                             <label class="form-label">Valor (R$)</label>
                             <input type="number" step="0.01" class="form-control" [(ngModel)]="novaDespesa.valor"
-                                name="valor" required />
+                                name="valor" (ngModelChange)="atualizarPreviewParcelamento()" required />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Data</label>
                             <input type="date" class="form-control" [(ngModel)]="novaDespesa.data" name="data"
-                                required />
+                                (ngModelChange)="atualizarPreviewParcelamento()" required />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Mês de Referência</label>
@@ -186,10 +189,55 @@
                                 <option *ngFor="let cat of categoriasEspecificas" [value]="cat.id">{{ cat.descricao }}</option>
                             </select>
                         </div>
+                        <div class="col-12" *ngIf="!editando">
+                            <label class="ym-check-row accent-danger">
+                                <input type="checkbox" [(ngModel)]="parcelamentoAtivo" name="parcelamentoAtivo"
+                                    (ngModelChange)="onParcelamentoToggle()" />
+                                <span>Despesa parcelada</span>
+                            </label>
+                        </div>
+                        <div class="col-md-6" *ngIf="!editando && parcelamentoAtivo">
+                            <label class="form-label">Quantidade de parcelas</label>
+                            <input type="number" min="1" max="120" step="1" class="form-control"
+                                [(ngModel)]="quantidadeParcelas" name="quantidadeParcelas"
+                                (ngModelChange)="atualizarPreviewParcelamento()" required />
+                        </div>
+                        <div class="col-md-6" *ngIf="!editando && parcelamentoAtivo && parcelasPreview.length > 0">
+                            <label class="form-label">Total previsto</label>
+                            <div class="ym-installment-total">
+                                R$ {{ novaDespesa.valor | number:'1.2-2' }}
+                            </div>
+                        </div>
                     </div>
                 </form>
 
-                <div class="ym-batch-panel" *ngIf="!editando">
+                <div class="ym-installment-preview" *ngIf="!editando && parcelamentoAtivo">
+                    <div class="ym-section-header">
+                        <div>
+                            <h6 class="ym-section-title">Prévia das parcelas</h6>
+                            <p class="ym-subtitle">As parcelas serão mensais a partir da data informada.</p>
+                        </div>
+                    </div>
+
+                    <div *ngIf="parcelasPreview.length === 0" class="ym-empty compact">
+                        Informe valor, data e quantidade de parcelas para visualizar a prévia.
+                    </div>
+
+                    <div class="ym-batch-list" *ngIf="parcelasPreview.length > 0">
+                        <div class="ym-batch-item" *ngFor="let parcela of parcelasPreview">
+                            <div class="ym-list-main">
+                                <h6 class="ym-list-title">Parcela {{ parcela.numeroParcela }}/{{ parcela.totalParcelas }}</h6>
+                                <div class="ym-list-meta">
+                                    <span><i class="bi bi-calendar3"></i> {{ formatarData(parcela.data) }}</span>
+                                    <span><i class="bi bi-calendar-month"></i> Ref. {{ obterMesReferenciaTexto(parcela.mesReferencia) }}</span>
+                                </div>
+                            </div>
+                            <strong class="ym-amount">R$ {{ parcela.valor | number:'1.2-2' }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ym-batch-panel" *ngIf="!editando && !parcelamentoAtivo">
                     <div class="ym-section-header">
                         <div>
                             <h6 class="ym-section-title">Lote de despesas</h6>
@@ -209,7 +257,7 @@
                             <div class="ym-list-main">
                                 <h6 class="ym-list-title">{{ despesa.descricao }}</h6>
                                 <div class="ym-list-meta">
-                                    <span><i class="bi bi-calendar3"></i> {{ despesa.data | date:'dd/MM/yyyy' }}</span>
+                                    <span><i class="bi bi-calendar3"></i> {{ formatarData(despesa.data) }}</span>
                                     <span><i class="bi bi-calendar-month"></i> Ref. {{ obterMesReferenciaTexto(despesa.mesReferencia) }}</span>
                                     <span>{{ despesa.contaDescricao }}</span>
                                     <span class="ym-chip">{{ despesa.categoriaDescricao }}</span>
@@ -241,7 +289,8 @@
                     (click)="salvarLoteDespesas()">
                     <i class="bi bi-check2-all"></i>Salvar lote ({{ despesasEmLote.length }})
                 </button>
-                <button type="button" class="ym-button primary" (click)="salvarDespesa()">
+                <button type="button" class="ym-button primary" (click)="salvarDespesa()"
+                    [disabled]="salvandoParcelamento || (parcelamentoAtivo && !parcelamentoValido())">
                     <i class="bi bi-check2"></i>Salvar Despesa
                 </button>
             </div>
