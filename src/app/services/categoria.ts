@@ -1,20 +1,17 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
+import { Categoria } from '../models/despesa.model';
 
-export interface CriarCategoriaComponent {
-    listarCategorias(): Observable<Categoria[]>;
-    criarCategoria(categoria: Categoria): Observable<Categoria>;
-    atualizarCategoria(categoria: Categoria): Observable<Categoria>;
-}
+export type CategoriaPayload = Omit<Categoria, 'id'>;
 
 @Injectable({
     providedIn: 'root'
 })
-export class CategoriaService implements CriarCategoriaComponent {
-    private apiUrl = `${environment.apiUrl}/categoria`;
+export class CategoriaService {
+    private apiUrl = `${environment.apiUrl}/Categoria`;
 
     constructor(private http: HttpClient) { }
 
@@ -22,16 +19,15 @@ export class CategoriaService implements CriarCategoriaComponent {
         return this.http.get<Categoria[]>(this.apiUrl);
     }
 
-    criarCategoria(categoria: Categoria): Observable<Categoria> {
+    criarCategoria(categoria: CategoriaPayload): Observable<Categoria> {
         return this.http.post<Categoria>(this.apiUrl, categoria);
     }
 
-    atualizarCategoria(categoria: Categoria): Observable<Categoria> {
-        return this.http.put<Categoria>(`${this.apiUrl}/${categoria.id}`, categoria);
+    atualizarCategoria(id: string, categoria: CategoriaPayload): Observable<Categoria> {
+        return this.http.put<Categoria>(`${this.apiUrl}/${id}`, categoria);
     }
-}
-export interface Categoria {
-    id: string;
-    nome: string;
-    categoriaPaiId: string | null;
+
+    removerCategoria(id: string): Observable<void> {
+        return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    }
 }
