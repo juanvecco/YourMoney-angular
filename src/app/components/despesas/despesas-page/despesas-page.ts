@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DespesaService, Despesa, Categoria } from '../../../services/despesa';
+import { DespesaService, Despesa, Categoria, CriarParcelamentoRequest, ParcelaPreview } from '../../../services/despesa';
 import Swal from 'sweetalert2';
 import { forkJoin, Subject, takeUntil } from 'rxjs';
 
@@ -41,6 +41,10 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
     editando = false;
     despesasEmLote: DespesaLote[] = [];
+    parcelamentoAtivo = false;
+    quantidadeParcelas = 1;
+    parcelasPreview: ParcelaPreview[] = [];
+    salvandoParcelamento = false;
 
     // === DADOS ===
     contas: any[] = [];
@@ -172,11 +176,13 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.editando = false;
         this.limparLote();
         this.resetForm();
+        this.resetParcelamento();
         this.abrirModal();
     }
 
     abrirModalEditar(despesa: Despesa) {
         this.editando = true;
+        this.resetParcelamento();
         this.novaDespesa = {
             id: despesa.id,
             descricao: despesa.descricao,
@@ -205,6 +211,14 @@ export class DespesasComponent implements OnInit, OnDestroy {
         };
         this.naturezasDespesa = [];
         this.categoriasEspecificas = [];
+        this.resetParcelamento();
+    }
+
+    private resetParcelamento() {
+        this.parcelamentoAtivo = false;
+        this.quantidadeParcelas = 1;
+        this.parcelasPreview = [];
+        this.salvandoParcelamento = false;
     }
 
     // ==============================================================
@@ -265,6 +279,11 @@ export class DespesasComponent implements OnInit, OnDestroy {
             return;
         }
 
+        if (!this.editando && this.parcelamentoAtivo && this.quantidadeParcelas > 1) {
+            this.salvarParcelamento();
+            return;
+        }
+
         const payload = this.montarPayloadDespesa();
 
         const request$ = this.editando
@@ -283,7 +302,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     }
 
     adicionarDespesaAoLote() {
-        if (this.editando) return;
+        if (this.editando || this.parcelamentoAtivo) return;
 
         if (!this.camposObrigatoriosPreenchidos()) {
             this.mostrarAlertaCamposObrigatorios();
@@ -371,6 +390,18 @@ export class DespesasComponent implements OnInit, OnDestroy {
         };
     }
 
+    private montarPayloadParcelamento(): CriarParcelamentoRequest {
+        return {
+            descricao: this.novaDespesa.descricao,
+            valorTotal: this.novaDespesa.valor,
+            dataInicial: this.novaDespesa.data,
+            mesReferenciaInicial: this.converterMesReferenciaParaApi(this.novaDespesa.mesReferencia),
+            quantidadeParcelas: this.quantidadeParcelas,
+            idContaFinanceira: this.novaDespesa.idContaFinanceira,
+            idCategoria: this.obterIdCategoriaFinal()
+        };
+    }
+
     private obterIdCategoriaFinal(): string {
         return this.novaDespesa.idCategoriaEspecifica ||
             this.novaDespesa.idNaturezaDespesa ||
@@ -388,6 +419,125 @@ export class DespesasComponent implements OnInit, OnDestroy {
         );
     }
 
+    parcelamentoValido(): boolean {
+        const quantidade = Number(this.quantidadeParcelas);
+
+        return !this.parcelamentoAtivo || (
+            Number.isInteger(quantidade) &&
+            quantidade >= 1 &&
+            quantidade <= 120 &&
+            this.novaDespesa.valor > 0 &&
+            !!this.novaDespesa.data
+        );
+    }
+
+    onParcelamentoToggle() {
+        if (!this.parcelamentoAtivo) {
+            this.quantidadeParcelas = 1;
+            this.parcelasPreview = [];
+            return;
+        }
+
+        this.quantidadeParcelas = Number(this.quantidadeParcelas);
+
+        if (this.quantidadeParcelas < 2) {
+            this.quantidadeParcelas = 2;
+        }
+
+        this.atualizarPreviewParcelamento();
+    }
+
+    atualizarPreviewParcelamento() {
+        this.quantidadeParcelas = Number(this.quantidadeParcelas);
+
+        if (!this.parcelamentoAtivo || !this.parcelamentoValido() || this.quantidadeParcelas <= 1) {
+            this.parcelasPreview = [];
+            return;
+        }
+
+        this.parcelasPreview = this.calcularParcelasPreview(
+            this.novaDespesa.valor,
+            this.quantidadeParcelas,
+            this.novaDespesa.data
+        );
+    }
+
+    calcularParcelasPreview(valorTotal: number, quantidadeParcelas: number, dataInicial: string): ParcelaPreview[] {
+        if (valorTotal <= 0 || quantidadeParcelas < 1 || !Number.isInteger(quantidadeParcelas)) {
+            return [];
+        }
+
+        const totalCentavos = Math.round(valorTotal * 100);
+        const valorBase = Math.floor(totalCentavos / quantidadeParcelas);
+        const resto = totalCentavos % quantidadeParcelas;
+
+        return Array.from({ length: quantidadeParcelas }, (_, index) => {
+            const valorCentavos = valorBase + (index < resto ? 1 : 0);
+            const data = this.adicionarMesesComAjuste(dataInicial, index);
+
+            return {
+                numeroParcela: index + 1,
+                totalParcelas: quantidadeParcelas,
+                valor: valorCentavos / 100,
+                data,
+                mesReferencia: this.converterMesReferenciaParaApi(this.obterMesReferenciaInput(data))
+            };
+        });
+    }
+
+    private adicionarMesesComAjuste(dataInicial: string, mesesParaAdicionar: number): string {
+        const [ano, mes, dia] = dataInicial.split('-').map(Number);
+        const mesIndex = mes - 1 + mesesParaAdicionar;
+        const ultimoDiaDoMes = new Date(ano, mesIndex + 1, 0).getDate();
+        const data = new Date(ano, mesIndex, Math.min(dia, ultimoDiaDoMes));
+        const anoFinal = data.getFullYear();
+        const mesFinal = String(data.getMonth() + 1).padStart(2, '0');
+        const diaFinal = String(data.getDate()).padStart(2, '0');
+
+        return `${anoFinal}-${mesFinal}-${diaFinal}`;
+    }
+
+    private salvarParcelamento() {
+        if (!this.parcelamentoValido()) {
+            this.mostrarAlertaParcelamentoInvalido();
+            return;
+        }
+
+        this.salvandoParcelamento = true;
+
+        this.despesaService.criarParcelamento(this.montarPayloadParcelamento())
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (response) => {
+                    this.salvandoParcelamento = false;
+                    this.fecharModal();
+                    this.carregarDespesas();
+                    this.resetForm();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Despesa parcelada cadastrada!',
+                        text: `${response.quantidadeParcelas} parcelas foram criadas.`,
+                        timer: 2200,
+                        showConfirmButton: false
+                    });
+                    this.verificarBadgeOrganizador();
+                },
+                error: () => {
+                    this.salvandoParcelamento = false;
+                    this.mostrarErroParcelamento();
+                }
+            });
+    }
+
+    private mostrarAlertaParcelamentoInvalido() {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Parcelamento inválido!',
+            text: 'Informe um valor maior que zero e uma quantidade de parcelas entre 1 e 120.',
+            confirmButtonColor: '#d4af37'
+        });
+    }
+
     private mostrarAlertaCamposObrigatorios() {
         Swal.fire({ icon: 'warning', title: 'Campos obrigatórios!', text: 'Preencha todos os campos.', confirmButtonColor: '#d4af37' });
     }
@@ -398,6 +548,15 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
     private mostrarErro() {
         Swal.fire({ icon: 'error', title: 'Erro!', text: 'Não foi possível salvar.', confirmButtonColor: '#dc3545' });
+    }
+
+    private mostrarErroParcelamento() {
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro ao salvar parcelamento!',
+            text: 'Não foi possível criar todas as parcelas. Revise os dados e tente novamente.',
+            confirmButtonColor: '#dc3545'
+        });
     }
 
     private prepararProximaDespesa() {
@@ -414,6 +573,23 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
         const data = new Date(`${this.obterMesReferenciaInput(mesReferencia)}-01T00:00:00`);
         return data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    }
+
+    formatarData(data: string): string {
+        const [ano, mes, dia] = data.substring(0, 10).split('-').map(Number);
+        return new Date(ano, mes - 1, dia).toLocaleDateString('pt-BR');
+    }
+
+    temParcelamento(despesa: Despesa): boolean {
+        return !!despesa.numeroParcela && !!despesa.totalParcelas && despesa.totalParcelas > 1;
+    }
+
+    obterRotuloParcela(despesa: Despesa): string {
+        if (!this.temParcelamento(despesa)) {
+            return '';
+        }
+
+        return `Parcela ${despesa.numeroParcela}/${despesa.totalParcelas}`;
     }
 
     obterNomeConta(id: string): string {
