@@ -27,12 +27,51 @@
             <article class="ym-card ym-kpi accent-primary" role="button" tabindex="0" (click)="abrirModalCategoria()">
                 <i class="ym-kpi-icon bi bi-tags"></i>
                 <h2 class="ym-kpi-label">Categorias</h2>
-                <p class="ym-kpi-value">Organização</p>
-                <p class="ym-kpi-meta">Gerencie tipos, naturezas e categorias específicas.</p>
+                <p class="ym-kpi-value">Nova específica</p>
+                <p class="ym-kpi-meta">Cadastre categorias para as despesas.</p>
             </article>
         </section>
 
-        <app-criar-categoria *ngIf="mostrarModalCategoria" [editando]="false" (salvar)="salvarCategoria($event)"
+        <section class="ym-card ym-card-pad">
+            <div class="ym-section-header">
+                <h2 class="ym-section-title">Categorias específicas</h2>
+                <button type="button" class="ym-button primary" (click)="abrirModalCategoria()">
+                    <i class="bi bi-plus-lg"></i>
+                    Nova
+                </button>
+            </div>
+
+            <p *ngIf="mensagemErro" class="ym-chip ym-negative">{{ mensagemErro }}</p>
+            <p *ngIf="mensagemSucesso" class="ym-chip ym-positive">{{ mensagemSucesso }}</p>
+
+            <div *ngIf="carregandoCategorias" class="ym-empty compact">Carregando categorias...</div>
+
+            <div *ngIf="!carregandoCategorias && categoriasEspecificas.length === 0" class="ym-empty compact">
+                Nenhuma categoria específica cadastrada.
+            </div>
+
+            <div *ngIf="!carregandoCategorias && categoriasEspecificas.length > 0" class="ym-list">
+                <article class="ym-list-item" *ngFor="let categoria of categoriasEspecificas">
+                    <div class="ym-list-main">
+                        <p class="ym-list-title">{{ categoria.descricao }}</p>
+                        <div class="ym-list-meta">
+                            <span>{{ obterCaminhoCategoria(categoria) }}</span>
+                        </div>
+                    </div>
+                    <div class="ym-list-actions">
+                        <button type="button" class="ym-icon-button" title="Editar" (click)="editarCategoria(categoria)">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button type="button" class="ym-icon-button" title="Remover" (click)="removerCategoria(categoria)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <app-criar-categoria *ngIf="mostrarModalCategoria" [editando]="!!categoriaEmEdicao"
+            [categoria]="categoriaEmEdicao" [categorias]="categorias" (salvar)="salvarCategoria($event)"
             (fechar)="fecharModalCategoria()">
         </app-criar-categoria>
     </div>

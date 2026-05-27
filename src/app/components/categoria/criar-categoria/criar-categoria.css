@@ -1,20 +1,9 @@
-/* Estilização básica */
-.card {
-    border-radius: 12px;
-    border: none;
+.ym-modal {
+    background: rgba(0, 0, 0, 0.55);
 }
 
-.card-header {
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
-}
-
-.form-control,
-.form-select {
-    border-radius: 8px;
-}
-
-.btn-success {
-    border-radius: 8px;
-    padding: 10px 20px;
+.ym-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    transform: none;
 }
