@@ -67,6 +67,51 @@
         </section>
 
         <section class="ym-grid">
+            <article class="ym-card ym-card-pad ym-chart-card">
+                <div class="ym-section-header">
+                    <div>
+                        <h2 class="ym-section-title">Distribuição financeira</h2>
+                        <p class="ym-section-subtitle">{{ resumoGrafico.periodoReferencia.rotulo }}</p>
+                    </div>
+                    <span class="ym-chart-total" *ngIf="resumoGrafico.estado === 'pronto'">
+                        {{ formatarMoeda(resumoGrafico.total) }}
+                    </span>
+                </div>
+
+                <div class="ym-chart-state" *ngIf="resumoGrafico.estado === 'carregando'" role="status">
+                    <i class="bi bi-arrow-repeat"></i>
+                    <span>{{ resumoGrafico.mensagemEstado }}</span>
+                </div>
+
+                <div class="ym-chart-state" *ngIf="resumoGrafico.estado === 'vazio'">
+                    <i class="bi bi-pie-chart"></i>
+                    <span>{{ resumoGrafico.mensagemEstado }}</span>
+                </div>
+
+                <div class="ym-chart-state error" *ngIf="resumoGrafico.estado === 'erro'" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <span>{{ resumoGrafico.mensagemEstado }}</span>
+                </div>
+
+                <div class="ym-chart-content" [class.is-hidden]="resumoGrafico.estado !== 'pronto'">
+                    <div class="ym-chart-canvas-wrap">
+                        <canvas
+                            #graficoFinanceiroCanvas
+                            aria-label="Gráfico de distribuição financeira do período"
+                            role="img"></canvas>
+                    </div>
+
+                    <div class="ym-chart-legend" aria-label="Legenda do gráfico financeiro">
+                        <div *ngFor="let item of resumoGrafico.items" class="ym-chart-legend-row">
+                            <span class="ym-chart-legend-color" [style.background]="item.cor"></span>
+                            <span class="ym-chart-legend-label">{{ item.rotulo }}</span>
+                            <strong>{{ formatarMoeda(item.valor) }}</strong>
+                            <small>{{ item.percentual | number:'1.0-1' }}%</small>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
             <article class="ym-card ym-card-pad">
                 <div class="ym-section-header">
                     <h2 class="ym-section-title">Despesas por tipo</h2>

@@ -1,1 +1,147 @@
+.ym-chart-card {
+    grid-column: 1 / -1;
+}
 
+.ym-section-subtitle {
+    color: #64748b;
+    font-size: 0.875rem;
+    margin: 0.25rem 0 0;
+    text-transform: capitalize;
+}
+
+.ym-chart-total {
+    color: #0f172a;
+    font-size: 1rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.ym-chart-content {
+    align-items: center;
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+    min-height: 280px;
+}
+
+.ym-chart-content.is-hidden {
+    height: 0;
+    min-height: 0;
+    overflow: hidden;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.ym-chart-canvas-wrap {
+    height: 260px;
+    min-width: 0;
+    position: relative;
+    width: 100%;
+}
+
+.ym-chart-canvas-wrap canvas {
+    display: block;
+    height: 100% !important;
+    width: 100% !important;
+}
+
+.ym-chart-legend {
+    display: grid;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.ym-chart-legend-row {
+    align-items: center;
+    border-bottom: 1px solid #e2e8f0;
+    column-gap: 0.75rem;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    padding: 0.65rem 0;
+}
+
+.ym-chart-legend-row:last-child {
+    border-bottom: 0;
+}
+
+.ym-chart-legend-color {
+    border-radius: 999px;
+    display: inline-block;
+    height: 0.75rem;
+    width: 0.75rem;
+}
+
+.ym-chart-legend-label {
+    color: #334155;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.ym-chart-legend-row strong {
+    color: #0f172a;
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+.ym-chart-legend-row small {
+    color: #64748b;
+    font-size: 0.8rem;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.ym-chart-state {
+    align-items: center;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    color: #475569;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    min-height: 180px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.ym-chart-state i {
+    color: #2563eb;
+    font-size: 1.25rem;
+}
+
+.ym-chart-state.error {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #9a3412;
+}
+
+.ym-chart-state.error i {
+    color: #c2410c;
+}
+
+@media (max-width: 760px) {
+    .ym-chart-content {
+        grid-template-columns: 1fr;
+        min-height: 0;
+    }
+
+    .ym-chart-canvas-wrap {
+        height: 220px;
+        max-width: 320px;
+        justify-self: center;
+    }
+
+    .ym-chart-legend-row {
+        grid-template-columns: auto minmax(0, 1fr);
+        row-gap: 0.25rem;
+    }
+
+    .ym-chart-legend-row strong,
+    .ym-chart-legend-row small {
+        grid-column: 2;
+        justify-self: start;
+    }
+
+    .ym-chart-total {
+        margin-top: 0.5rem;
+    }
+}
