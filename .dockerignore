@@ -4,3 +4,8 @@ dist
 .vscode
 Dockerfile
 docker-compose.yml
+*.log
+*.log.*
+.env
+.env.*
+coverage
