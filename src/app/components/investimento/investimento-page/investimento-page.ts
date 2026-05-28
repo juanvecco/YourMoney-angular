@@ -1,9 +1,11 @@
 import { Component, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Investimento, InvestimentoService } from '../../../services/investimento';
 import Swal from 'sweetalert2';
 import { Subject, takeUntil } from 'rxjs';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-investimento-page',
@@ -34,7 +36,11 @@ export class InvestimentoPageComponent implements OnDestroy {
 
   @ViewChild('calendarioInput') calendarioInput!: ElementRef<HTMLInputElement>;
 
-  constructor(private investimentoService: InvestimentoService) {
+  constructor(
+    private investimentoService: InvestimentoService,
+    private authService: AuthService,
+    private router: Router
+  ) {
     this.carregarDadosIniciais();
   }
 
@@ -83,6 +89,11 @@ export class InvestimentoPageComponent implements OnDestroy {
     const [ano, mes] = input.value.split('-').map(Number);
     this.mesAtual = new Date(ano, mes - 1, 1);
     this.carregarInvestimentos();
+  }
+
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
   }
 
   editando: boolean = false;

@@ -5,6 +5,7 @@ import { DashboardPageComponent } from './dashboard-page';
 import { ReceitaService } from '../../../services/receita';
 import { DespesaService } from '../../../services/despesa';
 import { InvestimentoService } from '../../../services/investimento';
+import { AuthService } from '../../../services/auth.service';
 
 describe('DashboardPageComponent', () => {
   let fixture: ComponentFixture<DashboardPageComponent>;
@@ -12,11 +13,15 @@ describe('DashboardPageComponent', () => {
   let receitaService: jasmine.SpyObj<ReceitaService>;
   let despesaService: jasmine.SpyObj<DespesaService>;
   let investimentoService: jasmine.SpyObj<InvestimentoService>;
+  let authService: jasmine.SpyObj<AuthService>;
+  let router: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
     receitaService = jasmine.createSpyObj<ReceitaService>('ReceitaService', ['obterPorReferencia']);
     despesaService = jasmine.createSpyObj<DespesaService>('DespesaService', ['obterPorReferencia', 'listarCategorias']);
     investimentoService = jasmine.createSpyObj<InvestimentoService>('InvestimentoService', ['obterPorReferencia']);
+    authService = jasmine.createSpyObj<AuthService>('AuthService', ['logout']);
+    router = jasmine.createSpyObj<Router>('Router', ['navigate']);
 
     receitaService.obterPorReferencia.and.returnValue(of([]));
     despesaService.obterPorReferencia.and.returnValue(of([]));
@@ -26,10 +31,11 @@ describe('DashboardPageComponent', () => {
     await TestBed.configureTestingModule({
       imports: [DashboardPageComponent],
       providers: [
-        { provide: Router, useValue: jasmine.createSpyObj<Router>('Router', ['navigate']) },
+        { provide: Router, useValue: router },
         { provide: ReceitaService, useValue: receitaService },
         { provide: DespesaService, useValue: despesaService },
-        { provide: InvestimentoService, useValue: investimentoService }
+        { provide: InvestimentoService, useValue: investimentoService },
+        { provide: AuthService, useValue: authService }
       ]
     }).compileComponents();
 
@@ -116,5 +122,22 @@ describe('DashboardPageComponent', () => {
     expect(nativeElement.querySelector('.ym-chart-card')).not.toBeNull();
     expect(nativeElement.querySelector('.ym-chart-legend')).not.toBeNull();
     expect(nativeElement.textContent).toContain('Receitas');
+  });
+
+  it('logs out before navigating to login', () => {
+    component.logout();
+
+    expect(authService.logout).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/login']);
+  });
+
+  it('renders an accessible logout action', () => {
+    fixture.detectChanges();
+
+    const nativeElement = fixture.nativeElement as HTMLElement;
+    const logoutButton = nativeElement.querySelector('button[aria-label="Sair da conta"]');
+
+    expect(logoutButton).not.toBeNull();
+    expect(logoutButton?.textContent).toContain('Sair');
   });
 });

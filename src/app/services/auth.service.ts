@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap, map } from 'rxjs';
-import { ApiResponse, AuthData, AuthResponse, LoginRequest, RegisterRequest } from '../models/auth.model';
+import { Observable, tap, map } from 'rxjs';
+import { ApiResponse, AuthData, LoginRequest, RegisterRequest } from '../models/auth.model';
 import { environment } from '../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -48,6 +48,7 @@ export class AuthService {
     logout(): void {
         localStorage.removeItem('access_token');
         localStorage.removeItem('expires_at');
+        localStorage.removeItem('user_email');
         localStorage.removeItem('username');
     }
 

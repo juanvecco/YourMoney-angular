@@ -1,9 +1,11 @@
 import { Component } from "@angular/core";
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Receita, ReceitaService } from "../../../services/receita";
 import { Despesa, DespesaService } from "../../../services/despesa";
 import Swal from 'sweetalert2';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
     selector: "app-disponivel-page",
@@ -29,7 +31,12 @@ export class DisponivelPageComponent {
         this.obterDespesas(mes, ano);
     }
 
-    constructor(private receitaService: ReceitaService, private despesaService: DespesaService) { }
+    constructor(
+        private receitaService: ReceitaService,
+        private despesaService: DespesaService,
+        private authService: AuthService,
+        private router: Router
+    ) { }
 
     ngOnInit(): void {
         this.carregarDados();
@@ -48,6 +55,12 @@ export class DisponivelPageComponent {
             error: (erro) => console.error('Erro ao carregar despesas', erro)
         });
     }
+
+    logout(): void {
+        this.authService.logout();
+        this.router.navigate(['/login']);
+    }
+
     calcularDisponivel(): number {
         const totalReceitas = this.receitas.reduce((soma, r) => soma + r.valor, 0);
         const totalDespesas = this.despesas.reduce((soma, d) => soma + d.valor, 0);
