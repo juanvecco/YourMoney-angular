@@ -7,6 +7,7 @@ import { ReceitaService, Receita } from '../../../services/receita';
 import { DespesaService, Despesa, Categoria } from '../../../services/despesa';
 import { InvestimentoService, Investimento } from '../../../services/investimento';
 import { ItemGraficoFinanceiro, ResumoGraficoDashboard } from '../../../models/dashboard-grafico.model';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
     selector: 'app-dashboard-page',
@@ -47,7 +48,8 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
         private router: Router,
         private receitaService: ReceitaService,
         private despesaService: DespesaService,
-        private investimentoService: InvestimentoService
+        private investimentoService: InvestimentoService,
+        private authService: AuthService
     ) { }
 
     ngOnInit(): void {
@@ -327,6 +329,11 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         });
+    }
+
+    logout(): void {
+        this.authService.logout();
+        this.router.navigate(['/login']);
     }
 
     adicionarReceita(): void {

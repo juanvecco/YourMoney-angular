@@ -1,9 +1,11 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ReceitaService, Receita } from '../../../services/receita';
 import Swal from 'sweetalert2';
 import { Subject, takeUntil } from 'rxjs';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
     selector: 'app-receita-page',
@@ -37,7 +39,11 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     // === CALENDÁRIO ===
     @ViewChild('calendarioInput') calendarioInput!: ElementRef<HTMLInputElement>;
 
-    constructor(private receitaService: ReceitaService) { }
+    constructor(
+        private receitaService: ReceitaService,
+        private authService: AuthService,
+        private router: Router
+    ) { }
 
     ngOnInit() {
         this.carregarDadosIniciais();
@@ -92,6 +98,11 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         const [ano, mes] = input.value.split('-').map(Number);
         this.mesAtual = new Date(ano, mes - 1, 1);
         this.carregarReceitas();
+    }
+
+    logout(): void {
+        this.authService.logout();
+        this.router.navigate(['/login']);
     }
 
     // === MODAL ===

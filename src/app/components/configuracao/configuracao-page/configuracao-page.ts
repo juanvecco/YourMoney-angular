@@ -1,9 +1,11 @@
 import { Component, OnInit } from "@angular/core";
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { CriarCategoriaComponent } from '../../categoria/criar-categoria/criar-categoria';
 import { Categoria } from '../../../models/despesa.model';
 import { CategoriaPayload, CategoriaService } from '../../../services/categoria';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
     selector: "app-configuracao-page",
@@ -22,7 +24,11 @@ export class ConfiguracaoPageComponent implements OnInit {
     mensagemErro = '';
     mensagemSucesso = '';
 
-    constructor(private categoriaService: CategoriaService) { }
+    constructor(
+        private categoriaService: CategoriaService,
+        private authService: AuthService,
+        private router: Router
+    ) { }
 
     ngOnInit() {
         this.carregarCategorias();
@@ -48,6 +54,11 @@ export class ConfiguracaoPageComponent implements OnInit {
     abrirModalCategoria() {
         this.categoriaEmEdicao = null;
         this.mostrarModalCategoria = true;
+    }
+
+    logout(): void {
+        this.authService.logout();
+        this.router.navigate(['/login']);
     }
 
     editarCategoria(categoria: Categoria) {
