@@ -1,9 +1,11 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { DespesaService, Despesa, Categoria, CriarParcelamentoRequest, ParcelaPreview } from '../../../services/despesa';
 import Swal from 'sweetalert2';
 import { forkJoin, Subject, takeUntil } from 'rxjs';
+import { AuthService } from '../../../services/auth.service';
 
 type DespesaLote = {
     descricao: string;
@@ -66,7 +68,11 @@ export class DespesasComponent implements OnInit, OnDestroy {
     // === CALENDÁRIO ===
     @ViewChild('calendarioInput') calendarioInput!: ElementRef<HTMLInputElement>;
 
-    constructor(private despesaService: DespesaService) { }
+    constructor(
+        private despesaService: DespesaService,
+        private authService: AuthService,
+        private router: Router
+    ) { }
 
     ngOnInit() {
         this.carregarDadosIniciais();
@@ -166,6 +172,11 @@ export class DespesasComponent implements OnInit, OnDestroy {
         const [ano, mes] = input.value.split('-').map(Number);
         this.mesAtual = new Date(ano, mes - 1, 1);
         this.carregarDespesas();
+    }
+
+    logout(): void {
+        this.authService.logout();
+        this.router.navigate(['/login']);
     }
 
     // ==============================================================

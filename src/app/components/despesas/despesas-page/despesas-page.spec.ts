@@ -2,10 +2,14 @@ import { of, throwError } from 'rxjs';
 import Swal from 'sweetalert2';
 import { DespesasComponent } from './despesas-page';
 import { DespesaService } from '../../../services/despesa';
+import { AuthService } from '../../../services/auth.service';
+import { Router } from '@angular/router';
 
 describe('DespesasComponent', () => {
   let component: DespesasComponent;
   let despesaService: jasmine.SpyObj<DespesaService>;
+  let authService: jasmine.SpyObj<AuthService>;
+  let router: jasmine.SpyObj<Router>;
 
   beforeEach(() => {
     despesaService = jasmine.createSpyObj<DespesaService>(
@@ -46,7 +50,10 @@ describe('DespesasComponent', () => {
       parcelas: []
     }));
 
-    component = new DespesasComponent(despesaService);
+    authService = jasmine.createSpyObj<AuthService>('AuthService', ['logout']);
+    router = jasmine.createSpyObj<Router>('Router', ['navigate']);
+
+    component = new DespesasComponent(despesaService, authService, router);
   });
 
   function preencherFormularioValido(): void {
