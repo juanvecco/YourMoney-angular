@@ -6,6 +6,7 @@ import { DespesaService, Despesa, Categoria, CriarParcelamentoRequest, ParcelaPr
 import Swal from 'sweetalert2';
 import { forkJoin, Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
+import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
 
 type DespesaLote = {
     descricao: string;
@@ -46,6 +47,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     parcelamentoAtivo = false;
     quantidadeParcelas = 1;
     parcelasPreview: ParcelaPreview[] = [];
+    salvandoDespesa = false;
     salvandoParcelamento = false;
 
     // === DADOS ===
@@ -58,6 +60,8 @@ export class DespesasComponent implements OnInit, OnDestroy {
     mesAtual: Date = new Date();
     totalDespesas = 0;
     totalPorConta: { descricao: string; valor: number }[] = [];
+    estadoCarregamento: FinancialViewState = 'loading';
+    mensagemCarregamento = '';
 
     // === TRILHA & GAMIFICAÇÃO ===
     mostrarDicaCategorizacao = false;
@@ -119,6 +123,11 @@ export class DespesasComponent implements OnInit, OnDestroy {
     carregarDespesas() {
         const mes = this.mesAtual.getMonth() + 1;
         const ano = this.mesAtual.getFullYear();
+        this.despesas = [];
+        this.totalDespesas = 0;
+        this.totalPorConta = [];
+        this.estadoCarregamento = 'loading';
+        this.atualizarMensagemCarregamento();
 
         this.despesaService.obterPorReferencia(mes, ano)
             .pipe(takeUntil(this.destroy$))
@@ -129,9 +138,18 @@ export class DespesasComponent implements OnInit, OnDestroy {
                     );
                     this.totalDespesas = dados.reduce((soma, d) => soma + d.valor, 0);
                     this.calcularTotalPorConta();
+                    this.estadoCarregamento = this.despesas.length > 0 ? 'loadedWithData' : 'emptyPeriod';
+                    this.atualizarMensagemCarregamento();
                     this.verificarTrilhaOrganizador();
                 },
-                error: (erro) => console.error('Erro ao carregar despesas', erro)
+                error: (erro) => {
+                    console.error('Erro ao carregar despesas', erro);
+                    this.despesas = [];
+                    this.totalDespesas = 0;
+                    this.totalPorConta = [];
+                    this.estadoCarregamento = 'loadError';
+                    this.atualizarMensagemCarregamento();
+                }
             });
     }
 
@@ -229,6 +247,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.parcelamentoAtivo = false;
         this.quantidadeParcelas = 1;
         this.parcelasPreview = [];
+        this.salvandoDespesa = false;
         this.salvandoParcelamento = false;
     }
 
@@ -285,6 +304,10 @@ export class DespesasComponent implements OnInit, OnDestroy {
     // ==============================================================
 
     salvarDespesa() {
+        if (this.salvandoDespesa || this.salvandoParcelamento) {
+            return;
+        }
+
         if (!this.camposObrigatoriosPreenchidos()) {
             this.mostrarAlertaCamposObrigatorios();
             return;
@@ -299,16 +322,29 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
         const request$ = this.editando
             ? this.despesaService.atualizarDespesa(payload)
-            : this.despesaService.criarDespesa(payload);
+            : this.despesaService.criarDespesa({
+                descricao: payload.descricao,
+                valor: payload.valor,
+                data: payload.data,
+                mesReferencia: payload.mesReferencia,
+                idContaFinanceira: payload.idContaFinanceira,
+                idCategoria: payload.idCategoria
+            });
+
+        this.salvandoDespesa = true;
 
         request$.pipe(takeUntil(this.destroy$)).subscribe({
             next: () => {
+                this.salvandoDespesa = false;
                 this.fecharModal();
                 this.carregarDespesas();
                 this.mostrarSucesso();
                 this.verificarBadgeOrganizador();
             },
-            error: () => this.mostrarErro()
+            error: (erro) => {
+                this.salvandoDespesa = false;
+                this.mostrarErro(erro);
+            }
         });
     }
 
@@ -557,8 +593,13 @@ export class DespesasComponent implements OnInit, OnDestroy {
         Swal.fire({ icon: 'success', title: this.editando ? 'Atualizada!' : 'Cadastrada!', timer: 2000, showConfirmButton: false });
     }
 
-    private mostrarErro() {
-        Swal.fire({ icon: 'error', title: 'Erro!', text: 'Não foi possível salvar.', confirmButtonColor: '#dc3545' });
+    private mostrarErro(erro?: unknown) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro ao salvar despesa!',
+            text: this.extrairMensagemErroSalvar(erro),
+            confirmButtonColor: '#dc3545'
+        });
     }
 
     private mostrarErroParcelamento() {
@@ -568,6 +609,23 @@ export class DespesasComponent implements OnInit, OnDestroy {
             text: 'Não foi possível criar todas as parcelas. Revise os dados e tente novamente.',
             confirmButtonColor: '#dc3545'
         });
+    }
+
+    private extrairMensagemErroSalvar(erro: unknown): string {
+        const httpError = erro as {
+            status?: number;
+            error?: { message?: string; errors?: { Mensagens?: string[] } };
+            message?: string;
+        };
+
+        if (httpError.status === 401) {
+            return 'Sessão expirada. Faça login novamente.';
+        }
+
+        return httpError.error?.errors?.Mensagens?.join(', ') ||
+            httpError.error?.message ||
+            httpError.message ||
+            'Não foi possível salvar. Revise os dados e tente novamente.';
     }
 
     private prepararProximaDespesa() {
@@ -716,5 +774,9 @@ export class DespesasComponent implements OnInit, OnDestroy {
             this.mesAtual.getMonth() + 1,
             0
         ).getDate();
+    }
+
+    private atualizarMensagemCarregamento(): void {
+        this.mensagemCarregamento = financialStateMessage(this.estadoCarregamento, this.mesAtual, 'despesas');
     }
 }

@@ -1,0 +1,99 @@
+<main class="register-container">
+    <section class="branding-section">
+        <div class="logo-container">
+            <div class="logo-icon">
+                <i class="bi bi-person-plus"></i>
+            </div>
+            <h1 class="brand-name">Your Money</h1>
+        </div>
+
+        <ul class="feature-list">
+            <li class="feature-item">
+                <div class="feature-icon"><i class="bi bi-shield-lock"></i></div>
+                <div class="feature-text">Dados financeiros separados por usuario</div>
+            </li>
+            <li class="feature-item">
+                <div class="feature-icon"><i class="bi bi-wallet2"></i></div>
+                <div class="feature-text">Organize receitas, despesas e investimentos</div>
+            </li>
+            <li class="feature-item">
+                <div class="feature-icon"><i class="bi bi-graph-up"></i></div>
+                <div class="feature-text">Acompanhe seu painel desde o primeiro registro</div>
+            </li>
+        </ul>
+    </section>
+
+    <section class="form-section">
+        <div class="form-container">
+            <div class="form-header">
+                <h2 class="form-title">Criar conta</h2>
+                <p class="form-subtitle">Comece com seu proprio espaco financeiro</p>
+            </div>
+
+            <form [formGroup]="form" (ngSubmit)="onSubmit()">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-person"></i>Nome
+                    </label>
+                    <input type="text" class="form-control" formControlName="nome" placeholder="Seu nome" />
+                    <small *ngIf="hasError('nome', 'required')" class="field-error">Informe seu nome.</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-envelope"></i>E-mail
+                    </label>
+                    <input type="email" class="form-control" formControlName="email" placeholder="seu@email.com" />
+                    <small *ngIf="hasError('email', 'required')" class="field-error">Informe seu e-mail.</small>
+                    <small *ngIf="hasError('email', 'email')" class="field-error">Informe um e-mail valido.</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-lock"></i>Senha
+                    </label>
+                    <div class="password-wrapper">
+                        <input [type]="showPassword ? 'text' : 'password'" class="form-control" formControlName="senha"
+                            placeholder="Minimo de 6 caracteres" />
+                        <button type="button" class="toggle-password" (click)="togglePasswordVisibility()"
+                            aria-label="Alternar visualizacao da senha">
+                            <i [class]="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                        </button>
+                    </div>
+                    <small *ngIf="hasError('senha', 'required')" class="field-error">Informe uma senha.</small>
+                    <small *ngIf="hasError('senha', 'minlength')" class="field-error">A senha precisa ter pelo menos 6 caracteres.</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-lock-fill"></i>Confirmar senha
+                    </label>
+                    <div class="password-wrapper">
+                        <input [type]="showPasswordConfirmation ? 'text' : 'password'" class="form-control"
+                            formControlName="senhaConfirmacao" placeholder="Repita sua senha" />
+                        <button type="button" class="toggle-password" (click)="togglePasswordConfirmationVisibility()"
+                            aria-label="Alternar visualizacao da confirmacao">
+                            <i [class]="showPasswordConfirmation ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                        </button>
+                    </div>
+                    <small *ngIf="form.touched && form.hasError('passwordsMismatch')" class="field-error">As senhas nao conferem.</small>
+                </div>
+
+                <button type="submit" class="btn-register-submit" [disabled]="loading">
+                    <span *ngIf="!loading"><i class="bi bi-check-circle"></i>Criar conta</span>
+                    <span *ngIf="loading"><i class="bi bi-hourglass-split"></i>Criando conta...</span>
+                </button>
+
+                <div *ngIf="error" class="alert-error">
+                    <i class="bi bi-exclamation-circle"></i>{{ error }}
+                </div>
+            </form>
+
+            <div class="divider"><span>ja tem conta?</span></div>
+
+            <a routerLink="/login" class="btn-login-link">
+                <i class="bi bi-arrow-left-circle"></i>Voltar para login
+            </a>
+        </div>
+    </section>
+</main>

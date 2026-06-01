@@ -38,6 +38,10 @@
         </div>
 
         <section class="ym-card ym-card-pad">
+            <div *ngIf="mensagemCarregamento" class="ym-empty ym-state-message"
+                [class.ym-state-error]="estadoReceitas === 'loadError' || estadoDespesas === 'loadError'">
+                {{ mensagemCarregamento }}
+            </div>
             <article class="ym-kpi" [class.accent-success]="calcularDisponivel() >= 0"
                 [class.accent-danger]="calcularDisponivel() < 0">
                 <i class="ym-kpi-icon" [class]="obterIconeDisponivel()"></i>

@@ -16,25 +16,21 @@ export class AuthService {
                 request
             )
             .pipe(
-                tap(response => {
-                    const auth = response.data;
-
-                    localStorage.setItem('access_token', auth.accessToken);
-                    localStorage.setItem(
-                        'expires_at',
-                        (Date.now() + auth.expiresIn * 1000).toString()
-                    );
-                    localStorage.setItem('user_email', auth.usuarioToken.email);
-                }),
+                tap(response => this.storeAuthData(response.data)),
                 map(response => response.data)
             );
     }
 
-    register(request: RegisterRequest): Observable<any> {
-        return this.http.post(
-            `${this.apiUrl}/nova-conta`,
-            request
-        );
+    register(request: RegisterRequest): Observable<AuthData> {
+        return this.http
+            .post<ApiResponse<AuthData>>(
+                `${this.apiUrl}/nova-conta`,
+                request
+            )
+            .pipe(
+                tap(response => this.storeAuthData(response.data)),
+                map(response => response.data)
+            );
     }
 
     isLoggedIn(): boolean {
@@ -46,12 +42,26 @@ export class AuthService {
 
 
     logout(): void {
+        this.clearAuthData();
+    }
+
+    private storeAuthData(auth: AuthData): void {
+        this.clearAuthData();
+        localStorage.setItem('access_token', auth.accessToken);
+        localStorage.setItem(
+            'expires_at',
+            (Date.now() + auth.expiresIn * 1000).toString()
+        );
+        localStorage.setItem('user_email', auth.usuarioToken.email);
+        localStorage.setItem('username', auth.usuarioToken.nome || '');
+    }
+
+    private clearAuthData(): void {
         localStorage.removeItem('access_token');
         localStorage.removeItem('expires_at');
         localStorage.removeItem('user_email');
         localStorage.removeItem('username');
     }
-
 
 }
 
