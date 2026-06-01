@@ -68,6 +68,12 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     carregarDadosMesAtual() {
         const mes = this.mesAtual.getMonth() + 1;
         const ano = this.mesAtual.getFullYear();
+        this.receitas = [];
+        this.despesas = [];
+        this.investimentos = [];
+        this.despesasPorTipo = [];
+        this.despesasPorNatureza = [];
+        this.atualizarResumo();
         this.statusCarregamentoGrafico = {
             receitas: 'carregando',
             despesas: 'carregando',
@@ -93,7 +99,9 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
             },
             error: (erro) => {
                 console.error('Erro ao carregar receitas:', erro);
+                this.receitas = [];
                 this.statusCarregamentoGrafico.receitas = 'erro';
+                this.atualizarResumo();
                 this.atualizarResumoGrafico();
             }
         });
@@ -108,7 +116,11 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
             },
             error: (erro) => {
                 console.error('Erro ao carregar despesas:', erro);
+                this.despesas = [];
+                this.despesasPorTipo = [];
+                this.despesasPorNatureza = [];
                 this.statusCarregamentoGrafico.despesas = 'erro';
+                this.atualizarResumo();
                 this.atualizarResumoGrafico();
             }
         });
@@ -122,7 +134,9 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
             },
             error: (erro) => {
                 console.error('Erro ao carregar investimentos:', erro);
+                this.investimentos = [];
                 this.statusCarregamentoGrafico.investimentos = 'erro';
+                this.atualizarResumo();
                 this.atualizarResumoGrafico();
             }
         });

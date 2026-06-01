@@ -58,8 +58,11 @@
             </button>
           </div>
 
-          <div *ngIf="investimentos.length === 0" class="ym-empty">Nenhum investimento registrado neste período.</div>
-          <div class="ym-list">
+          <div *ngIf="estadoCarregamento !== 'loadedWithData'" class="ym-empty ym-state-message"
+            [class.ym-state-error]="estadoCarregamento === 'loadError'">
+            {{ mensagemCarregamento }}
+          </div>
+          <div class="ym-list" *ngIf="estadoCarregamento === 'loadedWithData'">
             <article *ngFor="let investimento of investimentos" class="ym-list-item">
               <div class="ym-list-main">
                 <h3 class="ym-list-title">{{ investimento.nome }}</h3>

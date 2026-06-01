@@ -4,6 +4,7 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
+    nome: string;
     email: string;
     senha: string;
     senhaConfirmacao: string;
@@ -25,6 +26,7 @@ export interface AuthData {
     expiresIn: number;
     usuarioToken: {
         id: string;
+        nome?: string;
         email: string;
         claims: { type: string; value: string }[];
     };

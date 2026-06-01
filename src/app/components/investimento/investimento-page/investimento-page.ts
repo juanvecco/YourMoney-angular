@@ -6,6 +6,7 @@ import { Investimento, InvestimentoService } from '../../../services/investiment
 import Swal from 'sweetalert2';
 import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
+import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
 
 @Component({
   selector: 'app-investimento-page',
@@ -20,6 +21,8 @@ export class InvestimentoPageComponent implements OnDestroy {
   investimentos: Investimento[] = [];
   mesAtual: Date = new Date();
   totalInvestimentos = 0;
+  estadoCarregamento: FinancialViewState = 'loading';
+  mensagemCarregamento = '';
 
   novoInvestimento = {
     id: '',
@@ -56,14 +59,26 @@ export class InvestimentoPageComponent implements OnDestroy {
   carregarInvestimentos() {
     const mes = this.mesAtual.getMonth() + 1;
     const ano = this.mesAtual.getFullYear();
+    this.investimentos = [];
+    this.totalInvestimentos = 0;
+    this.estadoCarregamento = 'loading';
+    this.atualizarMensagemCarregamento();
     this.investimentoService.obterPorReferencia(mes, ano).subscribe({
       next: (dados) => {
         this.investimentos = dados.sort((a, b) => {
           return new Date(b.dataInvestimento).getTime() - new Date(a.dataInvestimento).getTime();
         });
         this.totalInvestimentos = dados.reduce((soma, d) => soma + d.valorAtual, 0);
+        this.estadoCarregamento = this.investimentos.length > 0 ? 'loadedWithData' : 'emptyPeriod';
+        this.atualizarMensagemCarregamento();
       },
-      error: (erro) => console.error('Erro ao carregar investimentos', erro)
+      error: (erro) => {
+        console.error('Erro ao carregar investimentos', erro);
+        this.investimentos = [];
+        this.totalInvestimentos = 0;
+        this.estadoCarregamento = 'loadError';
+        this.atualizarMensagemCarregamento();
+      }
     });
   }
 
@@ -228,6 +243,10 @@ export class InvestimentoPageComponent implements OnDestroy {
 
   obterClasseRentabilidade(rentabilidade: number): string {
     return rentabilidade >= 0 ? 'positive' : 'negative';
+  }
+
+  private atualizarMensagemCarregamento(): void {
+    this.mensagemCarregamento = financialStateMessage(this.estadoCarregamento, this.mesAtual, 'investimentos');
   }
 }
 

@@ -6,6 +6,7 @@ import { ReceitaService, Receita } from '../../../services/receita';
 import Swal from 'sweetalert2';
 import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
+import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
 
 @Component({
     selector: 'app-receita-page',
@@ -21,6 +22,8 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     receitas: Receita[] = [];
     mesAtual: Date = new Date();
     totalReceitas = 0;
+    estadoCarregamento: FinancialViewState = 'loading';
+    mensagemCarregamento = '';
 
     // === FORMULÁRIO ===
     novaReceita = {
@@ -61,6 +64,10 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     carregarReceitas() {
         const mes = this.mesAtual.getMonth() + 1;
         const ano = this.mesAtual.getFullYear();
+        this.receitas = [];
+        this.totalReceitas = 0;
+        this.estadoCarregamento = 'loading';
+        this.atualizarMensagemCarregamento();
 
         this.receitaService.obterPorReferencia(mes, ano)
             .pipe(takeUntil(this.destroy$))
@@ -70,9 +77,17 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
                         new Date(b.data).getTime() - new Date(a.data).getTime()
                     );
                     this.totalReceitas = dados.reduce((soma, d) => soma + d.valor, 0);
+                    this.estadoCarregamento = this.receitas.length > 0 ? 'loadedWithData' : 'emptyPeriod';
+                    this.atualizarMensagemCarregamento();
                     this.verificarTrilhaCrescimento();
                 },
-                error: (erro) => console.error('Erro ao carregar receitas', erro)
+                error: (erro) => {
+                    console.error('Erro ao carregar receitas', erro);
+                    this.receitas = [];
+                    this.totalReceitas = 0;
+                    this.estadoCarregamento = 'loadError';
+                    this.atualizarMensagemCarregamento();
+                }
             });
     }
 
@@ -235,5 +250,9 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     // === TRILHA ===
     verificarTrilhaCrescimento() {
         this.usuarioCategorizouEsteMes = this.receitas.length > 0;
+    }
+
+    private atualizarMensagemCarregamento(): void {
+        this.mensagemCarregamento = financialStateMessage(this.estadoCarregamento, this.mesAtual, 'receitas');
     }
 }

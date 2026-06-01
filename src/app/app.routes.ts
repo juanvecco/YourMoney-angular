@@ -8,11 +8,13 @@ import { InvestimentoPageComponent } from './components/investimento/investiment
 import { ConfiguracaoPageComponent } from './components/configuracao/configuracao-page/configuracao-page';
 import { DashboardPageComponent } from './components/dashboard/dashboard-page/dashboard-page';
 import { LoginPageComponent } from './components/login/login-page/login-page';
+import { CadastroPageComponent } from './components/cadastro/cadastro-page/cadastro-page';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
 
     { path: 'login', component: LoginPageComponent },
+    { path: 'cadastro', component: CadastroPageComponent },
 
     {
         path: 'dashboard',

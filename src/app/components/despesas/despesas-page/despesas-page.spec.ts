@@ -1,4 +1,4 @@
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 import Swal from 'sweetalert2';
 import { DespesasComponent } from './despesas-page';
 import { DespesaService } from '../../../services/despesa';
@@ -147,6 +147,72 @@ describe('DespesasComponent', () => {
     expect(despesaService.criarDespesa).not.toHaveBeenCalled();
   });
 
+  it('saves a simple expense, reloads the selected period and updates saving state', () => {
+    preencherFormularioValido();
+    component.mesAtual = new Date(2026, 4, 1);
+    despesaService.criarDespesa.and.returnValue(of({
+      id: 'despesa-criada',
+      descricao: 'Notebook',
+      valor: 100,
+      data: '2026-05-31',
+      mesReferencia: '2026-05-01',
+      idContaFinanceira: 'conta-1',
+      idCategoria: 'categoria-1'
+    }));
+    spyOn(Swal, 'fire').and.returnValue(Promise.resolve({ isConfirmed: true }) as any);
+    (globalThis as typeof globalThis & { bootstrap?: unknown }).bootstrap = {
+      Modal: {
+        getInstance: () => ({ hide: () => undefined })
+      }
+    };
+
+    component.salvarDespesa();
+
+    expect(despesaService.criarDespesa).toHaveBeenCalledWith({
+      descricao: 'Notebook',
+      valor: 100,
+      data: '2026-05-31',
+      mesReferencia: '2026-05-01',
+      idContaFinanceira: 'conta-1',
+      idCategoria: 'categoria-1'
+    });
+    expect(component.salvandoDespesa).toBeFalse();
+    expect(despesaService.obterPorReferencia).toHaveBeenCalledWith(5, 2026);
+    expect(Swal.fire).toHaveBeenCalledWith(jasmine.objectContaining({
+      icon: 'success',
+      title: 'Cadastrada!'
+    }));
+  });
+
+  it('keeps form data and shows backend message when simple expense save fails', () => {
+    preencherFormularioValido();
+    despesaService.criarDespesa.and.returnValue(throwError(() => ({
+      error: { message: 'Conta Financeira não encontrada.' }
+    })));
+    spyOn(Swal, 'fire').and.returnValue(Promise.resolve({ isConfirmed: true }) as any);
+
+    component.salvarDespesa();
+
+    expect(component.novaDespesa.descricao).toBe('Notebook');
+    expect(component.salvandoDespesa).toBeFalse();
+    expect(Swal.fire).toHaveBeenCalledWith(jasmine.objectContaining({
+      icon: 'error',
+      title: 'Erro ao salvar despesa!',
+      text: 'Conta Financeira não encontrada.'
+    }));
+  });
+
+  it('blocks repeated simple expense saves while request is in progress', () => {
+    preencherFormularioValido();
+    despesaService.criarDespesa.and.returnValue(NEVER);
+
+    component.salvarDespesa();
+    component.salvarDespesa();
+
+    expect(component.salvandoDespesa).toBeTrue();
+    expect(despesaService.criarDespesa).toHaveBeenCalledTimes(1);
+  });
+
   it('should keep data and show error when parcelamento save fails', () => {
     preencherFormularioValido();
     component.parcelamentoAtivo = true;
@@ -204,5 +270,53 @@ describe('DespesasComponent', () => {
       idContaFinanceira: 'conta-1',
       idCategoria: 'categoria-1'
     })).toBeFalse();
+  });
+
+  it('loads despesas by selected month and updates total', () => {
+    component.mesAtual = new Date(2026, 4, 1);
+    despesaService.obterPorReferencia.and.returnValue(of([
+      {
+        id: 'despesa-1',
+        descricao: 'Mercado',
+        valor: 120,
+        data: '2026-05-10',
+        mesReferencia: '2026-05-01',
+        idContaFinanceira: 'conta-1',
+        idCategoria: 'categoria-1'
+      },
+      {
+        id: 'despesa-2',
+        descricao: 'Internet',
+        valor: 80,
+        data: '2026-05-05',
+        mesReferencia: '2026-05-01',
+        idContaFinanceira: 'conta-1',
+        idCategoria: 'categoria-1'
+      }
+    ]));
+
+    component.carregarDespesas();
+
+    expect(despesaService.obterPorReferencia).toHaveBeenCalledWith(5, 2026);
+    expect(component.totalDespesas).toBe(200);
+    expect(component.estadoCarregamento).toBe('loadedWithData');
+  });
+
+  it('shows empty-period and load-error states for despesas', () => {
+    component.mesAtual = new Date(2026, 5, 1);
+    despesaService.obterPorReferencia.and.returnValue(of([]));
+
+    component.carregarDespesas();
+
+    expect(component.estadoCarregamento).toBe('emptyPeriod');
+    expect(component.mensagemCarregamento).toContain('Nenhum registro');
+
+    spyOn(console, 'error');
+    despesaService.obterPorReferencia.and.returnValue(throwError(() => new Error('falha')));
+
+    component.carregarDespesas();
+
+    expect(component.estadoCarregamento).toBe('loadError');
+    expect(component.mensagemCarregamento).toContain('Não foi possível');
   });
 });

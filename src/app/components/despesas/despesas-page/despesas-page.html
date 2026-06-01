@@ -71,12 +71,13 @@
                     </button>
                 </div>
 
-                <div *ngIf="despesas.length === 0" class="ym-empty">
+                <div *ngIf="estadoCarregamento !== 'loadedWithData'" class="ym-empty ym-state-message"
+                    [class.ym-state-error]="estadoCarregamento === 'loadError'">
                     <i class="bi bi-inbox"></i>
-                    <p>Nenhuma despesa registrada neste período.</p>
+                    <p>{{ mensagemCarregamento }}</p>
                 </div>
 
-                <div class="ym-list">
+                <div class="ym-list" *ngIf="estadoCarregamento === 'loadedWithData'">
                     <article *ngFor="let despesa of despesas" class="ym-list-item">
                         <div class="ym-list-main">
                             <h3 class="ym-list-title">{{ despesa.descricao }}</h3>
@@ -107,7 +108,9 @@
             <aside class="ym-stack">
                 <div class="ym-card ym-card-pad">
                     <h2 class="ym-section-title">Distribuição por conta</h2>
-                    <div *ngIf="totalPorConta.length === 0" class="ym-empty">Sem dados para este mês.</div>
+                    <div *ngIf="totalPorConta.length === 0" class="ym-empty">
+                        {{ estadoCarregamento === 'loadError' ? 'Não foi possível carregar a distribuição por conta.' : 'Sem dados para este mês.' }}
+                    </div>
                     <div *ngFor="let total of totalPorConta" class="ym-metric-row">
                         <span>{{ total.descricao }}</span>
                         <strong>R$ {{ total.valor | number:'1.2-2' }}</strong>
@@ -295,8 +298,9 @@
                     <i class="bi bi-check2-all"></i>Salvar lote ({{ despesasEmLote.length }})
                 </button>
                 <button type="button" class="ym-button primary" (click)="salvarDespesa()"
-                    [disabled]="salvandoParcelamento || (parcelamentoAtivo && !parcelamentoValido())">
-                    <i class="bi bi-check2"></i>Salvar Despesa
+                    [disabled]="salvandoDespesa || salvandoParcelamento || (parcelamentoAtivo && !parcelamentoValido())">
+                    <i class="bi" [ngClass]="salvandoDespesa ? 'bi-hourglass-split' : 'bi-check2'"></i>
+                    {{ salvandoDespesa ? 'Salvando...' : 'Salvar Despesa' }}
                 </button>
             </div>
         </div>
