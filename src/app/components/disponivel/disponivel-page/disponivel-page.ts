@@ -6,6 +6,7 @@ import { Receita, ReceitaService } from "../../../services/receita";
 import { Despesa, DespesaService } from "../../../services/despesa";
 import Swal from 'sweetalert2';
 import { AuthService } from '../../../services/auth.service';
+import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
 
 @Component({
     selector: "app-disponivel-page",
@@ -16,6 +17,9 @@ export class DisponivelPageComponent {
     receitas: Receita[] = [];
     despesas: Despesa[] = [];
     mesAtual: Date = new Date();
+    estadoReceitas: FinancialViewState = 'loading';
+    estadoDespesas: FinancialViewState = 'loading';
+    mensagemCarregamento = '';
 
     mudarMes(direcao: number) {
         const novoMes = new Date(this.mesAtual);
@@ -27,6 +31,11 @@ export class DisponivelPageComponent {
     carregarDados() {
         const mes = this.mesAtual.getMonth() + 1;
         const ano = this.mesAtual.getFullYear();
+        this.receitas = [];
+        this.despesas = [];
+        this.estadoReceitas = 'loading';
+        this.estadoDespesas = 'loading';
+        this.atualizarMensagemCarregamento();
         this.obterReceitas(mes, ano);
         this.obterDespesas(mes, ano);
     }
@@ -44,15 +53,33 @@ export class DisponivelPageComponent {
 
     obterReceitas(mes: number, ano: number) {
         this.receitaService.obterPorReferencia(mes, ano).subscribe({
-            next: (receitas) => this.receitas = receitas,
-            error: (erro) => console.error('Erro ao carregar receitas', erro)
+            next: (receitas) => {
+                this.receitas = receitas;
+                this.estadoReceitas = receitas.length > 0 ? 'loadedWithData' : 'emptyPeriod';
+                this.atualizarMensagemCarregamento();
+            },
+            error: (erro) => {
+                console.error('Erro ao carregar receitas', erro);
+                this.receitas = [];
+                this.estadoReceitas = 'loadError';
+                this.atualizarMensagemCarregamento();
+            }
         });
     }
 
     obterDespesas(mes: number, ano: number) {
         this.despesaService.obterPorReferencia(mes, ano).subscribe({
-            next: (despesas) => this.despesas = despesas,
-            error: (erro) => console.error('Erro ao carregar despesas', erro)
+            next: (despesas) => {
+                this.despesas = despesas;
+                this.estadoDespesas = despesas.length > 0 ? 'loadedWithData' : 'emptyPeriod';
+                this.atualizarMensagemCarregamento();
+            },
+            error: (erro) => {
+                console.error('Erro ao carregar despesas', erro);
+                this.despesas = [];
+                this.estadoDespesas = 'loadError';
+                this.atualizarMensagemCarregamento();
+            }
         });
     }
 
@@ -100,5 +127,24 @@ export class DisponivelPageComponent {
                 Swal.fire('Investido!', 'Seu valor foi direcionado para investimento.', 'success');
             }
         });
+    }
+
+    private atualizarMensagemCarregamento(): void {
+        if (this.estadoReceitas === 'loadError' || this.estadoDespesas === 'loadError') {
+            this.mensagemCarregamento = financialStateMessage('loadError', this.mesAtual, 'o saldo disponível');
+            return;
+        }
+
+        if (this.estadoReceitas === 'loading' || this.estadoDespesas === 'loading') {
+            this.mensagemCarregamento = financialStateMessage('loading', this.mesAtual, 'o saldo disponível');
+            return;
+        }
+
+        if (this.receitas.length === 0 && this.despesas.length === 0) {
+            this.mensagemCarregamento = financialStateMessage('emptyPeriod', this.mesAtual, 'receitas ou despesas');
+            return;
+        }
+
+        this.mensagemCarregamento = '';
     }
 }

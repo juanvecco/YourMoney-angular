@@ -33,6 +33,10 @@ export interface CriarDespesaRequest {
   idCategoria: string;
 }
 
+export interface CriarDespesaResponse extends Despesa {
+  mesReferencia: string;
+}
+
 export interface AtualizarDespesaRequest extends CriarDespesaRequest {
   id: string;
 }

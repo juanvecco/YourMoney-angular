@@ -7,6 +7,7 @@ import {
   Categoria,
   ContaFinanceira,
   CriarDespesaRequest,
+  CriarDespesaResponse,
   CriarParcelamentoRequest,
   CriarParcelamentoResponse,
   Despesa
@@ -17,6 +18,7 @@ export type {
   Categoria,
   ContaFinanceira,
   CriarDespesaRequest,
+  CriarDespesaResponse,
   CriarParcelamentoRequest,
   CriarParcelamentoResponse,
   Despesa,
@@ -48,8 +50,8 @@ export class DespesaService {
     });
   }
 
-  criarDespesa(despesa: CriarDespesaRequest): Observable<Despesa> {
-    return this.http.post<Despesa>(`${this.baseUrl}/Despesas`, despesa);
+  criarDespesa(despesa: CriarDespesaRequest): Observable<CriarDespesaResponse> {
+    return this.http.post<CriarDespesaResponse>(`${this.baseUrl}/Despesas`, despesa);
   }
 
   criarParcelamento(request: CriarParcelamentoRequest): Observable<CriarParcelamentoResponse> {
