@@ -82,6 +82,36 @@ describe('AuthService', () => {
     expect(localStorage.getItem('username')).toBe('Maria Silva');
   });
 
+  it('stores login session values in the current browser origin storage', () => {
+    service.login({
+      email: 'local@example.com',
+      senha: 'Senha123'
+    }).subscribe(auth => {
+      expect(auth.usuarioToken.email).toBe('local@example.com');
+    });
+
+    const request = httpMock.expectOne(`${environment.apiUrl}/identidade/autenticar`);
+    expect(request.request.method).toBe('POST');
+    request.flush({
+      success: true,
+      data: {
+        accessToken: 'origin-local-token',
+        expiresIn: 900,
+        usuarioToken: {
+          id: 'local-user-id',
+          nome: 'Local User',
+          email: 'local@example.com',
+          claims: []
+        }
+      }
+    });
+
+    expect(localStorage.getItem('access_token')).toBe('origin-local-token');
+    expect(localStorage.getItem('expires_at')).not.toBeNull();
+    expect(localStorage.getItem('user_email')).toBe('local@example.com');
+    expect(localStorage.getItem('username')).toBe('Local User');
+  });
+
   it('replaces stale authentication data returned by a previous user on login', () => {
     localStorage.setItem('access_token', 'old-token');
     localStorage.setItem('expires_at', String(Date.now() + 10000));
