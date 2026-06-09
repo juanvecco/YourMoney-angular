@@ -12,6 +12,11 @@ ng serve
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
+For the repository startup shortcut, the primary local frontend is served by the
+API at `https://localhost:5001/dashboard`. The Angular dev server at
+`http://localhost:4200/` or `http://127.0.0.1:4200/` is a development origin and
+may require its own login because browser `localStorage` is isolated per origin.
+
 ## Code scaffolding
 
 Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
