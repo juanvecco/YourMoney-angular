@@ -22,6 +22,7 @@ describe('InvestimentoPageComponent', () => {
     precoMedio: 1000,
     valorAtual: 1500,
     dataInvestimento: '2026-05-02T00:00:00',
+    mesReferencia: '2026-04-01T00:00:00',
     dataResgate: null,
     ativo: true
   };
@@ -52,7 +53,23 @@ describe('InvestimentoPageComponent', () => {
     expect(component.estadoCarregamento).toBe('loadedWithData');
   });
 
-  it('creates one investment and reloads the month from its civil date', () => {
+  it('combines new and legacy monthly investments without duplicating totals', () => {
+    const legacy = {
+      ...createdInvestment,
+      id: 'legacy-1',
+      valorAtual: 500,
+      dataInvestimento: '2026-05-15T00:00:00',
+      mesReferencia: null
+    };
+    investimentoService.obterPorReferencia.and.returnValue(of([legacy, createdInvestment]));
+
+    component.carregarInvestimentos();
+
+    expect(component.investimentos.map(item => item.id)).toEqual(['legacy-1', 'investimento-1']);
+    expect(component.totalInvestimentos).toBe(2000);
+  });
+
+  it('creates one investment and reloads its reference month', () => {
     investimentoService.criarInvestimento.and.returnValue(of(createdInvestment));
     component.novoInvestimento = {
       id: '',
@@ -63,6 +80,7 @@ describe('InvestimentoPageComponent', () => {
       precoMedio: 1000,
       valorAtual: 1500,
       dataInvestimento: '2026-05-02',
+      mesReferencia: '2026-04',
       dataResgate: null,
       ativo: true
     };
@@ -76,11 +94,12 @@ describe('InvestimentoPageComponent', () => {
       quantidade: 1,
       precoMedio: 1000,
       valorAtual: 1500,
-      dataInvestimento: '2026-05-02'
+      dataInvestimento: '2026-05-02',
+      mesReferencia: '2026-04-01'
     });
     expect(component.mesAtual.getFullYear()).toBe(2026);
-    expect(component.mesAtual.getMonth()).toBe(4);
-    expect(investimentoService.obterPorReferencia).toHaveBeenCalledWith(5, 2026);
+    expect(component.mesAtual.getMonth()).toBe(3);
+    expect(investimentoService.obterPorReferencia).toHaveBeenCalledWith(4, 2026);
     expect(component.salvandoInvestimento).toBeFalse();
   });
 
@@ -184,7 +203,32 @@ describe('InvestimentoPageComponent', () => {
     component.salvarInvestimento();
 
     expect(investimentoService.criarInvestimento).toHaveBeenCalledTimes(2);
-    expect(component.mesAtual.getMonth()).toBe(4);
+    expect(component.mesAtual.getMonth()).toBe(3);
+  });
+
+  it('rejects a missing reference month without sending a request', () => {
+    component.novoInvestimento = {
+      ...component.novoInvestimento,
+      nome: 'Tesouro',
+      tipo: 'Renda fixa',
+      quantidade: 1,
+      precoMedio: 100,
+      valorAtual: 100,
+      mesReferencia: ''
+    };
+
+    component.salvarInvestimento();
+
+    expect(investimentoService.criarInvestimento).not.toHaveBeenCalled();
+    expect(fireSpy.calls.mostRecent().args[0]).toEqual(jasmine.objectContaining({
+      text: 'Informe o mês de referência.'
+    }));
+  });
+
+  it('uses the civil date month when opening a legacy investment for editing', () => {
+    component.abrirModalEditar({ ...createdInvestment, mesReferencia: null });
+
+    expect(component.novoInvestimento.mesReferencia).toBe('2026-05');
   });
 
   it('shows empty-period and load-error states for investimentos', () => {

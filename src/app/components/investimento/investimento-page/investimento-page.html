@@ -142,9 +142,14 @@
                 [(ngModel)]="novoInvestimento.valorAtual" name="valor" required aria-required="true" />
             </div>
             <div class="col-md-6">
-              <label class="form-label">Data</label>
+              <label class="form-label">Data do investimento</label>
               <input type="date" class="form-control" [(ngModel)]="novoInvestimento.dataInvestimento" name="data"
                 required aria-required="true" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Mês de referência</label>
+              <input type="month" class="form-control" [(ngModel)]="novoInvestimento.mesReferencia"
+                name="mesReferencia" required aria-required="true" />
             </div>
           </div>
         </form>
