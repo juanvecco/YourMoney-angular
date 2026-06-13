@@ -1,12 +1,31 @@
-import { Component, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Investimento, InvestimentoService } from '../../../services/investimento';
+import { finalize, Subject, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
-import { Subject, takeUntil } from 'rxjs';
-import { AuthService } from '../../../services/auth.service';
 import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
+import {
+  AtualizarInvestimentoRequest,
+  CriarInvestimentoRequest,
+  Investimento,
+  InvestimentoService
+} from '../../../services/investimento';
+import { AuthService } from '../../../services/auth.service';
+
+interface InvestimentoForm {
+  id: string;
+  nome: string;
+  descricao: string;
+  tipo: string;
+  quantidade: number;
+  precoMedio: number;
+  valorAtual: number;
+  dataInvestimento: string;
+  dataResgate: string | null;
+  ativo: boolean;
+}
 
 @Component({
   selector: 'app-investimento-page',
@@ -23,19 +42,9 @@ export class InvestimentoPageComponent implements OnDestroy {
   totalInvestimentos = 0;
   estadoCarregamento: FinancialViewState = 'loading';
   mensagemCarregamento = '';
-
-  novoInvestimento = {
-    id: '',
-    nome: '',
-    descricao: '',
-    tipo: '',
-    quantidade: 0,
-    precoMedio: 0,
-    valorAtual: 0,
-    dataInvestimento: new Date().toISOString().split('T')[0],
-    dataResgate: new Date().toISOString().split('T')[0],
-    ativo: true
-  };
+  salvandoInvestimento = false;
+  editando = false;
+  novoInvestimento = this.criarFormularioVazio();
 
   @ViewChild('calendarioInput') calendarioInput!: ElementRef<HTMLInputElement>;
 
@@ -44,53 +53,50 @@ export class InvestimentoPageComponent implements OnDestroy {
     private authService: AuthService,
     private router: Router
   ) {
-    this.carregarDadosIniciais();
+    this.carregarInvestimentos();
   }
 
-  ngOnDestroy() {
+  ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-  carregarDadosIniciais() {
-    this.carregarInvestimentos();
-  }
-
-  carregarInvestimentos() {
+  carregarInvestimentos(): void {
     const mes = this.mesAtual.getMonth() + 1;
     const ano = this.mesAtual.getFullYear();
     this.investimentos = [];
     this.totalInvestimentos = 0;
     this.estadoCarregamento = 'loading';
     this.atualizarMensagemCarregamento();
-    this.investimentoService.obterPorReferencia(mes, ano).subscribe({
-      next: (dados) => {
-        this.investimentos = dados.sort((a, b) => {
-          return new Date(b.dataInvestimento).getTime() - new Date(a.dataInvestimento).getTime();
-        });
-        this.totalInvestimentos = dados.reduce((soma, d) => soma + d.valorAtual, 0);
-        this.estadoCarregamento = this.investimentos.length > 0 ? 'loadedWithData' : 'emptyPeriod';
-        this.atualizarMensagemCarregamento();
-      },
-      error: (erro) => {
-        console.error('Erro ao carregar investimentos', erro);
-        this.investimentos = [];
-        this.totalInvestimentos = 0;
-        this.estadoCarregamento = 'loadError';
-        this.atualizarMensagemCarregamento();
-      }
-    });
+
+    this.investimentoService.obterPorReferencia(mes, ano)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: dados => {
+          this.investimentos = [...dados].sort(
+            (a, b) => this.dataCivilParaDate(b.dataInvestimento).getTime() -
+              this.dataCivilParaDate(a.dataInvestimento).getTime()
+          );
+          this.totalInvestimentos = dados.reduce((soma, investimento) => soma + investimento.valorAtual, 0);
+          this.estadoCarregamento = dados.length > 0 ? 'loadedWithData' : 'emptyPeriod';
+          this.atualizarMensagemCarregamento();
+        },
+        error: erro => {
+          console.error('Erro ao carregar investimentos', erro);
+          this.estadoCarregamento = 'loadError';
+          this.atualizarMensagemCarregamento();
+        }
+      });
   }
 
-  mudarMes(direcao: number) {
+  mudarMes(direcao: number): void {
     const novoMes = new Date(this.mesAtual);
     novoMes.setMonth(novoMes.getMonth() + direcao);
     this.mesAtual = novoMes;
     this.carregarInvestimentos();
   }
 
-  // === CALENDÁRIO ===
-  abrirCalendario() {
+  abrirCalendario(): void {
     const input = this.calendarioInput.nativeElement;
     if (typeof input.showPicker === 'function') {
       input.showPicker();
@@ -99,7 +105,7 @@ export class InvestimentoPageComponent implements OnDestroy {
     }
   }
 
-  selecionarMesDoCalendario(event: Event) {
+  selecionarMesDoCalendario(event: Event): void {
     const input = event.target as HTMLInputElement;
     const [ano, mes] = input.value.split('-').map(Number);
     this.mesAtual = new Date(ano, mes - 1, 1);
@@ -111,11 +117,95 @@ export class InvestimentoPageComponent implements OnDestroy {
     this.router.navigate(['/login']);
   }
 
-  editando: boolean = false;
-
-  abrirModalInvestimento() {
+  abrirModalInvestimento(): void {
     this.editando = false;
+    this.novoInvestimento = this.criarFormularioVazio();
+    const modalElement = document.getElementById('modalInvestimento');
+    if (modalElement) {
+      new (window as any).bootstrap.Modal(modalElement).show();
+    }
+  }
+
+  abrirModalEditar(investimento: Investimento): void {
+    this.editando = true;
     this.novoInvestimento = {
+      ...investimento,
+      dataInvestimento: investimento.dataInvestimento.substring(0, 10),
+      dataResgate: investimento.dataResgate?.substring(0, 10) ?? null
+    };
+    const modalElement = document.getElementById('modalInvestimento');
+    if (modalElement) {
+      new (window as any).bootstrap.Modal(modalElement).show();
+    }
+  }
+
+  salvarInvestimento(): void {
+    if (this.salvandoInvestimento) {
+      return;
+    }
+
+    const mensagemValidacao = this.validarFormulario();
+    if (mensagemValidacao) {
+      this.mostrarAviso(mensagemValidacao);
+      return;
+    }
+
+    const request$ = this.editando
+      ? this.investimentoService.atualizarInvestimento(this.montarPayloadAtualizacao())
+      : this.investimentoService.criarInvestimento(this.montarPayloadCriacao());
+
+    this.salvandoInvestimento = true;
+    request$
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.salvandoInvestimento = false)
+      )
+      .subscribe({
+        next: investimento => {
+          const dataCriada = this.dataCivilParaDate(investimento.dataInvestimento);
+          this.mesAtual = new Date(dataCriada.getFullYear(), dataCriada.getMonth(), 1);
+          this.fecharModal();
+          this.carregarInvestimentos();
+          this.mostrarSucesso();
+        },
+        error: erro => {
+          console.error('Erro ao salvar investimento', erro);
+          this.mostrarErro(erro);
+        }
+      });
+  }
+
+  deletarInvestimento(id: string): void {
+    Swal.fire({
+      title: 'Deletar?',
+      text: 'Não pode ser desfeito.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim',
+      cancelButtonText: 'Não',
+      confirmButtonColor: '#dc3545'
+    }).then(result => {
+      if (!result.isConfirmed) return;
+
+      this.investimentoService.deletarInvestimento(id)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.investimentos = this.investimentos.filter(investimento => investimento.id !== id);
+            this.totalInvestimentos = this.investimentos.reduce((soma, investimento) => soma + investimento.valorAtual, 0);
+            Swal.fire('Deletado!', '', 'success');
+          },
+          error: () => Swal.fire('Erro!', '', 'error')
+        });
+    });
+  }
+
+  formatarMoeda(valor: number): string {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+  }
+
+  private criarFormularioVazio(): InvestimentoForm {
+    return {
       id: '',
       nome: '',
       descricao: '',
@@ -123,130 +213,119 @@ export class InvestimentoPageComponent implements OnDestroy {
       quantidade: 0,
       precoMedio: 0,
       valorAtual: 0,
-      dataInvestimento: new Date().toISOString().split('T')[0],
-      dataResgate: new Date().toISOString().split('T')[0],
+      dataInvestimento: this.dataLocalHoje(),
+      dataResgate: null,
       ativo: true
     };
-    const modal = new (window as any).bootstrap.Modal(document.getElementById('modalInvestimento'));
-    modal.show();
   }
 
-  abrirModalEditar(investimento: Investimento) {
-    this.editando = true;
-    this.novoInvestimento = {
-      ...investimento,
-      dataInvestimento: new Date(investimento.dataInvestimento).toISOString().split('T')[0],
-      dataResgate: new Date(investimento.dataResgate).toISOString().split('T')[0]
+  private montarPayloadCriacao(): CriarInvestimentoRequest {
+    return {
+      nome: this.novoInvestimento.nome.trim(),
+      descricao: this.novoInvestimento.descricao.trim(),
+      tipo: this.novoInvestimento.tipo.trim(),
+      quantidade: this.novoInvestimento.quantidade,
+      precoMedio: this.novoInvestimento.precoMedio,
+      valorAtual: this.novoInvestimento.valorAtual,
+      dataInvestimento: this.novoInvestimento.dataInvestimento
     };
-    const modal = new (window as any).bootstrap.Modal(document.getElementById('modalInvestimento'));
-    modal.show();
-  }
-  salvarInvestimento() {
-    if (!this.novoInvestimento.nome || !this.novoInvestimento.valorAtual || !this.novoInvestimento.dataInvestimento) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Campos obrigatórios!',
-        text: 'Preencha todos os campos antes de salvar.',
-        confirmButtonColor: '#b49452',
-        background: '#f8f8f8',
-        color: '#283b6b',
-      });
-      return;
-    }
-
-    const request$ = this.editando
-      ? this.investimentoService.atualizarInvestimento(this.novoInvestimento)
-      : this.investimentoService.criarInvestimento(this.novoInvestimento);
-
-    request$.subscribe({
-      next: () => {
-        const modal = document.getElementById('modalInvestimento');
-        (window as any).bootstrap.Modal.getInstance(modal)?.hide();
-        this.carregarInvestimentos();
-
-        Swal.fire({
-          icon: 'success',
-          title: this.editando ? 'Investimento atualizado!' : 'Investimento cadastrado!',
-          text: this.editando
-            ? 'Seu investimento foi atualizado com sucesso.'
-            : 'Seu investimento foi registrado com sucesso.',
-          confirmButtonColor: '#b49452',
-          background: '#f8f8f8',
-          color: '#283b6b',
-        });
-      },
-      error: (erro) => {
-        console.error('Erro ao salvar investimento', erro);
-        Swal.fire({
-          icon: 'error',
-          title: 'Erro!',
-          text: this.editando
-            ? 'Não foi possível atualizar o investimento.'
-            : 'Não foi possível salvar o investimento.',
-          confirmButtonColor: '#b49452',
-          background: '#f8f8f8',
-          color: '#283b6b',
-        });
-      }
-    });
   }
 
-  deletarInvestimento(id: string) {
+  private montarPayloadAtualizacao(): AtualizarInvestimentoRequest {
+    return {
+      ...this.montarPayloadCriacao(),
+      id: this.novoInvestimento.id,
+      dataResgate: this.novoInvestimento.dataResgate,
+      ativo: this.novoInvestimento.ativo
+    };
+  }
+
+  private validarFormulario(): string | null {
+    if (!this.novoInvestimento.nome.trim()) return 'Informe o nome do investimento.';
+    if (this.novoInvestimento.nome.trim().length > 100) return 'O nome deve ter no máximo 100 caracteres.';
+    if (this.novoInvestimento.descricao.trim().length > 500) return 'A descrição deve ter no máximo 500 caracteres.';
+    if (!this.novoInvestimento.tipo.trim()) return 'Informe o tipo do investimento.';
+    if (this.novoInvestimento.tipo.trim().length > 100) return 'O tipo deve ter no máximo 100 caracteres.';
+    if (this.novoInvestimento.quantidade <= 0) return 'A quantidade deve ser maior que zero.';
+    if (this.novoInvestimento.precoMedio <= 0) return 'O preço médio deve ser maior que zero.';
+    if (this.novoInvestimento.valorAtual <= 0) return 'O valor atual deve ser maior que zero.';
+    if (!this.novoInvestimento.dataInvestimento) return 'Informe a data do investimento.';
+    return null;
+  }
+
+  private mostrarAviso(mensagem: string): void {
     Swal.fire({
-      title: 'Deletar?', text: 'Não pode ser desfeito.', icon: 'warning',
-      showCancelButton: true, confirmButtonText: 'Sim', cancelButtonText: 'Não',
-      confirmButtonColor: '#dc3545'
-    }).then(result => {
-      if (result.isConfirmed) {
-        this.investimentoService.deletarInvestimento(id)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: () => {
-              this.investimentos = this.investimentos.filter(d => d.id !== id);
-              this.totalInvestimentos = this.investimentos.reduce((s, d) => s + d.valorAtual, 0);
-              Swal.fire('Deletado!', '', 'success');
-            },
-            error: () => Swal.fire('Erro!', '', 'error')
-          });
-      }
+      icon: 'warning',
+      title: 'Revise os dados',
+      text: mensagem,
+      confirmButtonColor: '#b49452'
     });
   }
 
-  adicionarInvestimento(): void {
-    // Implementar lógica para adicionar investimento
-    console.log('Adicionar investimento');
+  private mostrarSucesso(): void {
+    Swal.fire({
+      icon: 'success',
+      title: this.editando ? 'Investimento atualizado!' : 'Investimento cadastrado!',
+      text: this.editando
+        ? 'Seu investimento foi atualizado com sucesso.'
+        : 'Seu investimento foi registrado com sucesso.',
+      confirmButtonColor: '#b49452'
+    });
   }
 
-  editarInvestimento(id: number): void {
-    // Implementar lógica para editar investimento
-    console.log('Editar investimento:', id);
+  private mostrarErro(erro: unknown): void {
+    Swal.fire({
+      icon: 'error',
+      title: 'Não foi possível salvar',
+      text: this.extrairMensagemErro(erro),
+      confirmButtonColor: '#b49452'
+    });
   }
 
-  excluirInvestimento(id: number): void {
-    if (confirm('Tem certeza que deseja excluir este investimento?')) {
-      // Implementar lógica para excluir investimento
-      console.log('Excluir investimento:', id);
+  private extrairMensagemErro(erro: unknown): string {
+    const httpError = erro as HttpErrorResponse & {
+      error?: {
+        message?: string;
+        title?: string;
+        errors?: Record<string, string[]>;
+      };
+    };
+
+    if (httpError.status === 401) return 'Sessão expirada. Faça login novamente.';
+    if (httpError.status === 403) return 'Você não tem permissão para cadastrar este investimento.';
+    if ([0, 502, 503, 504].includes(httpError.status)) {
+      return 'Serviço temporariamente indisponível. Tente novamente.';
     }
+
+    const validationMessages = httpError.error?.errors
+      ? Object.values(httpError.error.errors).flat()
+      : [];
+
+    return validationMessages.join(', ') ||
+      httpError.error?.message ||
+      httpError.error?.title ||
+      'Não foi possível salvar o investimento. Revise os dados e tente novamente.';
   }
 
-  formatarMoeda(valor: number): string {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(valor);
+  private fecharModal(): void {
+    const modal = document.getElementById('modalInvestimento');
+    (window as any).bootstrap?.Modal.getInstance(modal)?.hide();
   }
 
-  formatarPercentual(valor: number): string {
-    const sinal = valor >= 0 ? '+' : '';
-    return `${sinal}${valor.toFixed(1)}%`;
+  private dataCivilParaDate(valor: string): Date {
+    const [ano, mes, dia] = valor.substring(0, 10).split('-').map(Number);
+    return new Date(ano, mes - 1, dia);
   }
 
-  obterClasseRentabilidade(rentabilidade: number): string {
-    return rentabilidade >= 0 ? 'positive' : 'negative';
+  private dataLocalHoje(): string {
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
   }
 
   private atualizarMensagemCarregamento(): void {
     this.mensagemCarregamento = financialStateMessage(this.estadoCarregamento, this.mesAtual, 'investimentos');
   }
 }
-

@@ -135,8 +135,11 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="ym-button" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="ym-button primary" (click)="salvarReceita()">
-                    <i class="bi bi-check2"></i>Salvar Receita
+                <button type="button" class="ym-button primary" (click)="salvarReceita()"
+                    [disabled]="salvandoReceita">
+                    <i class="bi" [class.bi-hourglass-split]="salvandoReceita"
+                        [class.bi-check2]="!salvandoReceita"></i>
+                    {{ salvandoReceita ? 'Salvando...' : 'Salvar Receita' }}
                 </button>
             </div>
         </div>

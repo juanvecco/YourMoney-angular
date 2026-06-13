@@ -67,8 +67,8 @@ describe('DashboardPageComponent', () => {
           quantidade: 1,
           precoMedio: 1000,
           valorAtual: 1500,
-          dataInvestimento: new Date('2026-05-03'),
-          dataResgate: new Date('2026-12-03'),
+          dataInvestimento: '2026-05-03T00:00:00',
+          dataResgate: '2026-12-03T00:00:00',
           ativo: true
         }
       ],

@@ -1,15 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-
-export interface Receita {
-    id: string;
-    descricao: string;
-    valor: number;
-    data: string;
-    mesReferencia?: string;
-}
+import {
+    AtualizarReceitaRequest,
+    CriarReceitaRequest,
+    CriarReceitaResponse,
+    Receita
+} from '../models/receita.model';
 
 @Injectable({
     providedIn: 'root',
@@ -25,23 +23,12 @@ export class ReceitaService {
         });
     }
 
-    criarReceita(receita: {
-        descricao: string;
-        valor: number;
-        data: string;
-        mesReferencia: string;
-    }): Observable<Receita> {
-        return this.http.post<Receita>(`${this.baseUrl}/Receitas`, receita);
+    criarReceita(receita: CriarReceitaRequest): Observable<CriarReceitaResponse> {
+        return this.http.post<CriarReceitaResponse>(`${this.baseUrl}/Receitas`, receita);
     }
 
-    atualizarReceita(receita: {
-        id: string;
-        descricao: string;
-        valor: number;
-        data: string;
-        mesReferencia: string;
-    }): Observable<Receita> {
-        return this.http.put<Receita>(`${this.baseUrl}/Receitas/${receita.id}`, receita);
+    atualizarReceita(receita: AtualizarReceitaRequest): Observable<void> {
+        return this.http.put<void>(`${this.baseUrl}/Receitas/${receita.id}`, receita);
     }
 
     deletarReceita(id: string): Observable<void> {
