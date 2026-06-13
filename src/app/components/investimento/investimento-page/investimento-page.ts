@@ -23,6 +23,7 @@ interface InvestimentoForm {
   precoMedio: number;
   valorAtual: number;
   dataInvestimento: string;
+  mesReferencia: string;
   dataResgate: string | null;
   ativo: boolean;
 }
@@ -131,6 +132,7 @@ export class InvestimentoPageComponent implements OnDestroy {
     this.novoInvestimento = {
       ...investimento,
       dataInvestimento: investimento.dataInvestimento.substring(0, 10),
+      mesReferencia: (investimento.mesReferencia ?? investimento.dataInvestimento).substring(0, 7),
       dataResgate: investimento.dataResgate?.substring(0, 10) ?? null
     };
     const modalElement = document.getElementById('modalInvestimento');
@@ -162,8 +164,10 @@ export class InvestimentoPageComponent implements OnDestroy {
       )
       .subscribe({
         next: investimento => {
-          const dataCriada = this.dataCivilParaDate(investimento.dataInvestimento);
-          this.mesAtual = new Date(dataCriada.getFullYear(), dataCriada.getMonth(), 1);
+          const referencia = this.mesParaDate(
+            investimento.mesReferencia ?? investimento.dataInvestimento.substring(0, 7)
+          );
+          this.mesAtual = referencia;
           this.fecharModal();
           this.carregarInvestimentos();
           this.mostrarSucesso();
@@ -214,6 +218,7 @@ export class InvestimentoPageComponent implements OnDestroy {
       precoMedio: 0,
       valorAtual: 0,
       dataInvestimento: this.dataLocalHoje(),
+      mesReferencia: this.mesLocalAtual(),
       dataResgate: null,
       ativo: true
     };
@@ -227,16 +232,15 @@ export class InvestimentoPageComponent implements OnDestroy {
       quantidade: this.novoInvestimento.quantidade,
       precoMedio: this.novoInvestimento.precoMedio,
       valorAtual: this.novoInvestimento.valorAtual,
-      dataInvestimento: this.novoInvestimento.dataInvestimento
+      dataInvestimento: this.novoInvestimento.dataInvestimento,
+      mesReferencia: `${this.novoInvestimento.mesReferencia}-01`
     };
   }
 
   private montarPayloadAtualizacao(): AtualizarInvestimentoRequest {
     return {
       ...this.montarPayloadCriacao(),
-      id: this.novoInvestimento.id,
-      dataResgate: this.novoInvestimento.dataResgate,
-      ativo: this.novoInvestimento.ativo
+      id: this.novoInvestimento.id
     };
   }
 
@@ -250,6 +254,7 @@ export class InvestimentoPageComponent implements OnDestroy {
     if (this.novoInvestimento.precoMedio <= 0) return 'O preço médio deve ser maior que zero.';
     if (this.novoInvestimento.valorAtual <= 0) return 'O valor atual deve ser maior que zero.';
     if (!this.novoInvestimento.dataInvestimento) return 'Informe a data do investimento.';
+    if (!this.novoInvestimento.mesReferencia) return 'Informe o mês de referência.';
     return null;
   }
 
@@ -323,6 +328,15 @@ export class InvestimentoPageComponent implements OnDestroy {
     const mes = String(hoje.getMonth() + 1).padStart(2, '0');
     const dia = String(hoje.getDate()).padStart(2, '0');
     return `${ano}-${mes}-${dia}`;
+  }
+
+  private mesLocalAtual(): string {
+    return this.dataLocalHoje().substring(0, 7);
+  }
+
+  private mesParaDate(valor: string): Date {
+    const [ano, mes] = valor.substring(0, 7).split('-').map(Number);
+    return new Date(ano, mes - 1, 1);
   }
 
   private atualizarMensagemCarregamento(): void {

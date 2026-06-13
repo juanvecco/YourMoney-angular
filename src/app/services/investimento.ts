@@ -35,7 +35,8 @@ export class InvestimentoService {
   }
 
   atualizarInvestimento(request: AtualizarInvestimentoRequest): Observable<Investimento> {
-    return this.http.put<Investimento>(`${this.baseUrl}/Investimento/${request.id}`, request);
+    const { id, ...payload } = request;
+    return this.http.put<Investimento>(`${this.baseUrl}/Investimento/${id}`, payload);
   }
 
   deletarInvestimento(id: string): Observable<void> {
