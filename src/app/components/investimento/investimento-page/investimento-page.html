@@ -113,44 +113,50 @@
           <div class="row g-3">
             <div class="col-12">
               <label class="form-label">Nome</label>
-              <input type="text" class="form-control" [(ngModel)]="novoInvestimento.nome" name="nome" required />
+              <input type="text" class="form-control" [(ngModel)]="novoInvestimento.nome" name="nome"
+                maxlength="100" required aria-required="true" />
             </div>
             <div class="col-12">
               <label class="form-label">Descrição</label>
               <input type="text" class="form-control" [(ngModel)]="novoInvestimento.descricao" name="descricao"
-                required />
+                maxlength="500" />
             </div>
             <div class="col-12">
               <label class="form-label">Tipo</label>
-              <input type="text" class="form-control" [(ngModel)]="novoInvestimento.tipo" name="tipo" required />
+              <input type="text" class="form-control" [(ngModel)]="novoInvestimento.tipo" name="tipo"
+                maxlength="100" required aria-required="true" />
             </div>
             <div class="col-md-6">
               <label class="form-label">Quantidade</label>
-              <input type="number" step="0.01" class="form-control" [(ngModel)]="novoInvestimento.quantidade"
-                name="quantidade" required />
+              <input type="number" step="0.01" min="0.01" class="form-control"
+                [(ngModel)]="novoInvestimento.quantidade" name="quantidade" required aria-required="true" />
             </div>
             <div class="col-md-6">
               <label class="form-label">Preço médio (R$)</label>
-              <input type="number" step="0.01" class="form-control" [(ngModel)]="novoInvestimento.precoMedio"
-                name="precoMedio" required />
+              <input type="number" step="0.01" min="0.01" class="form-control"
+                [(ngModel)]="novoInvestimento.precoMedio" name="precoMedio" required aria-required="true" />
             </div>
             <div class="col-md-6">
               <label class="form-label">Valor (R$)</label>
-              <input type="number" step="0.01" class="form-control" [(ngModel)]="novoInvestimento.valorAtual"
-                name="valor" required />
+              <input type="number" step="0.01" min="0.01" class="form-control"
+                [(ngModel)]="novoInvestimento.valorAtual" name="valor" required aria-required="true" />
             </div>
             <div class="col-md-6">
               <label class="form-label">Data</label>
               <input type="date" class="form-control" [(ngModel)]="novoInvestimento.dataInvestimento" name="data"
-                required />
+                required aria-required="true" />
             </div>
           </div>
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="ym-button" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="ym-button primary" (click)="salvarInvestimento()">
-          <i class="bi bi-check2"></i>Salvar Investimento
+        <button type="button" class="ym-button" data-bs-dismiss="modal" [disabled]="salvandoInvestimento">
+          Cancelar
+        </button>
+        <button type="button" class="ym-button primary" (click)="salvarInvestimento()"
+          [disabled]="salvandoInvestimento" [attr.aria-busy]="salvandoInvestimento">
+          <i class="bi" [ngClass]="salvandoInvestimento ? 'bi-hourglass-split' : 'bi-check2'"></i>
+          {{ salvandoInvestimento ? 'Salvando...' : 'Salvar Investimento' }}
         </button>
       </div>
     </div>

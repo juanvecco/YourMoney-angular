@@ -1,10 +1,12 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { ReceitaService, Receita } from '../../../services/receita';
+import { ReceitaService } from '../../../services/receita';
+import { Receita } from '../../../models/receita.model';
 import Swal from 'sweetalert2';
-import { Subject, takeUntil } from 'rxjs';
+import { Observable, Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
 
@@ -35,6 +37,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     };
 
     editando = false;
+    salvandoReceita = false;
 
     // === GAMIFICAÇÃO ===
     usuarioCategorizouEsteMes = false;
@@ -154,33 +157,47 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
 
     // === SALVAR ===
     salvarReceita() {
+        if (this.salvandoReceita) return;
+
         if (!this.camposObrigatoriosPreenchidos()) {
             this.mostrarAlertaCamposObrigatorios();
             return;
         }
 
         const payload = {
-            ...this.novaReceita,
+            descricao: this.novaReceita.descricao.trim(),
+            valor: this.novaReceita.valor,
+            data: this.novaReceita.data,
             mesReferencia: this.converterMesReferenciaParaApi(this.novaReceita.mesReferencia)
         };
 
-        const request$ = this.editando
-            ? this.receitaService.atualizarReceita(payload)
+        const request$: Observable<Receita | void> = this.editando
+            ? this.receitaService.atualizarReceita({ id: this.novaReceita.id, ...payload })
             : this.receitaService.criarReceita(payload);
 
+        this.salvandoReceita = true;
         request$.pipe(takeUntil(this.destroy$)).subscribe({
-            next: () => {
+            next: (response: Receita | void) => {
+                if (!this.editando && response?.mesReferencia) {
+                    const referencia = this.obterMesReferenciaInput(response.mesReferencia);
+                    const [ano, mes] = referencia.split('-').map(Number);
+                    this.mesAtual = new Date(ano, mes - 1, 1);
+                }
                 this.fecharModal();
                 this.carregarReceitas();
                 this.mostrarSucesso();
+                this.salvandoReceita = false;
             },
-            error: () => this.mostrarErro()
+            error: (error: unknown) => {
+                this.salvandoReceita = false;
+                this.mostrarErro(error);
+            }
         });
     }
 
     private camposObrigatoriosPreenchidos(): boolean {
         return !!(
-            this.novaReceita.descricao &&
+            this.novaReceita.descricao.trim() &&
             this.novaReceita.valor > 0 &&
             this.novaReceita.data &&
             this.novaReceita.mesReferencia
@@ -217,8 +234,33 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         Swal.fire({ icon: 'success', title: this.editando ? 'Atualizada!' : 'Cadastrada!', timer: 2000, showConfirmButton: false });
     }
 
-    private mostrarErro() {
-        Swal.fire({ icon: 'error', title: 'Erro!', text: 'Não foi possível salvar.', confirmButtonColor: '#dc3545' });
+    private mostrarErro(error: unknown) {
+        const httpError = error instanceof HttpErrorResponse ? error : null;
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro!',
+            text: this.obterMensagemErro(httpError),
+            confirmButtonColor: '#dc3545'
+        });
+    }
+
+    private obterMensagemErro(error: HttpErrorResponse | null): string {
+        if (!error) return 'Não foi possível salvar.';
+        if (error.status === 400) {
+            if (typeof error.error?.message === 'string') return error.error.message;
+            const errors = error.error?.errors;
+            if (errors && typeof errors === 'object') {
+                const first = Object.values(errors).flat().find(value => typeof value === 'string');
+                if (typeof first === 'string') return first;
+            }
+            return 'Revise os dados informados.';
+        }
+        if (error.status === 401) return 'Sua sessão expirou. Entre novamente.';
+        if (error.status === 403) return 'Você não tem permissão para salvar esta receita.';
+        if ([0, 502, 503, 504].includes(error.status)) {
+            return 'Serviço temporariamente indisponível. Tente novamente.';
+        }
+        return 'Não foi possível salvar a receita.';
     }
 
     private fecharModal() {
