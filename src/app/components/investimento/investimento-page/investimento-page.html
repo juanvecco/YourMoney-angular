@@ -1,14 +1,15 @@
 <header class="ym-topbar">
   <nav class="ym-nav">
-    <a class="ym-brand" href="/dashboard">
+    <a class="ym-brand" routerLink="/dashboard">
       <img src="assets/logo.png" alt="Your Money" class="ym-logo" />
     </a>
     <ul class="ym-menu">
-      <li><a href="/dashboard"><i class="bi bi-speedometer2"></i>Dashboard</a></li>
-      <li><a href="/receitas"><i class="bi bi-arrow-up-circle"></i>Receitas</a></li>
-      <li><a href="/despesas"><i class="bi bi-arrow-down-circle"></i>Despesas</a></li>
-      <li><a class="active" href="/investimento"><i class="bi bi-graph-up-arrow"></i>Investimentos</a></li>
-      <li><a href="/configuracao"><i class="bi bi-gear"></i>Configurações</a></li>
+      <li><a routerLink="/dashboard"><i class="bi bi-speedometer2"></i>Dashboard</a></li>
+      <li><a routerLink="/receitas"><i class="bi bi-arrow-up-circle"></i>Receitas</a></li>
+      <li><a routerLink="/despesas"><i class="bi bi-arrow-down-circle"></i>Despesas</a></li>
+      <li><a class="active" routerLink="/investimento"><i class="bi bi-graph-up-arrow"></i>Investimentos</a></li>
+      <li><a routerLink="/metas"><i class="bi bi-bullseye"></i>Metas</a></li>
+      <li><a routerLink="/configuracao"><i class="bi bi-gear"></i>Configurações</a></li>
       <li>
         <button class="ym-logout-link" type="button" (click)="logout()" aria-label="Sair da conta">
           <i class="bi bi-box-arrow-right"></i>Sair

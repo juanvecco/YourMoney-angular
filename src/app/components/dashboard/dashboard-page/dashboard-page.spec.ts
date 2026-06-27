@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DashboardPageComponent } from './dashboard-page';
 import { ReceitaService } from '../../../services/receita';
 import { DespesaService } from '../../../services/despesa';
@@ -21,7 +21,9 @@ describe('DashboardPageComponent', () => {
     despesaService = jasmine.createSpyObj<DespesaService>('DespesaService', ['obterPorReferencia', 'listarCategorias']);
     investimentoService = jasmine.createSpyObj<InvestimentoService>('InvestimentoService', ['obterPorReferencia']);
     authService = jasmine.createSpyObj<AuthService>('AuthService', ['logout']);
-    router = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    router = jasmine.createSpyObj<Router>('Router', ['navigate', 'createUrlTree', 'serializeUrl'], { events: of() });
+    router.createUrlTree.and.returnValue({} as ReturnType<Router['createUrlTree']>);
+    router.serializeUrl.and.returnValue('/');
 
     receitaService.obterPorReferencia.and.returnValue(of([]));
     despesaService.obterPorReferencia.and.returnValue(of([]));
@@ -32,6 +34,7 @@ describe('DashboardPageComponent', () => {
       imports: [DashboardPageComponent],
       providers: [
         { provide: Router, useValue: router },
+        { provide: ActivatedRoute, useValue: {} },
         { provide: ReceitaService, useValue: receitaService },
         { provide: DespesaService, useValue: despesaService },
         { provide: InvestimentoService, useValue: investimentoService },

@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { DespesaService, Despesa, Categoria, CriarParcelamentoRequest, ParcelaPreview } from '../../../services/despesa';
 import Swal from 'sweetalert2';
 import { forkJoin, Subject, takeUntil } from 'rxjs';
@@ -22,7 +22,7 @@ type DespesaLote = {
 @Component({
     selector: 'app-despesas-page',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, RouterLink],
     templateUrl: './despesas-page.html',
     styleUrls: ['./despesas-page.scss']
 })
