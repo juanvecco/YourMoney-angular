@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/co
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ReceitaService } from '../../../services/receita';
 import { Receita } from '../../../models/receita.model';
 import Swal from 'sweetalert2';
@@ -13,7 +13,7 @@ import { FinancialViewState, financialStateMessage } from '../../../models/finan
 @Component({
     selector: 'app-receita-page',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, RouterLink],
     templateUrl: './receita-page.html',
     styleUrls: ['./receita-page.scss']
 })

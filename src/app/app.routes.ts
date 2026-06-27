@@ -9,6 +9,7 @@ import { ConfiguracaoPageComponent } from './components/configuracao/configuraca
 import { DashboardPageComponent } from './components/dashboard/dashboard-page/dashboard-page';
 import { LoginPageComponent } from './components/login/login-page/login-page';
 import { CadastroPageComponent } from './components/cadastro/cadastro-page/cadastro-page';
+import { MetasPageComponent } from './components/metas/metas-page/metas-page';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
@@ -39,6 +40,11 @@ export const routes: Routes = [
     {
         path: 'investimento',
         component: InvestimentoPageComponent,
+        canActivate: [AuthGuard]
+    },
+    {
+        path: 'metas',
+        component: MetasPageComponent,
         canActivate: [AuthGuard]
     },
     {

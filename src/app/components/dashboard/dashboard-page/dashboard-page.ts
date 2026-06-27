@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import Chart from 'chart.js/auto';
 import type { ChartConfiguration } from 'chart.js';
 import { ReceitaService } from '../../../services/receita';
@@ -13,7 +13,7 @@ import { AuthService } from '../../../services/auth.service';
 @Component({
     selector: 'app-dashboard-page',
     standalone: true,
-    imports: [CommonModule, DecimalPipe],
+    imports: [CommonModule, DecimalPipe, RouterLink],
     templateUrl: './dashboard-page.html',
     styleUrls: ['./dashboard-page.css']
 })

@@ -1,7 +1,7 @@
 import { Component } from "@angular/core";
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ReceitaService } from "../../../services/receita";
 import { Receita } from "../../../models/receita.model";
 import { Despesa, DespesaService } from "../../../services/despesa";
@@ -11,7 +11,7 @@ import { FinancialViewState, financialStateMessage } from '../../../models/finan
 
 @Component({
     selector: "app-disponivel-page",
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, RouterLink],
     templateUrl: "./disponivel-page.html"
 })
 export class DisponivelPageComponent {

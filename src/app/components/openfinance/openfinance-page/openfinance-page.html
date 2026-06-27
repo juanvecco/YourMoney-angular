@@ -1,0 +1,125 @@
+<div class="of-shell">
+  <nav class="of-nav">
+    <a class="of-brand" routerLink="/dashboard">Your Money</a>
+    <ul>
+      <li><a routerLink="/dashboard"><i class="bi bi-speedometer2"></i>Dashboard</a></li>
+      <li><a routerLink="/receitas"><i class="bi bi-arrow-up-circle"></i>Receitas</a></li>
+      <li><a routerLink="/despesas"><i class="bi bi-arrow-down-circle"></i>Despesas</a></li>
+      <li><a routerLink="/investimento"><i class="bi bi-graph-up-arrow"></i>Investimentos</a></li>
+      <li><a routerLink="/metas"><i class="bi bi-bullseye"></i>Metas</a></li>
+      <li><a class="active" routerLink="/openfinance"><i class="bi bi-bank"></i>OpenFinance</a></li>
+      <li><a routerLink="/configuracao"><i class="bi bi-gear"></i>Configuracoes</a></li>
+    </ul>
+  </nav>
+
+  <main class="of-main">
+    <section class="of-hero">
+      <div>
+        <p class="of-eyebrow">Modulo separado</p>
+        <h1>OpenFinance</h1>
+        <p class="of-subtitle">
+          Explore fontes publicas ou simuladas antes de conectar dados bancarios reais.
+        </p>
+      </div>
+      <span class="of-mode" *ngIf="readiness">{{ readiness.mode }}</span>
+    </section>
+
+    <section class="of-readiness" *ngIf="readiness">
+      <div>
+        <h2>Prontidao da integracao</h2>
+        <p>{{ readiness.summary }}</p>
+        <strong *ngIf="!readiness.realDataEnabled">
+          Dados reais de contas, cartoes e transacoes ainda nao estao conectados.
+        </strong>
+      </div>
+      <ul>
+        <li *ngFor="let step of readiness.nextSteps">{{ step }}</li>
+      </ul>
+    </section>
+
+    <section class="of-section">
+      <div class="of-section-header">
+        <div>
+          <h2>Fontes disponiveis</h2>
+          <p>O status abaixo nao altera seu historico financeiro.</p>
+        </div>
+        <button type="button" class="of-button secondary" (click)="carregarFontes()">Atualizar</button>
+      </div>
+
+      <div class="of-state" *ngIf="estadoFontes === 'loading'">Verificando fontes OpenFinance...</div>
+      <div class="of-state" *ngIf="estadoFontes === 'empty'">Nenhuma fonte OpenFinance disponivel agora.</div>
+      <div class="of-state error" *ngIf="mensagemErroFontes">{{ mensagemErroFontes }}</div>
+
+      <div class="of-source-grid" *ngIf="fontes.length > 0">
+        <article class="of-source-card" *ngFor="let fonte of fontes">
+          <div class="of-card-topline">
+            <span class="of-badge">{{ obterRotuloTipoFonte(fonte.type) }}</span>
+            <span class="of-status" [class.available]="fonte.status === 'available'">
+              {{ obterRotuloStatus(fonte.status) }}
+            </span>
+          </div>
+          <h3>{{ fonte.name }}</h3>
+          <p>{{ fonte.message }}</p>
+          <small *ngIf="fonte.lastCheckedAt">
+            Verificada em {{ fonte.lastCheckedAt | date:'dd/MM/yyyy HH:mm' }}
+          </small>
+          <button
+            type="button"
+            class="of-button"
+            *ngIf="fonteSuportaPreview(fonte)"
+            (click)="fonteSelecionada = fonte.id; carregarPreview(fonte.id)">
+            Ver preview
+          </button>
+        </article>
+      </div>
+    </section>
+
+    <section class="of-section">
+      <div class="of-section-header">
+        <div>
+          <h2>Preview de transacoes</h2>
+          <p>Classificacoes editadas aqui ficam somente nesta tela.</p>
+        </div>
+        <button type="button" class="of-button secondary" (click)="carregarPreview()">Recarregar preview</button>
+      </div>
+
+      <div class="of-state" *ngIf="estadoPreview === 'loading'">Carregando transacoes simuladas...</div>
+      <div class="of-state" *ngIf="estadoPreview === 'empty'">Nenhuma transacao simulada para revisar.</div>
+      <div class="of-state error" *ngIf="estadoPreview === 'error'">{{ mensagemErroPreview }}</div>
+
+      <div class="of-preview-list" *ngIf="estadoPreview === 'loaded'">
+        <article class="of-preview-row" *ngFor="let transacao of transacoes">
+          <div>
+            <h3>{{ transacao.description }}</h3>
+            <p>
+              {{ transacao.transactionDate | date:'dd/MM/yyyy' }}
+              <span class="of-dot"></span>
+              {{ obterRotuloDirecao(transacao.direction) }}
+            </p>
+            <span class="of-warning" *ngIf="transacao.duplicateRisk">
+              {{ transacao.duplicateReason || 'Possivel duplicidade detectada.' }}
+            </span>
+          </div>
+
+          <div class="of-preview-actions">
+            <strong [class.outflow]="transacao.direction === 'outflow'">
+              {{ formatarMoeda(transacao.amount) }}
+            </strong>
+            <label>
+              Classificacao
+              <select
+                [ngModel]="transacao.suggestedFinancialType"
+                (ngModelChange)="atualizarClassificacaoLocal(transacao, $event)">
+                <option value="receita">Receita</option>
+                <option value="despesa">Despesa</option>
+                <option value="unknown">A revisar</option>
+              </select>
+            </label>
+            <span class="of-status">{{ obterRotuloClassificacao(transacao.suggestedFinancialType) }}</span>
+            <span class="of-badge">{{ transacao.importStatus }}</span>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+</div>
