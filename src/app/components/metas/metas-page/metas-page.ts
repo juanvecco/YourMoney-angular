@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { MetaMensal, MetaMensalStatus, MetasMensaisResumo } from '../../../models/meta-mensal.model';
+import { AuthService } from '../../../services/auth.service';
 import { MetaMensalService } from '../../../services/meta-mensal';
 
 type MetasViewState = 'loading' | 'loaded' | 'empty' | 'error';
@@ -29,7 +30,11 @@ export class MetasPageComponent implements OnInit, OnDestroy {
   editando = false;
   formulario = { id: '', nome: '', percentualReceita: 0 };
 
-  constructor(private metaMensalService: MetaMensalService) { }
+  constructor(
+    private metaMensalService: MetaMensalService,
+    private authService: AuthService,
+    private router: Router
+  ) { }
 
   ngOnInit(): void {
     this.carregarResumo();
@@ -137,6 +142,11 @@ export class MetasPageComponent implements OnInit, OnDestroy {
     this.mesAtual = new Date(ano, mes - 1, 1);
     this.resetarFormulario();
     this.carregarResumo();
+  }
+
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
   }
 
   formularioValido(): boolean {

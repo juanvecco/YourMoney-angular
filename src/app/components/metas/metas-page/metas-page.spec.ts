@@ -1,11 +1,15 @@
 import { of, throwError } from 'rxjs';
+import { Router } from '@angular/router';
 import { MetasPageComponent } from './metas-page';
 import { MetaMensalService } from '../../../services/meta-mensal';
 import { MetasMensaisResumo } from '../../../models/meta-mensal.model';
+import { AuthService } from '../../../services/auth.service';
 
 describe('MetasPageComponent', () => {
   let component: MetasPageComponent;
   let service: jasmine.SpyObj<MetaMensalService>;
+  let authService: jasmine.SpyObj<AuthService>;
+  let router: jasmine.SpyObj<Router>;
 
   const resumo: MetasMensaisResumo = {
     mesReferencia: '2026-06-01',
@@ -41,9 +45,11 @@ describe('MetasPageComponent', () => {
     service.criarMeta.and.returnValue(of(resumo.metas[0]));
     service.atualizarMeta.and.returnValue(of(resumo.metas[0]));
     service.deletarMeta.and.returnValue(of(void 0));
+    authService = jasmine.createSpyObj<AuthService>('AuthService', ['logout']);
+    router = jasmine.createSpyObj<Router>('Router', ['navigate']);
     spyOn(window, 'confirm').and.returnValue(true);
 
-    component = new MetasPageComponent(service);
+    component = new MetasPageComponent(service, authService, router);
     component.mesAtual = new Date(2026, 5, 1);
   });
 
@@ -107,5 +113,12 @@ describe('MetasPageComponent', () => {
     };
 
     expect(component.temAlertas).toBeTrue();
+  });
+
+  it('logs out using the existing authenticated flow', () => {
+    component.logout();
+
+    expect(authService.logout).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/login']);
   });
 });
