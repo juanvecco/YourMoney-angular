@@ -302,6 +302,39 @@ describe('DespesasComponent', () => {
     expect(component.estadoCarregamento).toBe('loadedWithData');
   });
 
+  it('calculates liquid expense values when reimbursements are present', () => {
+    component.mesAtual = new Date(2026, 4, 1);
+    despesaService.obterPorReferencia.and.returnValue(of([
+      {
+        id: 'despesa-1',
+        descricao: 'Compra para terceiro',
+        valor: 150,
+        valorReembolsado: 50,
+        valorLiquido: 100,
+        possuiReembolso: true,
+        data: '2026-05-10',
+        mesReferencia: '2026-05-01',
+        idContaFinanceira: 'conta-1',
+        idCategoria: 'categoria-1'
+      },
+      {
+        id: 'despesa-2',
+        descricao: 'Internet',
+        valor: 80,
+        data: '2026-05-05',
+        mesReferencia: '2026-05-01',
+        idContaFinanceira: 'conta-1',
+        idCategoria: 'categoria-1'
+      }
+    ]));
+
+    component.carregarDespesas();
+
+    expect(component.obterValorLiquidoDespesa(component.despesas[0])).toBe(100);
+    expect(component.obterValorLiquidoDespesa(component.despesas[1])).toBe(80);
+    expect(component.totalDespesas).toBe(180);
+  });
+
   it('shows empty-period and load-error states for despesas', () => {
     component.mesAtual = new Date(2026, 5, 1);
     despesaService.obterPorReferencia.and.returnValue(of([]));

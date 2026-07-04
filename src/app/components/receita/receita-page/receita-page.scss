@@ -1,1 +1,33 @@
 
+.receita-natureza,
+.receita-impacto {
+    border: 1px solid transparent;
+    font-weight: 700;
+}
+
+.natureza-disponivel {
+    background: rgba(25, 135, 84, 0.12);
+    border-color: rgba(25, 135, 84, 0.28);
+    color: #0f6b42;
+}
+
+.natureza-vinculada {
+    background: rgba(13, 110, 253, 0.1);
+    border-color: rgba(13, 110, 253, 0.24);
+    color: #084298;
+}
+
+.natureza-reembolso {
+    background: rgba(111, 66, 193, 0.12);
+    border-color: rgba(111, 66, 193, 0.24);
+    color: #4c2a85;
+}
+
+.receita-impacto {
+    background: rgba(33, 37, 41, 0.06);
+    color: #3d4248;
+}
+
+.receita-reembolso-detalhe {
+    border-left: 3px solid #6f42c1;
+}

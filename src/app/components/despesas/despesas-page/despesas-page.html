@@ -47,7 +47,7 @@
                 <i class="ym-kpi-icon bi bi-arrow-down"></i>
                 <h2 class="ym-kpi-label">Total de despesas</h2>
                 <p class="ym-kpi-value">R$ {{ totalDespesas | number:'1.2-2' }}</p>
-                <p class="ym-kpi-meta">{{ despesas.length }} transações</p>
+                <p class="ym-kpi-meta">{{ despesas.length }} transações líquidas</p>
             </article>
             <article class="ym-card ym-kpi accent-warning">
                 <i class="ym-kpi-icon bi bi-calendar-day"></i>
@@ -92,7 +92,10 @@
                             </div>
                         </div>
                         <div class="ym-list-actions accent-danger">
-                            <span class="ym-amount">R$ {{ despesa.valor | number:'1.2-2' }}</span>
+                            <span class="ym-amount">R$ {{ obterValorLiquidoDespesa(despesa) | number:'1.2-2' }}</span>
+                            <small *ngIf="despesa.possuiReembolso">
+                                Bruto R$ {{ despesa.valor | number:'1.2-2' }} · Reembolso R$ {{ despesa.valorReembolsado | number:'1.2-2' }}
+                            </small>
                             <button class="ym-icon-button" type="button" (click)="abrirModalEditar(despesa)"
                                 aria-label="Editar despesa">
                                 <i class="bi bi-pencil"></i>

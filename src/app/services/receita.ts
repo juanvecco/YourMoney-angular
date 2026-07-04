@@ -27,8 +27,8 @@ export class ReceitaService {
         return this.http.post<CriarReceitaResponse>(`${this.baseUrl}/Receitas`, receita);
     }
 
-    atualizarReceita(receita: AtualizarReceitaRequest): Observable<void> {
-        return this.http.put<void>(`${this.baseUrl}/Receitas/${receita.id}`, receita);
+    atualizarReceita(receita: AtualizarReceitaRequest): Observable<Receita> {
+        return this.http.put<Receita>(`${this.baseUrl}/Receitas/${receita.id}`, receita);
     }
 
     deletarReceita(id: string): Observable<void> {

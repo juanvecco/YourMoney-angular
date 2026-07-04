@@ -29,14 +29,47 @@ describe('ReceitaService', () => {
       descricao: 'Salário',
       valor: 5250.75,
       data: '2026-06-05',
-      mesReferencia: '2026-05-01'
+      mesReferencia: '2026-05-01',
+      natureza: 'RendaDisponivel'
     };
-    const response = { id: 'receita-1', ...payload };
+    const response = {
+      id: 'receita-1',
+      ...payload,
+      consideraNasMetas: true,
+      despesaVinculadaId: null,
+      despesaVinculadaDescricao: null,
+      valorAbatidoEmDespesa: 0
+    };
 
     service.criarReceita(payload).subscribe(result => expect(result).toEqual(response));
 
     const request = httpTesting.expectOne(`${environment.apiUrl}/Receitas`);
     expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(payload);
+    request.flush(response);
+  });
+
+  it('updates receita with classification and linked expense fields', () => {
+    const payload = {
+      id: 'receita-1',
+      descricao: 'Reembolso compra',
+      valor: 150,
+      data: '2026-07-05',
+      mesReferencia: '2026-07-01',
+      natureza: 'Reembolso' as const,
+      despesaVinculadaId: 'despesa-1'
+    };
+    const response = {
+      ...payload,
+      consideraNasMetas: false,
+      despesaVinculadaDescricao: 'Compra para terceiro',
+      valorAbatidoEmDespesa: 150
+    };
+
+    service.atualizarReceita(payload).subscribe(result => expect(result).toEqual(response));
+
+    const request = httpTesting.expectOne(`${environment.apiUrl}/Receitas/receita-1`);
+    expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual(payload);
     request.flush(response);
   });

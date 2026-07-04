@@ -1,5 +1,6 @@
 import { of, throwError } from 'rxjs';
-import { Router } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
+import { TestBed } from '@angular/core/testing';
 import { MetasPageComponent } from './metas-page';
 import { MetaMensalService } from '../../../services/meta-mensal';
 import { MetasMensaisResumo } from '../../../models/meta-mensal.model';
@@ -14,7 +15,12 @@ describe('MetasPageComponent', () => {
   const resumo: MetasMensaisResumo = {
     mesReferencia: '2026-06-01',
     receitaTotal: 10000,
+    receitaTotalBruta: 11000,
+    receitaElegivelMetas: 10000,
+    receitaExcluidaMetas: 1000,
     despesaTotal: 2500,
+    despesaTotalBruta: 2700,
+    despesaTotalReembolsada: 200,
     percentualTotalComprometido: 35,
     valorTotalReservado: 3500,
     percentualRestante: 65,
@@ -59,6 +65,9 @@ describe('MetasPageComponent', () => {
     expect(service.obterResumo).toHaveBeenCalledWith(6, 2026);
     expect(component.estado).toBe('loaded');
     expect(component.resumo?.valorTotalReservado).toBe(3500);
+    expect(component.resumo?.receitaElegivelMetas).toBe(10000);
+    expect(component.resumo?.receitaExcluidaMetas).toBe(1000);
+    expect(component.resumo?.despesaTotalReembolsada).toBe(200);
     expect(component.metas[0].valorCalculado).toBe(2500);
     expect(component.formatarMoeda(2500)).toContain('2.500,00');
   });
@@ -113,6 +122,27 @@ describe('MetasPageComponent', () => {
     };
 
     expect(component.temAlertas).toBeTrue();
+  });
+
+  it('renders eligible, excluded, gross and reimbursed summary labels', async () => {
+    await TestBed.configureTestingModule({
+      imports: [MetasPageComponent],
+      providers: [
+        provideRouter([]),
+        { provide: MetaMensalService, useValue: service },
+        { provide: AuthService, useValue: authService }
+      ]
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(MetasPageComponent);
+    fixture.componentInstance.mesAtual = new Date(2026, 5, 1);
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Receita elegível para metas');
+    expect(text).toContain('fora das metas');
+    expect(text).toContain('Bruta');
+    expect(text).toContain('reembolsada');
   });
 
   it('logs out using the existing authenticated flow', () => {

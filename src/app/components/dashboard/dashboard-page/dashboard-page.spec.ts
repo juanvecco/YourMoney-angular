@@ -49,7 +49,15 @@ describe('DashboardPageComponent', () => {
   it('maps positive monthly totals into chart items', () => {
     const resumo = component.criarResumoGrafico(
       [
-        { id: 'receita-1', descricao: 'Salario', valor: 5000, data: '2026-05-01' }
+        {
+          id: 'receita-1',
+          descricao: 'Salario',
+          valor: 5000,
+          data: '2026-05-01',
+          natureza: 'RendaDisponivel',
+          consideraNasMetas: true,
+          valorAbatidoEmDespesa: 0
+        }
       ],
       [
         {
@@ -86,6 +94,7 @@ describe('DashboardPageComponent', () => {
   });
 
   it('recalculates chart data when the dashboard month changes', () => {
+    component.mesAtual = new Date(2026, 4, 1);
     fixture.detectChanges();
 
     component.proximoMes();
@@ -115,7 +124,15 @@ describe('DashboardPageComponent', () => {
 
   it('renders chart state text and legend markup for responsive layout', () => {
     receitaService.obterPorReferencia.and.returnValue(of([
-      { id: 'receita-1', descricao: 'Salario', valor: 3000, data: '2026-05-01' }
+      {
+        id: 'receita-1',
+        descricao: 'Salario',
+        valor: 3000,
+        data: '2026-05-01',
+        natureza: 'RendaDisponivel',
+        consideraNasMetas: true,
+        valorAbatidoEmDespesa: 0
+      }
     ]));
 
     fixture.detectChanges();

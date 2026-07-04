@@ -26,7 +26,15 @@ describe('DisponivelPageComponent', () => {
   it('loads receitas and despesas for the same selected period', () => {
     component.mesAtual = new Date(2026, 4, 1);
     receitaService.obterPorReferencia.and.returnValue(of([
-      { id: 'receita-1', descricao: 'Salario', valor: 3000, data: '2026-05-01' }
+      {
+        id: 'receita-1',
+        descricao: 'Salario',
+        valor: 3000,
+        data: '2026-05-01',
+        natureza: 'RendaDisponivel',
+        consideraNasMetas: true,
+        valorAbatidoEmDespesa: 0
+      }
     ]));
     despesaService.obterPorReferencia.and.returnValue(of([
       {

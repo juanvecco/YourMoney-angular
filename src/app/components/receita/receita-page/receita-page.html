@@ -70,6 +70,11 @@
                                 <div class="ym-list-meta">
                                     <span><i class="bi bi-calendar3"></i> {{ receita.data | date:'dd/MM/yyyy' }}</span>
                                     <span><i class="bi bi-calendar-month"></i> Ref. {{ obterMesReferenciaTexto(receita.mesReferencia || receita.data) }}</span>
+                                    <span [ngClass]="obterNaturezaClasse(receita.natureza)">{{ obterNaturezaTexto(receita.natureza) }}</span>
+                                    <span class="ym-chip receita-impacto">{{ obterImpactoMetas(receita) }}</span>
+                                    <span class="ym-chip" *ngIf="receita.despesaVinculadaDescricao">
+                                        <i class="bi bi-link-45deg"></i>{{ receita.despesaVinculadaDescricao }}
+                                    </span>
                                 </div>
                             </div>
                             <div class="ym-list-actions accent-success">
@@ -130,6 +135,31 @@
                             <label class="form-label">Mês de Referência</label>
                             <input type="month" class="form-control" [(ngModel)]="novaReceita.mesReferencia"
                                 name="mesReferencia" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Natureza da entrada</label>
+                            <select class="form-select" [(ngModel)]="novaReceita.natureza"
+                                name="naturezaReceita" (change)="onNaturezaReceitaChange()" required>
+                                <option value="RendaDisponivel">Renda disponível</option>
+                                <option value="EntradaVinculadaDespesa">Destinada a despesa</option>
+                                <option value="Reembolso">Reembolso</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6" *ngIf="novaReceita.natureza === 'Reembolso'">
+                            <label class="form-label">Despesa vinculada</label>
+                            <select class="form-select" [(ngModel)]="novaReceita.despesaVinculadaId"
+                                name="despesaVinculada" required>
+                                <option value="" disabled>Selecione a despesa</option>
+                                <option *ngFor="let despesa of despesasVinculaveis" [value]="despesa.id">
+                                    {{ despesa.descricao }} - R$ {{ obterValorPendenteDespesa(despesa) | number:'1.2-2' }}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-12" *ngIf="novaReceita.natureza === 'Reembolso' && obterDespesaSelecionada() as despesaSelecionada">
+                            <div class="ym-empty compact text-start receita-reembolso-detalhe">
+                                Reembolso para {{ despesaSelecionada.descricao }}. Pendente atual:
+                                R$ {{ obterValorPendenteDespesa(despesaSelecionada) | number:'1.2-2' }}.
+                            </div>
                         </div>
                     </div>
                 </form>

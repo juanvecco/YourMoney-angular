@@ -11,7 +11,12 @@ export interface MetaMensal {
 export interface MetasMensaisResumo {
   mesReferencia: string;
   receitaTotal: number;
+  receitaTotalBruta: number;
+  receitaElegivelMetas: number;
+  receitaExcluidaMetas: number;
   despesaTotal: number;
+  despesaTotalBruta: number;
+  despesaTotalReembolsada: number;
   percentualTotalComprometido: number;
   valorTotalReservado: number;
   percentualRestante: number;
