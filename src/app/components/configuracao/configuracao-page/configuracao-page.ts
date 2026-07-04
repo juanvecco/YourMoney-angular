@@ -1,7 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CriarCategoriaComponent } from '../../categoria/criar-categoria/criar-categoria';
 import { Categoria } from '../../../models/despesa.model';
 import { CategoriaPayload, CategoriaService } from '../../../services/categoria';
@@ -10,7 +10,7 @@ import { AuthService } from '../../../services/auth.service';
 @Component({
     selector: "app-configuracao-page",
     standalone: true,
-    imports: [CommonModule, FormsModule, CriarCategoriaComponent],
+    imports: [CommonModule, FormsModule, CriarCategoriaComponent, RouterLink],
     templateUrl: "./configuracao-page.html"
 })
 export class ConfiguracaoPageComponent implements OnInit {

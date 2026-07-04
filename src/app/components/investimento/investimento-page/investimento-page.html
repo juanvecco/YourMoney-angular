@@ -1,14 +1,15 @@
 <header class="ym-topbar">
   <nav class="ym-nav">
-    <a class="ym-brand" href="/dashboard">
+    <a class="ym-brand" routerLink="/dashboard">
       <img src="assets/logo.png" alt="Your Money" class="ym-logo" />
     </a>
     <ul class="ym-menu">
-      <li><a href="/dashboard"><i class="bi bi-speedometer2"></i>Dashboard</a></li>
-      <li><a href="/receitas"><i class="bi bi-arrow-up-circle"></i>Receitas</a></li>
-      <li><a href="/despesas"><i class="bi bi-arrow-down-circle"></i>Despesas</a></li>
-      <li><a class="active" href="/investimento"><i class="bi bi-graph-up-arrow"></i>Investimentos</a></li>
-      <li><a href="/configuracao"><i class="bi bi-gear"></i>Configurações</a></li>
+      <li><a routerLink="/dashboard"><i class="bi bi-speedometer2"></i>Dashboard</a></li>
+      <li><a routerLink="/receitas"><i class="bi bi-arrow-up-circle"></i>Receitas</a></li>
+      <li><a routerLink="/despesas"><i class="bi bi-arrow-down-circle"></i>Despesas</a></li>
+      <li><a class="active" routerLink="/investimento"><i class="bi bi-graph-up-arrow"></i>Investimentos</a></li>
+      <li><a routerLink="/metas"><i class="bi bi-bullseye"></i>Metas</a></li>
+      <li><a routerLink="/configuracao"><i class="bi bi-gear"></i>Configurações</a></li>
       <li>
         <button class="ym-logout-link" type="button" (click)="logout()" aria-label="Sair da conta">
           <i class="bi bi-box-arrow-right"></i>Sair
@@ -113,44 +114,55 @@
           <div class="row g-3">
             <div class="col-12">
               <label class="form-label">Nome</label>
-              <input type="text" class="form-control" [(ngModel)]="novoInvestimento.nome" name="nome" required />
+              <input type="text" class="form-control" [(ngModel)]="novoInvestimento.nome" name="nome"
+                maxlength="100" required aria-required="true" />
             </div>
             <div class="col-12">
               <label class="form-label">Descrição</label>
               <input type="text" class="form-control" [(ngModel)]="novoInvestimento.descricao" name="descricao"
-                required />
+                maxlength="500" />
             </div>
             <div class="col-12">
               <label class="form-label">Tipo</label>
-              <input type="text" class="form-control" [(ngModel)]="novoInvestimento.tipo" name="tipo" required />
+              <input type="text" class="form-control" [(ngModel)]="novoInvestimento.tipo" name="tipo"
+                maxlength="100" required aria-required="true" />
             </div>
             <div class="col-md-6">
               <label class="form-label">Quantidade</label>
-              <input type="number" step="0.01" class="form-control" [(ngModel)]="novoInvestimento.quantidade"
-                name="quantidade" required />
+              <input type="number" step="0.01" min="0.01" class="form-control"
+                [(ngModel)]="novoInvestimento.quantidade" name="quantidade" required aria-required="true" />
             </div>
             <div class="col-md-6">
               <label class="form-label">Preço médio (R$)</label>
-              <input type="number" step="0.01" class="form-control" [(ngModel)]="novoInvestimento.precoMedio"
-                name="precoMedio" required />
+              <input type="number" step="0.01" min="0.01" class="form-control"
+                [(ngModel)]="novoInvestimento.precoMedio" name="precoMedio" required aria-required="true" />
             </div>
             <div class="col-md-6">
               <label class="form-label">Valor (R$)</label>
-              <input type="number" step="0.01" class="form-control" [(ngModel)]="novoInvestimento.valorAtual"
-                name="valor" required />
+              <input type="number" step="0.01" min="0.01" class="form-control"
+                [(ngModel)]="novoInvestimento.valorAtual" name="valor" required aria-required="true" />
             </div>
             <div class="col-md-6">
-              <label class="form-label">Data</label>
+              <label class="form-label">Data do investimento</label>
               <input type="date" class="form-control" [(ngModel)]="novoInvestimento.dataInvestimento" name="data"
-                required />
+                required aria-required="true" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Mês de referência</label>
+              <input type="month" class="form-control" [(ngModel)]="novoInvestimento.mesReferencia"
+                name="mesReferencia" required aria-required="true" />
             </div>
           </div>
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="ym-button" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="ym-button primary" (click)="salvarInvestimento()">
-          <i class="bi bi-check2"></i>Salvar Investimento
+        <button type="button" class="ym-button" data-bs-dismiss="modal" [disabled]="salvandoInvestimento">
+          Cancelar
+        </button>
+        <button type="button" class="ym-button primary" (click)="salvarInvestimento()"
+          [disabled]="salvandoInvestimento" [attr.aria-busy]="salvandoInvestimento">
+          <i class="bi" [ngClass]="salvandoInvestimento ? 'bi-hourglass-split' : 'bi-check2'"></i>
+          {{ salvandoInvestimento ? 'Salvando...' : 'Salvar Investimento' }}
         </button>
       </div>
     </div>

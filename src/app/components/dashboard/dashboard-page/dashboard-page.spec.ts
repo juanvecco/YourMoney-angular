@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DashboardPageComponent } from './dashboard-page';
 import { ReceitaService } from '../../../services/receita';
 import { DespesaService } from '../../../services/despesa';
@@ -21,7 +21,9 @@ describe('DashboardPageComponent', () => {
     despesaService = jasmine.createSpyObj<DespesaService>('DespesaService', ['obterPorReferencia', 'listarCategorias']);
     investimentoService = jasmine.createSpyObj<InvestimentoService>('InvestimentoService', ['obterPorReferencia']);
     authService = jasmine.createSpyObj<AuthService>('AuthService', ['logout']);
-    router = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    router = jasmine.createSpyObj<Router>('Router', ['navigate', 'createUrlTree', 'serializeUrl'], { events: of() });
+    router.createUrlTree.and.returnValue({} as ReturnType<Router['createUrlTree']>);
+    router.serializeUrl.and.returnValue('/');
 
     receitaService.obterPorReferencia.and.returnValue(of([]));
     despesaService.obterPorReferencia.and.returnValue(of([]));
@@ -32,6 +34,7 @@ describe('DashboardPageComponent', () => {
       imports: [DashboardPageComponent],
       providers: [
         { provide: Router, useValue: router },
+        { provide: ActivatedRoute, useValue: {} },
         { provide: ReceitaService, useValue: receitaService },
         { provide: DespesaService, useValue: despesaService },
         { provide: InvestimentoService, useValue: investimentoService },
@@ -46,7 +49,15 @@ describe('DashboardPageComponent', () => {
   it('maps positive monthly totals into chart items', () => {
     const resumo = component.criarResumoGrafico(
       [
-        { id: 'receita-1', descricao: 'Salario', valor: 5000, data: '2026-05-01' }
+        {
+          id: 'receita-1',
+          descricao: 'Salario',
+          valor: 5000,
+          data: '2026-05-01',
+          natureza: 'RendaDisponivel',
+          consideraNasMetas: true,
+          valorAbatidoEmDespesa: 0
+        }
       ],
       [
         {
@@ -67,8 +78,8 @@ describe('DashboardPageComponent', () => {
           quantidade: 1,
           precoMedio: 1000,
           valorAtual: 1500,
-          dataInvestimento: new Date('2026-05-03'),
-          dataResgate: new Date('2026-12-03'),
+          dataInvestimento: '2026-05-03T00:00:00',
+          dataResgate: '2026-12-03T00:00:00',
           ativo: true
         }
       ],
@@ -83,6 +94,7 @@ describe('DashboardPageComponent', () => {
   });
 
   it('recalculates chart data when the dashboard month changes', () => {
+    component.mesAtual = new Date(2026, 4, 1);
     fixture.detectChanges();
 
     component.proximoMes();
@@ -112,7 +124,15 @@ describe('DashboardPageComponent', () => {
 
   it('renders chart state text and legend markup for responsive layout', () => {
     receitaService.obterPorReferencia.and.returnValue(of([
-      { id: 'receita-1', descricao: 'Salario', valor: 3000, data: '2026-05-01' }
+      {
+        id: 'receita-1',
+        descricao: 'Salario',
+        valor: 3000,
+        data: '2026-05-01',
+        natureza: 'RendaDisponivel',
+        consideraNasMetas: true,
+        valorAbatidoEmDespesa: 0
+      }
     ]));
 
     fixture.detectChanges();

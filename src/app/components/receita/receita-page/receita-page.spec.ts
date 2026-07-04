@@ -1,14 +1,47 @@
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { ReceitaPageComponent } from './receita-page';
 import { ReceitaService } from '../../../services/receita';
+import { DespesaService } from '../../../services/despesa';
 import { AuthService } from '../../../services/auth.service';
+import Swal from 'sweetalert2';
+import { CriarReceitaResponse, Receita } from '../../../models/receita.model';
+import { Despesa } from '../../../models/despesa.model';
 
 describe('ReceitaPageComponent', () => {
   let component: ReceitaPageComponent;
   let receitaService: jasmine.SpyObj<ReceitaService>;
+  let despesaService: jasmine.SpyObj<DespesaService>;
   let authService: jasmine.SpyObj<AuthService>;
   let router: jasmine.SpyObj<Router>;
+
+  const criarReceitaMock = (overrides: Partial<Receita> = {}): Receita => ({
+    id: 'receita-1',
+    descricao: 'Salario',
+    valor: 5000,
+    data: '2026-03-01',
+    mesReferencia: '2026-03-01',
+    natureza: 'RendaDisponivel',
+    consideraNasMetas: true,
+    despesaVinculadaId: null,
+    despesaVinculadaDescricao: null,
+    valorAbatidoEmDespesa: 0,
+    ...overrides
+  });
+
+  const criarDespesaMock = (overrides: Partial<Despesa> = {}): Despesa => ({
+    id: 'despesa-1',
+    descricao: 'Compra para terceiro',
+    valor: 150,
+    data: '2026-05-02',
+    idContaFinanceira: 'conta-1',
+    idCategoria: 'categoria-1',
+    valorReembolsado: 0,
+    valorLiquido: 150,
+    possuiReembolso: false,
+    ...overrides
+  });
 
   beforeEach(() => {
     receitaService = jasmine.createSpyObj<ReceitaService>('ReceitaService', [
@@ -17,18 +50,25 @@ describe('ReceitaPageComponent', () => {
       'atualizarReceita',
       'deletarReceita'
     ]);
+    despesaService = jasmine.createSpyObj<DespesaService>('DespesaService', ['obterPorReferencia']);
     authService = jasmine.createSpyObj<AuthService>('AuthService', ['logout']);
     router = jasmine.createSpyObj<Router>('Router', ['navigate']);
     receitaService.obterPorReferencia.and.returnValue(of([]));
+    despesaService.obterPorReferencia.and.returnValue(of([]));
+    (window as any).bootstrap = {
+      Modal: {
+        getInstance: () => ({ hide: () => undefined })
+      }
+    };
 
-    component = new ReceitaPageComponent(receitaService, authService, router);
+    component = new ReceitaPageComponent(receitaService, despesaService, authService, router);
   });
 
   it('loads receitas by selected month and updates total', () => {
     component.mesAtual = new Date(2026, 2, 1);
     receitaService.obterPorReferencia.and.returnValue(of([
-      { id: 'receita-1', descricao: 'Salario', valor: 5000, data: '2026-03-01', mesReferencia: '2026-03-01' },
-      { id: 'receita-2', descricao: 'Bonus', valor: 750, data: '2026-03-15', mesReferencia: '2026-03-01' }
+      criarReceitaMock({ id: 'receita-1', descricao: 'Salario', valor: 5000 }),
+      criarReceitaMock({ id: 'receita-2', descricao: 'Bonus', valor: 750, data: '2026-03-15' })
     ]));
 
     component.carregarReceitas();
@@ -55,5 +95,190 @@ describe('ReceitaPageComponent', () => {
     expect(component.estadoCarregamento).toBe('loadError');
     expect(component.totalReceitas).toBe(0);
     expect(component.mensagemCarregamento).toContain('Não foi possível');
+  });
+
+  it('creates receita once and reloads the returned reference month', () => {
+    spyOn(Swal, 'fire').and.resolveTo({ isConfirmed: true } as any);
+    const response: CriarReceitaResponse = {
+      id: 'receita-1',
+      descricao: 'Salário',
+      valor: 5250.75,
+      data: '2026-06-05',
+      mesReferencia: '2026-05-01',
+      natureza: 'RendaDisponivel',
+      consideraNasMetas: true,
+      despesaVinculadaId: null,
+      despesaVinculadaDescricao: null,
+      valorAbatidoEmDespesa: 0
+    };
+    receitaService.criarReceita.and.returnValue(of(response));
+    component.novaReceita = {
+      id: '',
+      descricao: ' Salário ',
+      valor: 5250.75,
+      data: '2026-06-05',
+      mesReferencia: '2026-05',
+      natureza: 'RendaDisponivel',
+      despesaVinculadaId: ''
+    };
+
+    component.salvarReceita();
+
+    expect(receitaService.criarReceita).toHaveBeenCalledOnceWith({
+      descricao: 'Salário',
+      valor: 5250.75,
+      data: '2026-06-05',
+      mesReferencia: '2026-05-01',
+      natureza: 'RendaDisponivel',
+      despesaVinculadaId: null
+    });
+    expect(component.mesAtual.getMonth()).toBe(4);
+    expect(receitaService.obterPorReferencia).toHaveBeenCalledWith(5, 2026);
+    expect(despesaService.obterPorReferencia).toHaveBeenCalledWith(5, 2026);
+    expect(component.salvandoReceita).toBeFalse();
+  });
+
+  it('sends linked expense only for reimbursement entries', () => {
+    spyOn(Swal, 'fire').and.resolveTo({ isConfirmed: true } as any);
+    const response = criarReceitaMock({
+      natureza: 'Reembolso',
+      consideraNasMetas: false,
+      despesaVinculadaId: 'despesa-1',
+      valorAbatidoEmDespesa: 150
+    }) as CriarReceitaResponse;
+    receitaService.criarReceita.and.returnValue(of(response));
+    component.novaReceita = {
+      id: '',
+      descricao: 'Reembolso compra',
+      valor: 150,
+      data: '2026-06-05',
+      mesReferencia: '2026-06',
+      natureza: 'Reembolso',
+      despesaVinculadaId: 'despesa-1'
+    };
+
+    component.salvarReceita();
+
+    expect(receitaService.criarReceita).toHaveBeenCalledOnceWith({
+      descricao: 'Reembolso compra',
+      valor: 150,
+      data: '2026-06-05',
+      mesReferencia: '2026-06-01',
+      natureza: 'Reembolso',
+      despesaVinculadaId: 'despesa-1'
+    });
+  });
+
+  it('requires linked expense when nature is reimbursement', () => {
+    const alert = spyOn(Swal, 'fire').and.resolveTo({ isConfirmed: true } as any);
+    component.novaReceita = {
+      id: '',
+      descricao: 'Reembolso compra',
+      valor: 150,
+      data: '2026-06-05',
+      mesReferencia: '2026-06',
+      natureza: 'Reembolso',
+      despesaVinculadaId: ''
+    };
+
+    component.salvarReceita();
+
+    expect(receitaService.criarReceita).not.toHaveBeenCalled();
+    expect(alert).toHaveBeenCalledWith(jasmine.objectContaining({ icon: 'warning' }));
+  });
+
+  it('shows nature labels, goal impact, and pending expense value', () => {
+    despesaService.obterPorReferencia.and.returnValue(of([
+      criarDespesaMock({ valor: 150, valorReembolsado: 50, valorLiquido: 100 })
+    ]));
+    component.novaReceita.despesaVinculadaId = 'despesa-1';
+
+    component.carregarDespesasVinculaveis();
+
+    expect(component.obterNaturezaTexto('EntradaVinculadaDespesa')).toBe('Destinada a despesa');
+    expect(component.obterNaturezaClasse('Reembolso')).toContain('natureza-reembolso');
+    expect(component.obterImpactoMetas(criarReceitaMock({ natureza: 'Reembolso', consideraNasMetas: false }))).toContain('abate uma despesa');
+    expect(component.obterDespesaSelecionada()?.id).toBe('despesa-1');
+    expect(component.obterValorPendenteDespesa(component.despesasVinculaveis[0])).toBe(100);
+  });
+
+  it('clears linked expense when leaving reimbursement nature', () => {
+    component.novaReceita.natureza = 'EntradaVinculadaDespesa';
+    component.novaReceita.despesaVinculadaId = 'despesa-1';
+
+    component.onNaturezaReceitaChange();
+
+    expect(component.novaReceita.despesaVinculadaId).toBe('');
+  });
+
+  it('blocks repeated submissions while saving', () => {
+    const pending = new Subject<CriarReceitaResponse>();
+    receitaService.criarReceita.and.returnValue(pending);
+    component.novaReceita = {
+      id: '',
+      descricao: 'Salário',
+      valor: 5000,
+      data: '2026-06-05',
+      mesReferencia: '2026-05',
+      natureza: 'RendaDisponivel',
+      despesaVinculadaId: ''
+    };
+
+    component.salvarReceita();
+    component.salvarReceita();
+
+    expect(receitaService.criarReceita).toHaveBeenCalledTimes(1);
+    expect(component.salvandoReceita).toBeTrue();
+  });
+
+  it('preserves form and shows backend validation message', () => {
+    const alert = spyOn(Swal, 'fire').and.resolveTo({ isConfirmed: true } as any);
+    receitaService.criarReceita.and.returnValue(throwError(() => new HttpErrorResponse({
+      status: 400,
+      error: { message: 'Valor deve ser maior que zero.' }
+    })));
+    component.novaReceita = {
+      id: '',
+      descricao: 'Salário',
+      valor: 5000,
+      data: '2026-06-05',
+      mesReferencia: '2026-05',
+      natureza: 'RendaDisponivel',
+      despesaVinculadaId: ''
+    };
+
+    component.salvarReceita();
+
+    expect(component.novaReceita.descricao).toBe('Salário');
+    expect(component.salvandoReceita).toBeFalse();
+    expect(alert).toHaveBeenCalledWith(jasmine.objectContaining({
+      text: 'Valor deve ser maior que zero.'
+    }));
+  });
+
+  [
+    { status: 401, message: 'Sua sessão expirou. Entre novamente.' },
+    { status: 403, message: 'Você não tem permissão para salvar esta receita.' },
+    { status: 503, message: 'Serviço temporariamente indisponível. Tente novamente.' }
+  ].forEach(({ status, message }) => {
+    it(`keeps the form and classifies HTTP ${status}`, () => {
+      const alert = spyOn(Swal, 'fire').and.resolveTo({ isConfirmed: true } as any);
+      receitaService.criarReceita.and.returnValue(throwError(() => new HttpErrorResponse({ status })));
+      component.novaReceita = {
+        id: '',
+        descricao: 'Salário',
+        valor: 5000,
+        data: '2026-06-05',
+        mesReferencia: '2026-05',
+        natureza: 'RendaDisponivel',
+        despesaVinculadaId: ''
+      };
+
+      component.salvarReceita();
+
+      expect(component.novaReceita.data).toBe('2026-06-05');
+      expect(component.salvandoReceita).toBeFalse();
+      expect(alert).toHaveBeenCalledWith(jasmine.objectContaining({ text: message }));
+    });
   });
 });

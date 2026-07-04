@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Despesa } from './despesa';
-import { Receita } from './receita';
+import { Receita } from '../models/receita.model';
 
 export interface Disponivel {
     id: string;

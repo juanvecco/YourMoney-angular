@@ -1,17 +1,21 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { ReceitaService, Receita } from '../../../services/receita';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Router, RouterLink } from '@angular/router';
+import { ReceitaService } from '../../../services/receita';
+import { NaturezaReceita, Receita } from '../../../models/receita.model';
+import { Despesa } from '../../../models/despesa.model';
+import { DespesaService } from '../../../services/despesa';
 import Swal from 'sweetalert2';
-import { Subject, takeUntil } from 'rxjs';
+import { Observable, Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
 
 @Component({
     selector: 'app-receita-page',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, RouterLink],
     templateUrl: './receita-page.html',
     styleUrls: ['./receita-page.scss']
 })
@@ -20,6 +24,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
 
     // === DADOS ===
     receitas: Receita[] = [];
+    despesasVinculaveis: Despesa[] = [];
     mesAtual: Date = new Date();
     totalReceitas = 0;
     estadoCarregamento: FinancialViewState = 'loading';
@@ -31,10 +36,13 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         descricao: '',
         valor: 0,
         data: new Date().toISOString().split('T')[0],
-        mesReferencia: this.obterMesReferenciaInput(new Date())
+        mesReferencia: this.obterMesReferenciaInput(new Date()),
+        natureza: 'RendaDisponivel' as NaturezaReceita,
+        despesaVinculadaId: ''
     };
 
     editando = false;
+    salvandoReceita = false;
 
     // === GAMIFICAÇÃO ===
     usuarioCategorizouEsteMes = false;
@@ -44,6 +52,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
 
     constructor(
         private receitaService: ReceitaService,
+        private despesaService: DespesaService,
         private authService: AuthService,
         private router: Router
     ) { }
@@ -59,6 +68,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
 
     carregarDadosIniciais() {
         this.carregarReceitas();
+        this.carregarDespesasVinculaveis();
     }
 
     carregarReceitas() {
@@ -91,11 +101,24 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
             });
     }
 
+    carregarDespesasVinculaveis() {
+        const mes = this.mesAtual.getMonth() + 1;
+        const ano = this.mesAtual.getFullYear();
+
+        this.despesaService.obterPorReferencia(mes, ano)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (despesas) => this.despesasVinculaveis = despesas,
+                error: () => this.despesasVinculaveis = []
+            });
+    }
+
     mudarMes(direcao: number) {
         const novoMes = new Date(this.mesAtual);
         novoMes.setMonth(novoMes.getMonth() + direcao);
         this.mesAtual = novoMes;
         this.carregarReceitas();
+        this.carregarDespesasVinculaveis();
     }
 
     // === CALENDÁRIO ===
@@ -113,6 +136,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         const [ano, mes] = input.value.split('-').map(Number);
         this.mesAtual = new Date(ano, mes - 1, 1);
         this.carregarReceitas();
+        this.carregarDespesasVinculaveis();
     }
 
     logout(): void {
@@ -132,7 +156,9 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         this.novaReceita = {
             ...receita,
             data: new Date(receita.data).toISOString().split('T')[0],
-            mesReferencia: this.obterMesReferenciaInput(receita.mesReferencia || receita.data)
+            mesReferencia: this.obterMesReferenciaInput(receita.mesReferencia || receita.data),
+            natureza: receita.natureza ?? 'RendaDisponivel',
+            despesaVinculadaId: receita.despesaVinculadaId ?? ''
         };
         this.abrirModal();
     }
@@ -148,43 +174,104 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
             descricao: '',
             valor: 0,
             data: new Date().toISOString().split('T')[0],
-            mesReferencia: this.obterMesReferenciaInput(this.mesAtual)
+            mesReferencia: this.obterMesReferenciaInput(this.mesAtual),
+            natureza: 'RendaDisponivel',
+            despesaVinculadaId: ''
         };
     }
 
     // === SALVAR ===
     salvarReceita() {
+        if (this.salvandoReceita) return;
+
         if (!this.camposObrigatoriosPreenchidos()) {
             this.mostrarAlertaCamposObrigatorios();
             return;
         }
 
         const payload = {
-            ...this.novaReceita,
-            mesReferencia: this.converterMesReferenciaParaApi(this.novaReceita.mesReferencia)
+            descricao: this.novaReceita.descricao.trim(),
+            valor: this.novaReceita.valor,
+            data: this.novaReceita.data,
+            mesReferencia: this.converterMesReferenciaParaApi(this.novaReceita.mesReferencia),
+            natureza: this.novaReceita.natureza,
+            despesaVinculadaId: this.novaReceita.natureza === 'Reembolso'
+                ? this.novaReceita.despesaVinculadaId || null
+                : null
         };
 
-        const request$ = this.editando
-            ? this.receitaService.atualizarReceita(payload)
+        const request$: Observable<Receita | void> = this.editando
+            ? this.receitaService.atualizarReceita({ id: this.novaReceita.id, ...payload })
             : this.receitaService.criarReceita(payload);
 
+        this.salvandoReceita = true;
         request$.pipe(takeUntil(this.destroy$)).subscribe({
-            next: () => {
+            next: (response: Receita | void) => {
+                if (!this.editando && response?.mesReferencia) {
+                    const referencia = this.obterMesReferenciaInput(response.mesReferencia);
+                    const [ano, mes] = referencia.split('-').map(Number);
+                    this.mesAtual = new Date(ano, mes - 1, 1);
+                }
                 this.fecharModal();
                 this.carregarReceitas();
+                this.carregarDespesasVinculaveis();
                 this.mostrarSucesso();
+                this.salvandoReceita = false;
             },
-            error: () => this.mostrarErro()
+            error: (error: unknown) => {
+                this.salvandoReceita = false;
+                this.mostrarErro(error);
+            }
         });
     }
 
     private camposObrigatoriosPreenchidos(): boolean {
         return !!(
-            this.novaReceita.descricao &&
+            this.novaReceita.descricao.trim() &&
             this.novaReceita.valor > 0 &&
             this.novaReceita.data &&
-            this.novaReceita.mesReferencia
+            this.novaReceita.mesReferencia &&
+            this.novaReceita.natureza &&
+            (this.novaReceita.natureza !== 'Reembolso' || !!this.novaReceita.despesaVinculadaId)
         );
+    }
+
+    onNaturezaReceitaChange() {
+        if (this.novaReceita.natureza !== 'Reembolso') {
+            this.novaReceita.despesaVinculadaId = '';
+        }
+    }
+
+    obterNaturezaTexto(natureza?: NaturezaReceita): string {
+        const rotulos: Record<NaturezaReceita, string> = {
+            RendaDisponivel: 'Renda disponível',
+            EntradaVinculadaDespesa: 'Destinada a despesa',
+            Reembolso: 'Reembolso'
+        };
+        return rotulos[natureza ?? 'RendaDisponivel'];
+    }
+
+    obterNaturezaClasse(natureza?: NaturezaReceita): string {
+        const classes: Record<NaturezaReceita, string> = {
+            RendaDisponivel: 'ym-chip receita-natureza natureza-disponivel',
+            EntradaVinculadaDespesa: 'ym-chip receita-natureza natureza-vinculada',
+            Reembolso: 'ym-chip receita-natureza natureza-reembolso'
+        };
+        return classes[natureza ?? 'RendaDisponivel'];
+    }
+
+    obterImpactoMetas(receita: Receita): string {
+        if (receita.consideraNasMetas) return 'Entra na base das metas';
+        if (receita.natureza === 'Reembolso') return 'Fora das metas e abate uma despesa';
+        return 'Fora das metas';
+    }
+
+    obterDespesaSelecionada(): Despesa | undefined {
+        return this.despesasVinculaveis.find(d => d.id === this.novaReceita.despesaVinculadaId);
+    }
+
+    obterValorPendenteDespesa(despesa: Despesa): number {
+        return despesa.valorLiquido ?? Math.max(despesa.valor - (despesa.valorReembolsado ?? 0), 0);
     }
 
     obterMesReferenciaTexto(mesReferencia?: string): string {
@@ -217,8 +304,33 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         Swal.fire({ icon: 'success', title: this.editando ? 'Atualizada!' : 'Cadastrada!', timer: 2000, showConfirmButton: false });
     }
 
-    private mostrarErro() {
-        Swal.fire({ icon: 'error', title: 'Erro!', text: 'Não foi possível salvar.', confirmButtonColor: '#dc3545' });
+    private mostrarErro(error: unknown) {
+        const httpError = error instanceof HttpErrorResponse ? error : null;
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro!',
+            text: this.obterMensagemErro(httpError),
+            confirmButtonColor: '#dc3545'
+        });
+    }
+
+    private obterMensagemErro(error: HttpErrorResponse | null): string {
+        if (!error) return 'Não foi possível salvar.';
+        if (error.status === 400) {
+            if (typeof error.error?.message === 'string') return error.error.message;
+            const errors = error.error?.errors;
+            if (errors && typeof errors === 'object') {
+                const first = Object.values(errors).flat().find(value => typeof value === 'string');
+                if (typeof first === 'string') return first;
+            }
+            return 'Revise os dados informados.';
+        }
+        if (error.status === 401) return 'Sua sessão expirou. Entre novamente.';
+        if (error.status === 403) return 'Você não tem permissão para salvar esta receita.';
+        if ([0, 502, 503, 504].includes(error.status)) {
+            return 'Serviço temporariamente indisponível. Tente novamente.';
+        }
+        return 'Não foi possível salvar a receita.';
     }
 
     private fecharModal() {

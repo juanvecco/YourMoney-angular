@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { DespesaService, Despesa, Categoria, CriarParcelamentoRequest, ParcelaPreview } from '../../../services/despesa';
 import Swal from 'sweetalert2';
 import { forkJoin, Subject, takeUntil } from 'rxjs';
@@ -22,7 +22,7 @@ type DespesaLote = {
 @Component({
     selector: 'app-despesas-page',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, RouterLink],
     templateUrl: './despesas-page.html',
     styleUrls: ['./despesas-page.scss']
 })
@@ -136,7 +136,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
                     this.despesas = dados.sort((a, b) =>
                         new Date(b.data).getTime() - new Date(a.data).getTime()
                     );
-                    this.totalDespesas = dados.reduce((soma, d) => soma + d.valor, 0);
+                    this.totalDespesas = dados.reduce((soma, d) => soma + this.obterValorLiquidoDespesa(d), 0);
                     this.calcularTotalPorConta();
                     this.estadoCarregamento = this.despesas.length > 0 ? 'loadedWithData' : 'emptyPeriod';
                     this.atualizarMensagemCarregamento();
@@ -156,7 +156,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     calcularTotalPorConta() {
         const totalMap: { [id: string]: number } = {};
         this.despesas.forEach(d => {
-            totalMap[d.idContaFinanceira] = (totalMap[d.idContaFinanceira] || 0) + d.valor;
+            totalMap[d.idContaFinanceira] = (totalMap[d.idContaFinanceira] || 0) + this.obterValorLiquidoDespesa(d);
         });
 
         this.totalPorConta = Object.entries(totalMap).map(([id, valor]) => ({
@@ -697,7 +697,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
                     .subscribe({
                         next: () => {
                             this.despesas = this.despesas.filter(d => d.id !== id);
-                            this.totalDespesas = this.despesas.reduce((s, d) => s + d.valor, 0);
+                            this.totalDespesas = this.despesas.reduce((s, d) => s + this.obterValorLiquidoDespesa(d), 0);
                             this.calcularTotalPorConta();
                             Swal.fire('Deletado!', '', 'success');
                         },
@@ -766,6 +766,10 @@ export class DespesasComponent implements OnInit, OnDestroy {
     calcularMediaDiaria(): number {
         const diasDoMes = this.obterDiasDoMes();
         return diasDoMes > 0 ? this.totalDespesas / diasDoMes : 0;
+    }
+
+    obterValorLiquidoDespesa(despesa: Despesa): number {
+        return despesa.valorLiquido ?? Math.max(despesa.valor - (despesa.valorReembolsado ?? 0), 0);
     }
 
     obterDiasDoMes(): number {
