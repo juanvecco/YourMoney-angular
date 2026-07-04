@@ -24,14 +24,38 @@ describe('MetaMensalService', () => {
   afterEach(() => httpTesting.verify());
 
   it('queries summary by month and year', () => {
-    service.obterResumo(6, 2026).subscribe();
+    const response = {
+      mesReferencia: '2026-07-01',
+      receitaTotal: 5000,
+      receitaTotalBruta: 5950,
+      receitaElegivelMetas: 5000,
+      receitaExcluidaMetas: 950,
+      despesaTotal: 0,
+      despesaTotalBruta: 150,
+      despesaTotalReembolsada: 150,
+      percentualTotalComprometido: 20,
+      valorTotalReservado: 1000,
+      percentualRestante: 80,
+      valorRestanteAntesDespesas: 4000,
+      saldoFinal: 4000,
+      valorFaltante: 0,
+      status: 'disponivel' as const,
+      alertas: [],
+      metas: []
+    };
+
+    service.obterResumo(7, 2026).subscribe(result => {
+      expect(result.receitaElegivelMetas).toBe(5000);
+      expect(result.receitaExcluidaMetas).toBe(950);
+      expect(result.despesaTotalReembolsada).toBe(150);
+    });
 
     const request = httpTesting.expectOne(req =>
       req.url === `${environment.apiUrl}/Metas/resumo`
-      && req.params.get('mes') === '6'
+      && req.params.get('mes') === '7'
       && req.params.get('ano') === '2026');
     expect(request.request.method).toBe('GET');
-    request.flush({ metas: [] });
+    request.flush(response);
   });
 
   it('creates updates and deletes monthly goals', () => {

@@ -48,8 +48,11 @@
 
   <section class="metas-summary" *ngIf="resumo">
     <article class="metas-kpi">
-      <span>Receita do mês</span>
+      <span>Receita elegível para metas</span>
       <strong>{{ formatarMoeda(resumo.receitaTotal) }}</strong>
+      <small *ngIf="resumo.receitaExcluidaMetas > 0">
+        Bruta {{ formatarMoeda(resumo.receitaTotalBruta) }} · fora das metas {{ formatarMoeda(resumo.receitaExcluidaMetas) }}
+      </small>
     </article>
     <article class="metas-kpi">
       <span>Reservado em metas</span>
@@ -64,6 +67,9 @@
     <article class="metas-kpi">
       <span>Despesas do mês</span>
       <strong>{{ formatarMoeda(resumo.despesaTotal) }}</strong>
+      <small *ngIf="resumo.despesaTotalReembolsada > 0">
+        Bruta {{ formatarMoeda(resumo.despesaTotalBruta) }} · reembolsada {{ formatarMoeda(resumo.despesaTotalReembolsada) }}
+      </small>
     </article>
     <article class="metas-kpi metas-balance" [class.negative]="resumo.status === 'faltando'">
       <span>{{ obterStatusTexto(resumo.status) }}</span>

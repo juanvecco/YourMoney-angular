@@ -10,6 +10,9 @@ export interface Despesa {
   numeroParcela?: number | null;
   totalParcelas?: number | null;
   valorTotalParcelamento?: number | null;
+  valorReembolsado?: number;
+  valorLiquido?: number;
+  possuiReembolso?: boolean;
 }
 
 export interface ContaFinanceira {
