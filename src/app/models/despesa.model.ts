@@ -40,6 +40,31 @@ export interface CriarDespesaResponse extends Despesa {
   mesReferencia: string;
 }
 
+export interface ConsultaDespesasRequest {
+  mes: number;
+  ano: number;
+  idContaFinanceira?: string;
+  idTipoDespesa?: string;
+  idNaturezaDespesa?: string;
+  pagina?: number;
+  tamanhoPagina?: number;
+}
+
+export interface ConsultaDespesasResponse {
+  itens: Despesa[];
+  paginaAtual: number;
+  tamanhoPagina: number;
+  totalResultados: number;
+  totalPaginas: number;
+  valorTotalFiltrado: number;
+  totaisPorConta: ConsultaDespesasTotalPorConta[];
+}
+
+export interface ConsultaDespesasTotalPorConta {
+  idContaFinanceira: string;
+  valor: number;
+}
+
 export interface AtualizarDespesaRequest extends CriarDespesaRequest {
   id: string;
 }

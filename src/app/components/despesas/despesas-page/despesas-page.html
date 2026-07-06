@@ -47,7 +47,7 @@
                 <i class="ym-kpi-icon bi bi-arrow-down"></i>
                 <h2 class="ym-kpi-label">Total de despesas</h2>
                 <p class="ym-kpi-value">R$ {{ totalDespesas | number:'1.2-2' }}</p>
-                <p class="ym-kpi-meta">{{ despesas.length }} transações líquidas</p>
+                <p class="ym-kpi-meta">{{ totalResultadosDespesas }} transações líquidas</p>
             </article>
             <article class="ym-card ym-kpi accent-warning">
                 <i class="ym-kpi-icon bi bi-calendar-day"></i>
@@ -70,6 +70,52 @@
                     <button class="ym-button primary accent-danger" type="button" (click)="abrirModalDespesa()">
                         <i class="bi bi-plus-lg"></i>Nova despesa
                     </button>
+                </div>
+
+                <div class="ym-expense-query">
+                    <div class="ym-filter-grid">
+                        <label class="ym-filter-field">
+                            <span>Conta</span>
+                            <select [(ngModel)]="filtrosTransacoes.idContaFinanceira"
+                                (change)="aplicarFiltrosTransacoes()" name="filtroConta">
+                                <option value="">Todas</option>
+                                <option *ngFor="let conta of contas" [value]="conta.id">{{ conta.descricao }}</option>
+                            </select>
+                        </label>
+
+                        <label class="ym-filter-field">
+                            <span>Tipo</span>
+                            <select [(ngModel)]="filtrosTransacoes.idTipoDespesa" (change)="onFiltroTipoChange()"
+                                name="filtroTipo">
+                                <option value="">Todos</option>
+                                <option *ngFor="let tipo of tiposDespesa" [value]="tipo.id">{{ tipo.descricao }}</option>
+                            </select>
+                        </label>
+
+                        <label class="ym-filter-field">
+                            <span>Natureza</span>
+                            <select [(ngModel)]="filtrosTransacoes.idNaturezaDespesa"
+                                (change)="aplicarFiltrosTransacoes()" name="filtroNatureza"
+                                [disabled]="naturezasFiltroDespesa.length === 0">
+                                <option value="">Todas</option>
+                                <option *ngFor="let nat of naturezasFiltroDespesa" [value]="nat.id">{{ nat.descricao }}</option>
+                            </select>
+                        </label>
+
+                        <button class="ym-icon-button ym-filter-clear" type="button" (click)="limparFiltrosTransacoes()"
+                            [disabled]="!temFiltrosTransacoesAtivos()" aria-label="Limpar filtros">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+
+                    <div class="ym-filter-total">
+                        <div>
+                            <span>Total filtrado</span>
+                            <strong *ngIf="estadoCarregamento !== 'loading'">R$ {{ totalDespesasFiltradas | number:'1.2-2' }}</strong>
+                            <strong *ngIf="estadoCarregamento === 'loading'">Calculando...</strong>
+                        </div>
+                        <small>{{ totalResultadosDespesas }} resultados no filtro atual</small>
+                    </div>
                 </div>
 
                 <div *ngIf="estadoCarregamento !== 'loadedWithData'" class="ym-empty ym-state-message"
@@ -107,6 +153,23 @@
                         </div>
                     </article>
                 </div>
+
+                <nav class="ym-pagination" *ngIf="totalPaginas > 1" aria-label="Paginação de despesas">
+                    <button class="ym-icon-button" type="button" (click)="irParaPagina(paginaAtual - 1)"
+                        [disabled]="paginaAtual === 1" aria-label="Página anterior">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+
+                    <button class="ym-page-button" type="button" *ngFor="let pagina of paginasVisiveis()"
+                        [class.active]="pagina === paginaAtual" (click)="irParaPagina(pagina)">
+                        {{ pagina }}
+                    </button>
+
+                    <button class="ym-icon-button" type="button" (click)="irParaPagina(paginaAtual + 1)"
+                        [disabled]="paginaAtual === totalPaginas" aria-label="Próxima página">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </nav>
             </div>
 
             <aside class="ym-stack">
@@ -125,9 +188,9 @@
                     <h2 class="ym-section-title">Insights</h2>
                     <div class="ym-metric-row">
                         <span>Total de transações</span>
-                        <strong>{{ despesas.length }}</strong>
+                        <strong>{{ totalResultadosDespesas }}</strong>
                     </div>
-                    <p class="ym-subtitle" *ngIf="!usuarioCategorizouEsteMes && despesas.length > 3">
+                    <p class="ym-subtitle" *ngIf="!usuarioCategorizouEsteMes && totalResultadosDespesas > 3">
                         Categorize suas despesas para melhorar o controle financeiro.
                     </p>
                 </div>

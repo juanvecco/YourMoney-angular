@@ -5,6 +5,9 @@ import { environment } from '../../environments/environment';
 import {
   AtualizarDespesaRequest,
   Categoria,
+  ConsultaDespesasRequest,
+  ConsultaDespesasResponse,
+  ConsultaDespesasTotalPorConta,
   ContaFinanceira,
   CriarDespesaRequest,
   CriarDespesaResponse,
@@ -16,6 +19,9 @@ import {
 export type {
   AtualizarDespesaRequest,
   Categoria,
+  ConsultaDespesasRequest,
+  ConsultaDespesasResponse,
+  ConsultaDespesasTotalPorConta,
   ContaFinanceira,
   CriarDespesaRequest,
   CriarDespesaResponse,
@@ -48,6 +54,21 @@ export class DespesaService {
     return this.http.get<Despesa[]>(`${this.baseUrl}/Despesas/por-referencia`, {
       params: { mes: mes.toString(), ano: ano.toString() }
     });
+  }
+
+  consultarDespesas(request: ConsultaDespesasRequest): Observable<ConsultaDespesasResponse> {
+    const params: Record<string, string> = {
+      mes: request.mes.toString(),
+      ano: request.ano.toString(),
+      pagina: (request.pagina ?? 1).toString(),
+      tamanhoPagina: (request.tamanhoPagina ?? 10).toString()
+    };
+
+    if (request.idContaFinanceira) params['idContaFinanceira'] = request.idContaFinanceira;
+    if (request.idTipoDespesa) params['idTipoDespesa'] = request.idTipoDespesa;
+    if (request.idNaturezaDespesa) params['idNaturezaDespesa'] = request.idNaturezaDespesa;
+
+    return this.http.get<ConsultaDespesasResponse>(`${this.baseUrl}/Despesas/consulta`, { params });
   }
 
   criarDespesa(despesa: CriarDespesaRequest): Observable<CriarDespesaResponse> {
