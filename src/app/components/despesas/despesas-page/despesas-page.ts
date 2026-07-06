@@ -55,10 +55,21 @@ export class DespesasComponent implements OnInit, OnDestroy {
     tiposDespesa: Categoria[] = [];
     naturezasDespesa: Categoria[] = [];
     categoriasEspecificas: Categoria[] = [];
+    naturezasFiltroDespesa: Categoria[] = [];
 
     despesas: Despesa[] = [];
     mesAtual: Date = new Date();
     totalDespesas = 0;
+    totalDespesasFiltradas = 0;
+    totalResultadosDespesas = 0;
+    paginaAtual = 1;
+    totalPaginas = 0;
+    tamanhoPagina = 10;
+    filtrosTransacoes = {
+        idContaFinanceira: '',
+        idTipoDespesa: '',
+        idNaturezaDespesa: ''
+    };
     totalPorConta: { descricao: string; valor: number }[] = [];
     estadoCarregamento: FinancialViewState = 'loading';
     mensagemCarregamento = '';
@@ -125,44 +136,163 @@ export class DespesasComponent implements OnInit, OnDestroy {
         const ano = this.mesAtual.getFullYear();
         this.despesas = [];
         this.totalDespesas = 0;
+        this.totalDespesasFiltradas = 0;
+        this.totalResultadosDespesas = 0;
+        this.totalPaginas = 0;
         this.totalPorConta = [];
         this.estadoCarregamento = 'loading';
         this.atualizarMensagemCarregamento();
 
-        this.despesaService.obterPorReferencia(mes, ano)
+        this.despesaService.consultarDespesas({
+            mes,
+            ano,
+            idContaFinanceira: this.filtrosTransacoes.idContaFinanceira || undefined,
+            idTipoDespesa: this.filtrosTransacoes.idTipoDespesa || undefined,
+            idNaturezaDespesa: this.filtrosTransacoes.idNaturezaDespesa || undefined,
+            pagina: this.paginaAtual,
+            tamanhoPagina: this.tamanhoPagina
+        })
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: (dados) => {
-                    this.despesas = dados.sort((a, b) =>
-                        new Date(b.data).getTime() - new Date(a.data).getTime()
-                    );
-                    this.totalDespesas = dados.reduce((soma, d) => soma + this.obterValorLiquidoDespesa(d), 0);
-                    this.calcularTotalPorConta();
-                    this.estadoCarregamento = this.despesas.length > 0 ? 'loadedWithData' : 'emptyPeriod';
+                next: (response) => {
+                    this.despesas = response.itens;
+                    this.paginaAtual = response.paginaAtual;
+                    this.tamanhoPagina = response.tamanhoPagina;
+                    this.totalPaginas = response.totalPaginas;
+                    this.totalResultadosDespesas = response.totalResultados;
+                    this.totalDespesasFiltradas = response.valorTotalFiltrado;
+                    this.totalDespesas = response.valorTotalFiltrado;
+                    this.aplicarTotaisPorConta(response.totaisPorConta ?? this.montarTotaisPorConta(this.despesas));
+                    this.estadoCarregamento = response.totalResultados > 0 ? 'loadedWithData' : 'emptyPeriod';
                     this.atualizarMensagemCarregamento();
                     this.verificarTrilhaOrganizador();
                 },
                 error: (erro) => {
                     console.error('Erro ao carregar despesas', erro);
-                    this.despesas = [];
-                    this.totalDespesas = 0;
-                    this.totalPorConta = [];
-                    this.estadoCarregamento = 'loadError';
-                    this.atualizarMensagemCarregamento();
+                    if (this.deveUsarConsultaLegada(erro)) {
+                        this.carregarDespesasPorReferenciaLegada(mes, ano);
+                        return;
+                    }
+
+                    this.aplicarErroCarregamento();
                 }
             });
     }
 
+    private carregarDespesasPorReferenciaLegada(mes: number, ano: number) {
+        this.despesaService.obterPorReferencia(mes, ano)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (dados) => this.aplicarResultadoLocal(dados),
+                error: (erro) => {
+                    console.error('Erro ao carregar despesas por referência', erro);
+                    this.aplicarErroCarregamento();
+                }
+            });
+    }
+
+    private aplicarResultadoLocal(dados: Despesa[]) {
+        const filtradas = this.filtrarDespesasLocalmente(dados)
+            .sort((a, b) => {
+                const data = new Date(b.data).getTime() - new Date(a.data).getTime();
+                return data !== 0 ? data : b.id.localeCompare(a.id);
+            });
+
+        const totalResultados = filtradas.length;
+        const totalPaginas = totalResultados === 0
+            ? 0
+            : Math.ceil(totalResultados / this.tamanhoPagina);
+
+        if (totalPaginas > 0 && this.paginaAtual > totalPaginas) {
+            this.paginaAtual = totalPaginas;
+        }
+
+        const inicio = totalResultados === 0 ? 0 : (this.paginaAtual - 1) * this.tamanhoPagina;
+        this.despesas = filtradas.slice(inicio, inicio + this.tamanhoPagina);
+        this.totalResultadosDespesas = totalResultados;
+        this.totalPaginas = totalPaginas;
+        this.totalDespesasFiltradas = filtradas.reduce((soma, despesa) => soma + this.obterValorLiquidoDespesa(despesa), 0);
+        this.totalDespesas = this.totalDespesasFiltradas;
+        this.aplicarTotaisPorConta(this.montarTotaisPorConta(filtradas));
+        this.estadoCarregamento = totalResultados > 0 ? 'loadedWithData' : 'emptyPeriod';
+        this.atualizarMensagemCarregamento();
+        this.verificarTrilhaOrganizador();
+    }
+
+    private filtrarDespesasLocalmente(despesas: Despesa[]): Despesa[] {
+        return despesas.filter(despesa => {
+            const contaOk = !this.filtrosTransacoes.idContaFinanceira ||
+                despesa.idContaFinanceira === this.filtrosTransacoes.idContaFinanceira;
+            const tipoOk = this.categoriaPertenceAoFiltro(
+                despesa.idCategoria,
+                this.filtrosTransacoes.idTipoDespesa);
+            const naturezaOk = this.categoriaPertenceAoFiltro(
+                despesa.idCategoria,
+                this.filtrosTransacoes.idNaturezaDespesa);
+
+            return contaOk && tipoOk && naturezaOk;
+        });
+    }
+
+    private categoriaPertenceAoFiltro(idCategoria: string, idFiltro: string): boolean {
+        if (!idFiltro) return true;
+        return this.obterCategoriaEDescendentes(idFiltro).has(idCategoria);
+    }
+
+    private obterCategoriaEDescendentes(idRaiz: string): Set<string> {
+        const ids = new Set<string>([idRaiz]);
+        let adicionou = true;
+
+        while (adicionou) {
+            adicionou = false;
+            this.despesaService.todasCategorias.forEach(categoria => {
+                if (categoria.categoriaPaiId && ids.has(categoria.categoriaPaiId) && !ids.has(categoria.id)) {
+                    ids.add(categoria.id);
+                    adicionou = true;
+                }
+            });
+        }
+
+        return ids;
+    }
+
+    private aplicarErroCarregamento() {
+        this.despesas = [];
+        this.totalDespesas = 0;
+        this.totalDespesasFiltradas = 0;
+        this.totalResultadosDespesas = 0;
+        this.totalPaginas = 0;
+        this.totalPorConta = [];
+        this.estadoCarregamento = 'loadError';
+        this.atualizarMensagemCarregamento();
+    }
+
+    private deveUsarConsultaLegada(erro: unknown): boolean {
+        const status = (erro as { status?: number })?.status;
+        return status === 0 || status === 404 || status === 405;
+    }
+
     calcularTotalPorConta() {
+        this.aplicarTotaisPorConta(this.montarTotaisPorConta(this.despesas));
+    }
+
+    private montarTotaisPorConta(despesas: Despesa[]) {
         const totalMap: { [id: string]: number } = {};
-        this.despesas.forEach(d => {
+        despesas.forEach(d => {
             totalMap[d.idContaFinanceira] = (totalMap[d.idContaFinanceira] || 0) + this.obterValorLiquidoDespesa(d);
         });
 
-        this.totalPorConta = Object.entries(totalMap).map(([id, valor]) => ({
-            descricao: this.contas.find(c => c.id === id)?.descricao || 'Conta Desconhecida',
+        return Object.entries(totalMap).map(([id, valor]) => ({
+            idContaFinanceira: id,
             valor
         }));
+    }
+
+    private aplicarTotaisPorConta(totais: { idContaFinanceira: string; valor: number }[]) {
+        this.totalPorConta = totais.map(total => ({
+            descricao: this.obterNomeConta(total.idContaFinanceira),
+            valor: total.valor
+        })).sort((a, b) => b.valor - a.valor);
     }
 
     // ==============================================================
@@ -173,6 +303,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         const novo = new Date(this.mesAtual);
         novo.setMonth(novo.getMonth() + direcao);
         this.mesAtual = novo;
+        this.paginaAtual = 1;
         this.carregarDespesas();
     }
 
@@ -189,6 +320,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         const input = event.target as HTMLInputElement;
         const [ano, mes] = input.value.split('-').map(Number);
         this.mesAtual = new Date(ano, mes - 1, 1);
+        this.paginaAtual = 1;
         this.carregarDespesas();
     }
 
@@ -297,6 +429,57 @@ export class DespesasComponent implements OnInit, OnDestroy {
             ? this.despesaService.todasCategorias.filter(c => c.categoriaPaiId === naturezaId)
             : [];
         this.novaDespesa.idCategoriaEspecifica = '';
+    }
+
+    onFiltroTipoChange() {
+        const tipoId = this.filtrosTransacoes.idTipoDespesa;
+        this.naturezasFiltroDespesa = tipoId
+            ? this.despesaService.todasCategorias.filter(c => c.categoriaPaiId === tipoId)
+            : [];
+        this.filtrosTransacoes.idNaturezaDespesa = '';
+        this.aplicarFiltrosTransacoes();
+    }
+
+    aplicarFiltrosTransacoes() {
+        this.paginaAtual = 1;
+        this.carregarDespesas();
+    }
+
+    limparFiltrosTransacoes() {
+        this.filtrosTransacoes = {
+            idContaFinanceira: '',
+            idTipoDespesa: '',
+            idNaturezaDespesa: ''
+        };
+        this.naturezasFiltroDespesa = [];
+        this.aplicarFiltrosTransacoes();
+    }
+
+    temFiltrosTransacoesAtivos(): boolean {
+        return !!(
+            this.filtrosTransacoes.idContaFinanceira ||
+            this.filtrosTransacoes.idTipoDespesa ||
+            this.filtrosTransacoes.idNaturezaDespesa
+        );
+    }
+
+    irParaPagina(pagina: number) {
+        if (pagina < 1 || pagina > this.totalPaginas || pagina === this.paginaAtual) {
+            return;
+        }
+
+        this.paginaAtual = pagina;
+        this.carregarDespesas();
+    }
+
+    paginasVisiveis(): number[] {
+        if (this.totalPaginas <= 1) return [];
+
+        const inicio = Math.max(1, this.paginaAtual - 2);
+        const fim = Math.min(this.totalPaginas, inicio + 4);
+        const primeiro = Math.max(1, fim - 4);
+
+        return Array.from({ length: fim - primeiro + 1 }, (_, index) => primeiro + index);
     }
 
     // ==============================================================
@@ -696,9 +879,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
                     .pipe(takeUntil(this.destroy$))
                     .subscribe({
                         next: () => {
-                            this.despesas = this.despesas.filter(d => d.id !== id);
-                            this.totalDespesas = this.despesas.reduce((s, d) => s + this.obterValorLiquidoDespesa(d), 0);
-                            this.calcularTotalPorConta();
+                            this.carregarDespesas();
                             Swal.fire('Deletado!', '', 'success');
                         },
                         error: () => Swal.fire('Erro!', '', 'error')
