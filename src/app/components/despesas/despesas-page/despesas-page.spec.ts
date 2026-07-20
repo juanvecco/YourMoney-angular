@@ -2,12 +2,15 @@ import { NEVER, of, throwError } from 'rxjs';
 import Swal from 'sweetalert2';
 import { DespesasComponent } from './despesas-page';
 import { ConsultaDespesasResponse, Despesa, DespesaService } from '../../../services/despesa';
+import { DespesaRecorrenteService } from '../../../services/despesa-recorrente';
+import { DespesaRecorrenteResponse, SugestaoDespesaRecorrenteResponse } from '../../../models/despesa-recorrente.model';
 import { AuthService } from '../../../services/auth.service';
 import { Router } from '@angular/router';
 
 describe('DespesasComponent', () => {
   let component: DespesasComponent;
   let despesaService: jasmine.SpyObj<DespesaService>;
+  let despesaRecorrenteService: jasmine.SpyObj<DespesaRecorrenteService>;
   let authService: jasmine.SpyObj<AuthService>;
   let router: jasmine.SpyObj<Router>;
 
@@ -87,10 +90,89 @@ describe('DespesasComponent', () => {
       parcelas: []
     }));
 
+    despesaRecorrenteService = jasmine.createSpyObj<DespesaRecorrenteService>(
+      'DespesaRecorrenteService',
+      [
+        'listar',
+        'obterPorId',
+        'criar',
+        'atualizar',
+        'desativar',
+        'encerrar',
+        'listarSugestoes',
+        'confirmarSugestao',
+        'ignorarSugestao'
+      ]
+    );
+    despesaRecorrenteService.listar.and.returnValue(of({ itens: [] }));
+    despesaRecorrenteService.listarSugestoes.and.returnValue(of({ mes: 5, ano: 2026, itens: [] }));
+    despesaRecorrenteService.criar.and.returnValue(of({
+      id: 'recorrencia-1',
+      descricao: 'Internet',
+      valorPrevisto: 100,
+      idContaFinanceira: 'conta-1',
+      contaDescricao: 'Conta Principal',
+      idTipoDespesa: 'tipo-essencial',
+      tipoDescricao: 'Essencial',
+      idNaturezaDespesa: 'natureza-moradia',
+      naturezaDescricao: 'Moradia',
+      idCategoria: 'natureza-moradia',
+      categoriaDescricao: 'Moradia',
+      diaVencimento: 10,
+      dataInicio: '2026-05-01',
+      dataTermino: null,
+      ativa: true
+    }));
+    despesaRecorrenteService.atualizar.and.returnValue(of({
+      id: 'recorrencia-1',
+      descricao: 'Internet ajustada',
+      valorPrevisto: 110,
+      idContaFinanceira: 'conta-1',
+      contaDescricao: 'Conta Principal',
+      idTipoDespesa: 'tipo-essencial',
+      tipoDescricao: 'Essencial',
+      idNaturezaDespesa: 'natureza-moradia',
+      naturezaDescricao: 'Moradia',
+      idCategoria: 'natureza-moradia',
+      categoriaDescricao: 'Moradia',
+      diaVencimento: 12,
+      dataInicio: '2026-05-01',
+      dataTermino: null,
+      ativa: true
+    }));
+    despesaRecorrenteService.desativar.and.returnValue(of(void 0));
+    despesaRecorrenteService.encerrar.and.returnValue(of({
+      id: 'recorrencia-1',
+      descricao: 'Internet',
+      valorPrevisto: 100,
+      idContaFinanceira: 'conta-1',
+      contaDescricao: 'Conta Principal',
+      idTipoDespesa: 'tipo-essencial',
+      tipoDescricao: 'Essencial',
+      idNaturezaDespesa: 'natureza-moradia',
+      naturezaDescricao: 'Moradia',
+      idCategoria: 'natureza-moradia',
+      categoriaDescricao: 'Moradia',
+      diaVencimento: 10,
+      dataInicio: '2026-05-01',
+      dataTermino: '2026-06-30',
+      ativa: true
+    }));
+    despesaRecorrenteService.confirmarSugestao.and.returnValue(of({
+      id: 'despesa-confirmada',
+      descricao: 'Internet',
+      valor: 100,
+      data: '2026-05-10',
+      mesReferencia: '2026-05-01',
+      idContaFinanceira: 'conta-1',
+      idCategoria: 'natureza-moradia'
+    }));
+    despesaRecorrenteService.ignorarSugestao.and.returnValue(of(void 0));
+
     authService = jasmine.createSpyObj<AuthService>('AuthService', ['logout']);
     router = jasmine.createSpyObj<Router>('Router', ['navigate']);
 
-    component = new DespesasComponent(despesaService, authService, router);
+    component = new DespesasComponent(despesaService, despesaRecorrenteService, authService, router);
   });
 
   function preencherFormularioValido(): void {
@@ -104,6 +186,46 @@ describe('DespesasComponent', () => {
       idTipoDespesa: 'categoria-1',
       idNaturezaDespesa: '',
       idCategoriaEspecifica: ''
+    };
+  }
+
+  function criarSugestao(overrides: Partial<SugestaoDespesaRecorrenteResponse> = {}): SugestaoDespesaRecorrenteResponse {
+    return {
+      ocorrenciaId: 'ocorrencia-1',
+      despesaRecorrenteId: 'recorrencia-1',
+      mesReferencia: '2026-05-01',
+      status: 'Pendente',
+      descricao: 'Internet',
+      valorPrevisto: 100,
+      dataSugerida: '2026-05-10',
+      idContaFinanceira: 'conta-1',
+      contaDescricao: 'Conta Principal',
+      idTipoDespesa: 'tipo-essencial',
+      idNaturezaDespesa: 'natureza-moradia',
+      idCategoria: 'natureza-moradia',
+      despesaConfirmadaId: null,
+      ...overrides
+    };
+  }
+
+  function criarRecorrencia(overrides: Partial<DespesaRecorrenteResponse> = {}): DespesaRecorrenteResponse {
+    return {
+      id: 'recorrencia-1',
+      descricao: 'Internet',
+      valorPrevisto: 100,
+      idContaFinanceira: 'conta-1',
+      contaDescricao: 'Conta Principal',
+      idTipoDespesa: 'tipo-essencial',
+      tipoDescricao: 'Essencial',
+      idNaturezaDespesa: 'natureza-moradia',
+      naturezaDescricao: 'Moradia',
+      idCategoria: 'natureza-moradia',
+      categoriaDescricao: 'Moradia',
+      diaVencimento: 10,
+      dataInicio: '2026-05-01',
+      dataTermino: null,
+      ativa: true,
+      ...overrides
     };
   }
 
@@ -609,5 +731,174 @@ describe('DespesasComponent', () => {
       idNaturezaDespesa: undefined,
       pagina: 1
     }));
+  });
+
+  it('loads recurring suggestions for the selected month', () => {
+    const sugestao = criarSugestao();
+    component.mesAtual = new Date(2026, 4, 1);
+    despesaRecorrenteService.listarSugestoes.and.returnValue(of({
+      mes: 5,
+      ano: 2026,
+      itens: [sugestao]
+    }));
+
+    component.carregarSugestoesRecorrentes();
+
+    expect(despesaRecorrenteService.listarSugestoes).toHaveBeenCalledWith(5, 2026);
+    expect(component.sugestoesRecorrentes).toEqual([sugestao]);
+    expect(component.temSugestoesPendentes()).toBeTrue();
+    expect(component.obterTotalSugestoesPendentes()).toBe(100);
+  });
+
+  it('confirms recurring suggestion without overrides and reloads month data', () => {
+    const sugestao = criarSugestao();
+    component.mesAtual = new Date(2026, 4, 1);
+    spyOn(Swal, 'fire').and.returnValue(Promise.resolve({ isConfirmed: true }) as any);
+
+    component.confirmarSugestao(sugestao);
+
+    expect(despesaRecorrenteService.confirmarSugestao).toHaveBeenCalledWith('ocorrencia-1', {});
+    expect(component.salvandoSugestaoRecorrente).toBeFalse();
+    expect(despesaRecorrenteService.listarSugestoes).toHaveBeenCalledWith(5, 2026);
+    expect(despesaService.consultarDespesas).toHaveBeenCalledWith(jasmine.objectContaining({
+      mes: 5,
+      ano: 2026
+    }));
+  });
+
+  it('confirms recurring suggestion with edited fields', () => {
+    const sugestao = criarSugestao();
+
+    component.editarSugestao(sugestao);
+    component.confirmacaoSugestao = {
+      ...component.confirmacaoSugestao,
+      descricao: 'Internet ajustada',
+      valor: 110,
+      data: '2026-05-12',
+      idContaFinanceira: 'conta-2',
+      idTipoDespesa: 'tipo-essencial',
+      idNaturezaDespesa: 'natureza-moradia',
+      idCategoriaEspecifica: ''
+    };
+    spyOn(Swal, 'fire').and.returnValue(Promise.resolve({ isConfirmed: true }) as any);
+
+    component.confirmarSugestao(sugestao);
+
+    expect(despesaRecorrenteService.confirmarSugestao).toHaveBeenCalledWith('ocorrencia-1', {
+      descricao: 'Internet ajustada',
+      valor: 110,
+      data: '2026-05-12',
+      idContaFinanceira: 'conta-2',
+      idTipoDespesa: 'tipo-essencial',
+      idNaturezaDespesa: 'natureza-moradia',
+      idCategoria: 'natureza-moradia'
+    });
+    expect(component.sugestaoEmEdicaoId).toBe('');
+  });
+
+  it('creates recurring expense configuration with monthly base data', () => {
+    component.novaRecorrencia = {
+      descricao: 'Internet',
+      valorPrevisto: 100,
+      dataVencimento: '2026-05-10',
+      dataInicio: '2026-05-01',
+      dataTermino: '',
+      idContaFinanceira: 'conta-1',
+      idTipoDespesa: 'tipo-essencial',
+      idNaturezaDespesa: 'natureza-moradia',
+      idCategoriaEspecifica: ''
+    };
+    spyOn(Swal, 'fire').and.returnValue(Promise.resolve({ isConfirmed: true }) as any);
+    (window as any).bootstrap = {
+      Modal: {
+        getInstance: () => ({ hide: () => undefined })
+      }
+    };
+
+    component.salvarRecorrencia();
+
+    expect(despesaRecorrenteService.criar).toHaveBeenCalledWith({
+      descricao: 'Internet',
+      valorPrevisto: 100,
+      idContaFinanceira: 'conta-1',
+      idTipoDespesa: 'tipo-essencial',
+      idNaturezaDespesa: 'natureza-moradia',
+      idCategoria: 'natureza-moradia',
+      dataVencimento: '2026-05-10',
+      dataInicio: '2026-05-01',
+      dataTermino: null
+    });
+    expect(component.salvandoRecorrencia).toBeFalse();
+    expect(despesaRecorrenteService.listar).toHaveBeenCalled();
+    expect(despesaRecorrenteService.listarSugestoes).toHaveBeenCalled();
+  });
+
+  it('updates recurring expense configuration when editing', () => {
+    component.recorrenciaEditandoId = 'recorrencia-1';
+    component.novaRecorrencia = {
+      descricao: 'Internet ajustada',
+      valorPrevisto: 110,
+      dataVencimento: '2026-05-12',
+      dataInicio: '2026-05-01',
+      dataTermino: '',
+      idContaFinanceira: 'conta-1',
+      idTipoDespesa: 'tipo-essencial',
+      idNaturezaDespesa: 'natureza-moradia',
+      idCategoriaEspecifica: ''
+    };
+    spyOn(Swal, 'fire').and.returnValue(Promise.resolve({ isConfirmed: true }) as any);
+    (window as any).bootstrap = {
+      Modal: {
+        getInstance: () => ({ hide: () => undefined })
+      }
+    };
+
+    component.salvarRecorrencia();
+
+    expect(despesaRecorrenteService.atualizar).toHaveBeenCalledWith('recorrencia-1', jasmine.objectContaining({
+      descricao: 'Internet ajustada',
+      valorPrevisto: 110,
+      dataVencimento: '2026-05-12'
+    }));
+    expect(despesaRecorrenteService.criar).not.toHaveBeenCalled();
+  });
+
+  it('deactivates recurring expense after confirmation', async () => {
+    spyOn(Swal, 'fire').and.returnValue(Promise.resolve({ isConfirmed: true }) as any);
+
+    component.desativarRecorrencia(criarRecorrencia());
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(despesaRecorrenteService.desativar).toHaveBeenCalledWith('recorrencia-1');
+    expect(despesaRecorrenteService.listar).toHaveBeenCalled();
+    expect(despesaRecorrenteService.listarSugestoes).toHaveBeenCalled();
+  });
+
+  it('ends recurring expense with selected end date', async () => {
+    spyOn(Swal, 'fire').and.returnValue(Promise.resolve({
+      isConfirmed: true,
+      value: '2026-06-30'
+    }) as any);
+
+    component.encerrarRecorrencia(criarRecorrencia());
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(despesaRecorrenteService.encerrar).toHaveBeenCalledWith('recorrencia-1', {
+      dataTermino: '2026-06-30'
+    });
+    expect(despesaRecorrenteService.listar).toHaveBeenCalled();
+    expect(despesaRecorrenteService.listarSugestoes).toHaveBeenCalled();
+  });
+
+  it('reloads recurring suggestions when navigating months', () => {
+    component.mesAtual = new Date(2026, 4, 1);
+    despesaRecorrenteService.listarSugestoes.calls.reset();
+
+    component.mudarMes(1);
+
+    expect(component.mesAtual.getMonth()).toBe(5);
+    expect(despesaRecorrenteService.listarSugestoes).toHaveBeenCalledWith(6, 2026);
   });
 });
