@@ -23,7 +23,8 @@
     font-weight: 700;
   }
 
-  select {
+  select,
+  input {
     width: 100%;
     min-height: 40px;
     border: 1px solid var(--ym-border);
@@ -32,6 +33,94 @@
     color: var(--ym-text);
     background: rgba(255, 255, 255, 0.06);
   }
+}
+
+.ym-section-header-compact {
+  margin-bottom: 10px;
+}
+
+.ym-panel-title {
+  margin: 0;
+  color: var(--ym-text);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.ym-recurring-panel {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid var(--ym-border);
+  border-radius: var(--ym-radius-sm);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.ym-recurring-total {
+  color: #fff;
+  background: color-mix(in srgb, var(--ym-danger) 26%, transparent);
+}
+
+.ym-recurring-list {
+  gap: 8px;
+}
+
+.ym-recurring-item {
+  display: grid;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.ym-recurring-row,
+.ym-recurring-config-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.ym-recurring-edit {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ym-border);
+}
+
+.ym-recurring-edit-actions {
+  display: flex;
+  align-items: end;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ym-recurring-config-list {
+  display: grid;
+  gap: 10px;
+}
+
+.ym-recurring-config {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--ym-border);
+  border-radius: var(--ym-radius-sm);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.ym-status-pendente {
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.18);
+}
+
+.ym-status-confirmada {
+  color: #bbf7d0;
+  background: rgba(34, 197, 94, 0.18);
+}
+
+.ym-status-ignorada {
+  color: #fecaca;
+  background: rgba(248, 113, 113, 0.18);
 }
 
 .ym-filter-clear {
@@ -134,5 +223,20 @@
   .ym-pagination {
     justify-content: center;
     flex-wrap: wrap;
+  }
+
+  .ym-recurring-row,
+  .ym-recurring-config-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ym-recurring-edit {
+    grid-template-columns: 1fr;
+  }
+
+  .ym-recurring-edit-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

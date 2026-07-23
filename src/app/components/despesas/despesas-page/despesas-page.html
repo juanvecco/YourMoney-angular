@@ -72,6 +72,129 @@
                     </button>
                 </div>
 
+                <div class="ym-recurring-panel">
+                    <div class="ym-section-header ym-section-header-compact">
+                        <div>
+                            <h3 class="ym-panel-title">Sugestões recorrentes</h3>
+                            <p class="ym-subtitle">
+                                {{ sugestoesRecorrentes.length }} sugestão(ões) em {{ mesAtual | date:'MMMM yyyy':'pt-BR' }}
+                            </p>
+                        </div>
+                        <span class="ym-chip ym-recurring-total" *ngIf="temSugestoesPendentes()">
+                            R$ {{ obterTotalSugestoesPendentes() | number:'1.2-2' }}
+                        </span>
+                    </div>
+
+                    <div *ngIf="carregandoSugestoesRecorrentes" class="ym-empty compact">
+                        Carregando sugestões...
+                    </div>
+
+                    <div *ngIf="!carregandoSugestoesRecorrentes && sugestoesRecorrentes.length === 0"
+                        class="ym-empty compact">
+                        Nenhuma sugestão para este mês.
+                    </div>
+
+                    <div class="ym-list ym-recurring-list"
+                        *ngIf="!carregandoSugestoesRecorrentes && sugestoesRecorrentes.length > 0">
+                        <article *ngFor="let sugestao of sugestoesRecorrentes"
+                            class="ym-list-item ym-recurring-item">
+                            <div class="ym-recurring-row">
+                                <div class="ym-list-main">
+                                    <h3 class="ym-list-title">{{ sugestao.descricao }}</h3>
+                                    <div class="ym-list-meta">
+                                        <span><i class="bi bi-calendar3"></i> {{ formatarData(sugestao.dataSugerida) }}</span>
+                                        <span>{{ sugestao.contaDescricao }}</span>
+                                        <span class="ym-chip">{{ obterNomeCategoria(sugestao.idCategoria) }}</span>
+                                        <span class="ym-chip" [ngClass]="obterStatusSugestaoClasse(sugestao.status)">
+                                            {{ sugestao.status }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="ym-list-actions accent-danger">
+                                    <span class="ym-amount">R$ {{ sugestao.valorPrevisto | number:'1.2-2' }}</span>
+                                    <ng-container *ngIf="sugestao.status === 'Pendente'">
+                                        <button class="ym-icon-button" type="button" (click)="editarSugestao(sugestao)"
+                                            [disabled]="salvandoSugestaoRecorrente" aria-label="Editar sugestão">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="ym-icon-button" type="button" (click)="confirmarSugestao(sugestao)"
+                                            [disabled]="salvandoSugestaoRecorrente || sugestaoEmEdicaoId === sugestao.ocorrenciaId"
+                                            aria-label="Confirmar sugestão">
+                                            <i class="bi bi-check2"></i>
+                                        </button>
+                                        <button class="ym-icon-button" type="button" (click)="ignorarSugestao(sugestao)"
+                                            [disabled]="salvandoSugestaoRecorrente" aria-label="Ignorar sugestão">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </ng-container>
+                                </div>
+                            </div>
+
+                            <div class="ym-recurring-edit" *ngIf="sugestaoEmEdicaoId === sugestao.ocorrenciaId">
+                                <label class="ym-filter-field">
+                                    <span>Descrição</span>
+                                    <input type="text" [(ngModel)]="confirmacaoSugestao.descricao"
+                                        name="sugestaoDescricao{{ sugestao.ocorrenciaId }}">
+                                </label>
+                                <label class="ym-filter-field">
+                                    <span>Valor</span>
+                                    <input type="number" step="0.01" [(ngModel)]="confirmacaoSugestao.valor"
+                                        name="sugestaoValor{{ sugestao.ocorrenciaId }}">
+                                </label>
+                                <label class="ym-filter-field">
+                                    <span>Data</span>
+                                    <input type="date" [(ngModel)]="confirmacaoSugestao.data"
+                                        name="sugestaoData{{ sugestao.ocorrenciaId }}">
+                                </label>
+                                <label class="ym-filter-field">
+                                    <span>Conta</span>
+                                    <select [(ngModel)]="confirmacaoSugestao.idContaFinanceira"
+                                        name="sugestaoConta{{ sugestao.ocorrenciaId }}">
+                                        <option value="" disabled>Selecione</option>
+                                        <option *ngFor="let conta of contas" [value]="conta.id">{{ conta.descricao }}</option>
+                                    </select>
+                                </label>
+                                <label class="ym-filter-field">
+                                    <span>Tipo</span>
+                                    <select [(ngModel)]="confirmacaoSugestao.idTipoDespesa"
+                                        (change)="onTipoSugestaoChange()" name="sugestaoTipo{{ sugestao.ocorrenciaId }}">
+                                        <option value="" disabled>Selecione</option>
+                                        <option *ngFor="let tipo of tiposDespesa" [value]="tipo.id">{{ tipo.descricao }}</option>
+                                    </select>
+                                </label>
+                                <label class="ym-filter-field">
+                                    <span>Natureza</span>
+                                    <select [(ngModel)]="confirmacaoSugestao.idNaturezaDespesa"
+                                        (change)="onNaturezaSugestaoChange()" name="sugestaoNatureza{{ sugestao.ocorrenciaId }}"
+                                        [disabled]="naturezasSugestao.length === 0">
+                                        <option value="" disabled>Selecione</option>
+                                        <option *ngFor="let nat of naturezasSugestao" [value]="nat.id">{{ nat.descricao }}</option>
+                                    </select>
+                                </label>
+                                <label class="ym-filter-field">
+                                    <span>Categoria</span>
+                                    <select [(ngModel)]="confirmacaoSugestao.idCategoriaEspecifica"
+                                        name="sugestaoCategoria{{ sugestao.ocorrenciaId }}"
+                                        [disabled]="categoriasSugestao.length === 0">
+                                        <option value="">Usar natureza</option>
+                                        <option *ngFor="let cat of categoriasSugestao" [value]="cat.id">{{ cat.descricao }}</option>
+                                    </select>
+                                </label>
+                                <div class="ym-recurring-edit-actions">
+                                    <button class="ym-button" type="button" (click)="cancelarEdicaoSugestao()">
+                                        Cancelar
+                                    </button>
+                                    <button class="ym-button primary accent-danger" type="button"
+                                        (click)="confirmarSugestao(sugestao)"
+                                        [disabled]="salvandoSugestaoRecorrente || !sugestaoEditadaValida()">
+                                        <i class="bi bi-check2"></i>Confirmar ajuste
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+
                 <div class="ym-expense-query">
                     <div class="ym-filter-grid">
                         <label class="ym-filter-field">
@@ -181,6 +304,57 @@
                     <div *ngFor="let total of totalPorConta" class="ym-metric-row">
                         <span>{{ total.descricao }}</span>
                         <strong>R$ {{ total.valor | number:'1.2-2' }}</strong>
+                    </div>
+                </div>
+
+                <div class="ym-card ym-card-pad">
+                    <div class="ym-section-header">
+                        <h2 class="ym-section-title">Recorrências</h2>
+                        <button class="ym-icon-button" type="button" (click)="abrirModalRecorrencia()"
+                            aria-label="Nova recorrência">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                    </div>
+
+                    <div *ngIf="carregandoRecorrencias" class="ym-empty compact">
+                        Carregando recorrências...
+                    </div>
+
+                    <div *ngIf="!carregandoRecorrencias && recorrencias.length === 0" class="ym-empty compact">
+                        Nenhuma recorrência cadastrada.
+                    </div>
+
+                    <div class="ym-recurring-config-list"
+                        *ngIf="!carregandoRecorrencias && recorrencias.length > 0">
+                        <article class="ym-recurring-config" *ngFor="let recorrencia of recorrencias">
+                            <div>
+                                <h3 class="ym-list-title">{{ recorrencia.descricao }}</h3>
+                                <div class="ym-list-meta">
+                                    <span>Dia {{ recorrencia.diaVencimento }}</span>
+                                    <span>{{ recorrencia.contaDescricao }}</span>
+                                    <span class="ym-chip" [ngClass]="recorrencia.ativa ? 'ym-status-confirmada' : 'ym-status-ignorada'">
+                                        {{ recorrencia.ativa ? 'Ativa' : 'Inativa' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="ym-recurring-config-footer accent-danger">
+                                <strong class="ym-amount">R$ {{ recorrencia.valorPrevisto | number:'1.2-2' }}</strong>
+                                <div class="ym-list-actions">
+                                    <button class="ym-icon-button" type="button"
+                                        (click)="abrirModalRecorrencia(recorrencia)" aria-label="Editar recorrência">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="ym-icon-button" type="button" (click)="encerrarRecorrencia(recorrencia)"
+                                        [disabled]="!recorrencia.ativa" aria-label="Encerrar recorrência">
+                                        <i class="bi bi-calendar-x"></i>
+                                    </button>
+                                    <button class="ym-icon-button" type="button" (click)="desativarRecorrencia(recorrencia)"
+                                        [disabled]="!recorrencia.ativa" aria-label="Desativar recorrência">
+                                        <i class="bi bi-slash-circle"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
                     </div>
                 </div>
 
@@ -368,6 +542,91 @@
                     [disabled]="salvandoDespesa || salvandoParcelamento || (parcelamentoAtivo && !parcelamentoValido())">
                     <i class="bi" [ngClass]="salvandoDespesa ? 'bi-hourglass-split' : 'bi-check2'"></i>
                     {{ salvandoDespesa ? 'Salvando...' : 'Salvar Despesa' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade ym-modal accent-danger" id="modalRecorrencia" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-arrow-repeat me-2"></i>{{ recorrenciaEditandoId ? 'Editar' : 'Nova' }} Recorrência
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-4">
+                <form>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Descrição</label>
+                            <input type="text" class="form-control" [(ngModel)]="novaRecorrencia.descricao"
+                                name="recorrenciaDescricao" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Valor previsto (R$)</label>
+                            <input type="number" step="0.01" class="form-control"
+                                [(ngModel)]="novaRecorrencia.valorPrevisto" name="recorrenciaValor" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Data de vencimento</label>
+                            <input type="date" class="form-control" [(ngModel)]="novaRecorrencia.dataVencimento"
+                                name="recorrenciaVencimento" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Início</label>
+                            <input type="date" class="form-control" [(ngModel)]="novaRecorrencia.dataInicio"
+                                name="recorrenciaInicio" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Término</label>
+                            <input type="date" class="form-control" [(ngModel)]="novaRecorrencia.dataTermino"
+                                name="recorrenciaTermino" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Conta</label>
+                            <select class="form-select" [(ngModel)]="novaRecorrencia.idContaFinanceira"
+                                name="recorrenciaConta" required>
+                                <option value="" disabled>Selecione uma conta</option>
+                                <option *ngFor="let conta of contas" [value]="conta.id">{{ conta.descricao }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Tipo de Despesa</label>
+                            <select class="form-select" [(ngModel)]="novaRecorrencia.idTipoDespesa"
+                                (change)="onTipoRecorrenciaChange()" name="recorrenciaTipo" required>
+                                <option value="" disabled>Selecione</option>
+                                <option *ngFor="let tipo of tiposDespesa" [value]="tipo.id">{{ tipo.descricao }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Natureza da Despesa</label>
+                            <select class="form-select" [(ngModel)]="novaRecorrencia.idNaturezaDespesa"
+                                (change)="onNaturezaRecorrenciaChange()" name="recorrenciaNatureza"
+                                [disabled]="naturezasRecorrencia.length === 0" required>
+                                <option value="" disabled>Selecione</option>
+                                <option *ngFor="let nat of naturezasRecorrencia" [value]="nat.id">{{ nat.descricao }}</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Categoria Específica</label>
+                            <select class="form-select" [(ngModel)]="novaRecorrencia.idCategoriaEspecifica"
+                                name="recorrenciaCategoria" [disabled]="categoriasRecorrencia.length === 0">
+                                <option value="">Usar natureza</option>
+                                <option *ngFor="let cat of categoriasRecorrencia" [value]="cat.id">{{ cat.descricao }}</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="ym-button" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="ym-button primary accent-danger" (click)="salvarRecorrencia()"
+                    [disabled]="salvandoRecorrencia || !recorrenciaValida()">
+                    <i class="bi" [ngClass]="salvandoRecorrencia ? 'bi-hourglass-split' : 'bi-check2'"></i>
+                    {{ salvandoRecorrencia ? 'Salvando...' : 'Salvar recorrência' }}
                 </button>
             </div>
         </div>

@@ -3,6 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { DespesaService, Despesa, Categoria, CriarParcelamentoRequest, ParcelaPreview } from '../../../services/despesa';
+import { DespesaRecorrenteService } from '../../../services/despesa-recorrente';
+import {
+    ConfirmarSugestaoDespesaRecorrenteRequest,
+    DespesaRecorrenteRequest,
+    DespesaRecorrenteResponse,
+    SugestaoDespesaRecorrenteResponse
+} from '../../../models/despesa-recorrente.model';
 import Swal from 'sweetalert2';
 import { forkJoin, Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
@@ -17,6 +24,28 @@ type DespesaLote = {
     idCategoria: string;
     contaDescricao: string;
     categoriaDescricao: string;
+};
+
+type DespesaRecorrenteForm = {
+    descricao: string;
+    valorPrevisto: number;
+    dataVencimento: string;
+    dataInicio: string;
+    dataTermino: string;
+    idContaFinanceira: string;
+    idTipoDespesa: string;
+    idNaturezaDespesa: string;
+    idCategoriaEspecifica: string;
+};
+
+type SugestaoRecorrenteForm = {
+    descricao: string;
+    valor: number;
+    data: string;
+    idContaFinanceira: string;
+    idTipoDespesa: string;
+    idNaturezaDespesa: string;
+    idCategoriaEspecifica: string;
 };
 
 @Component({
@@ -74,6 +103,21 @@ export class DespesasComponent implements OnInit, OnDestroy {
     estadoCarregamento: FinancialViewState = 'loading';
     mensagemCarregamento = '';
 
+    recorrencias: DespesaRecorrenteResponse[] = [];
+    sugestoesRecorrentes: SugestaoDespesaRecorrenteResponse[] = [];
+    carregandoRecorrencias = false;
+    carregandoSugestoesRecorrentes = false;
+    salvandoRecorrencia = false;
+    salvandoSugestaoRecorrente = false;
+    recorrenciaEditandoId = '';
+    sugestaoEmEdicaoId = '';
+    novaRecorrencia: DespesaRecorrenteForm = this.criarFormularioRecorrencia();
+    confirmacaoSugestao: SugestaoRecorrenteForm = this.criarFormularioSugestao();
+    naturezasRecorrencia: Categoria[] = [];
+    categoriasRecorrencia: Categoria[] = [];
+    naturezasSugestao: Categoria[] = [];
+    categoriasSugestao: Categoria[] = [];
+
     // === TRILHA & GAMIFICAÇÃO ===
     mostrarDicaCategorizacao = false;
     dicaDespesaHover: Despesa | null = null;
@@ -85,6 +129,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
     constructor(
         private despesaService: DespesaService,
+        private despesaRecorrenteService: DespesaRecorrenteService,
         private authService: AuthService,
         private router: Router
     ) { }
@@ -106,6 +151,8 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.carregarContas();
         this.carregarCategoriasCompletas();
         this.carregarDespesas();
+        this.carregarRecorrencias();
+        this.carregarSugestoesRecorrentes();
     }
 
     carregarContas() {
@@ -175,6 +222,45 @@ export class DespesasComponent implements OnInit, OnDestroy {
                     }
 
                     this.aplicarErroCarregamento();
+                }
+            });
+    }
+
+    carregarRecorrencias() {
+        this.carregandoRecorrencias = true;
+
+        this.despesaRecorrenteService.listar()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (response) => {
+                    this.recorrencias = response.itens ?? [];
+                    this.carregandoRecorrencias = false;
+                },
+                error: (erro) => {
+                    console.error('Erro ao carregar despesas recorrentes', erro);
+                    this.recorrencias = [];
+                    this.carregandoRecorrencias = false;
+                }
+            });
+    }
+
+    carregarSugestoesRecorrentes() {
+        const mes = this.mesAtual.getMonth() + 1;
+        const ano = this.mesAtual.getFullYear();
+        this.carregandoSugestoesRecorrentes = true;
+
+        this.despesaRecorrenteService.listarSugestoes(mes, ano)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (response) => {
+                    this.sugestoesRecorrentes = response.itens ?? [];
+                    this.carregandoSugestoesRecorrentes = false;
+                    this.cancelarEdicaoSugestao();
+                },
+                error: (erro) => {
+                    console.error('Erro ao carregar sugestões recorrentes', erro);
+                    this.sugestoesRecorrentes = [];
+                    this.carregandoSugestoesRecorrentes = false;
                 }
             });
     }
@@ -305,6 +391,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.mesAtual = novo;
         this.paginaAtual = 1;
         this.carregarDespesas();
+        this.carregarSugestoesRecorrentes();
     }
 
     public abrirCalendario() {
@@ -322,6 +409,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.mesAtual = new Date(ano, mes - 1, 1);
         this.paginaAtual = 1;
         this.carregarDespesas();
+        this.carregarSugestoesRecorrentes();
     }
 
     logout(): void {
@@ -381,6 +469,404 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.parcelasPreview = [];
         this.salvandoDespesa = false;
         this.salvandoParcelamento = false;
+    }
+
+    // ==============================================================
+    // DESPESAS RECORRENTES
+    // ==============================================================
+
+    abrirModalRecorrencia(recorrencia?: DespesaRecorrenteResponse) {
+        this.recorrenciaEditandoId = recorrencia?.id ?? '';
+        this.novaRecorrencia = this.criarFormularioRecorrencia(recorrencia);
+        this.naturezasRecorrencia = [];
+        this.categoriasRecorrencia = [];
+
+        if (recorrencia) {
+            this.carregarCascataRecorrencia(recorrencia.idCategoria);
+        }
+
+        const modal = new (window as any).bootstrap.Modal(document.getElementById('modalRecorrencia'));
+        modal.show();
+    }
+
+    salvarRecorrencia() {
+        if (this.salvandoRecorrencia) return;
+
+        if (!this.recorrenciaValida()) {
+            this.mostrarAlertaCamposObrigatorios();
+            return;
+        }
+
+        const payload = this.montarPayloadRecorrencia();
+        const request$ = this.recorrenciaEditandoId
+            ? this.despesaRecorrenteService.atualizar(this.recorrenciaEditandoId, payload)
+            : this.despesaRecorrenteService.criar(payload);
+
+        this.salvandoRecorrencia = true;
+
+        request$.pipe(takeUntil(this.destroy$)).subscribe({
+            next: () => {
+                this.salvandoRecorrencia = false;
+                this.fecharModalPorId('modalRecorrencia');
+                this.carregarRecorrencias();
+                this.carregarSugestoesRecorrentes();
+                Swal.fire({
+                    icon: 'success',
+                    title: this.recorrenciaEditandoId ? 'Recorrência atualizada!' : 'Recorrência cadastrada!',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            },
+            error: (erro) => {
+                this.salvandoRecorrencia = false;
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro ao salvar recorrência!',
+                    text: this.extrairMensagemErroSalvar(erro),
+                    confirmButtonColor: '#dc3545'
+                });
+            }
+        });
+    }
+
+    desativarRecorrencia(recorrencia: DespesaRecorrenteResponse) {
+        Swal.fire({
+            title: 'Desativar recorrência?',
+            text: 'As sugestões futuras deixarão de ser apresentadas.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Desativar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545'
+        }).then(result => {
+            if (!result.isConfirmed) return;
+
+            this.despesaRecorrenteService.desativar(recorrencia.id)
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                    next: () => {
+                        this.carregarRecorrencias();
+                        this.carregarSugestoesRecorrentes();
+                        Swal.fire('Desativada!', '', 'success');
+                    },
+                    error: () => Swal.fire('Erro!', 'Não foi possível desativar a recorrência.', 'error')
+                });
+        });
+    }
+
+    encerrarRecorrencia(recorrencia: DespesaRecorrenteResponse) {
+        const hoje = new Date().toISOString().split('T')[0];
+
+        Swal.fire({
+            title: 'Encerrar recorrência',
+            input: 'date',
+            inputValue: this.normalizarDataInput(recorrencia.dataTermino) || hoje,
+            showCancelButton: true,
+            confirmButtonText: 'Encerrar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545'
+        }).then(result => {
+            if (!result.isConfirmed || !result.value) return;
+
+            this.despesaRecorrenteService.encerrar(recorrencia.id, { dataTermino: result.value })
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                    next: () => {
+                        this.carregarRecorrencias();
+                        this.carregarSugestoesRecorrentes();
+                        Swal.fire('Encerrada!', '', 'success');
+                    },
+                    error: () => Swal.fire('Erro!', 'Não foi possível encerrar a recorrência.', 'error')
+                });
+        });
+    }
+
+    recorrenciaValida(): boolean {
+        return !!(
+            this.novaRecorrencia.descricao &&
+            this.novaRecorrencia.valorPrevisto > 0 &&
+            this.novaRecorrencia.dataVencimento &&
+            this.novaRecorrencia.dataInicio &&
+            this.novaRecorrencia.idContaFinanceira &&
+            this.novaRecorrencia.idTipoDespesa &&
+            this.novaRecorrencia.idNaturezaDespesa
+        );
+    }
+
+    onTipoRecorrenciaChange() {
+        const tipoId = this.novaRecorrencia.idTipoDespesa;
+        this.naturezasRecorrencia = tipoId
+            ? this.despesaService.todasCategorias.filter(c => c.categoriaPaiId === tipoId)
+            : [];
+        this.novaRecorrencia.idNaturezaDespesa = '';
+        this.novaRecorrencia.idCategoriaEspecifica = '';
+        this.categoriasRecorrencia = [];
+    }
+
+    onNaturezaRecorrenciaChange() {
+        const naturezaId = this.novaRecorrencia.idNaturezaDespesa;
+        this.categoriasRecorrencia = naturezaId
+            ? this.despesaService.todasCategorias.filter(c => c.categoriaPaiId === naturezaId)
+            : [];
+        this.novaRecorrencia.idCategoriaEspecifica = '';
+    }
+
+    editarSugestao(sugestao: SugestaoDespesaRecorrenteResponse) {
+        if (sugestao.status !== 'Pendente') return;
+
+        this.sugestaoEmEdicaoId = sugestao.ocorrenciaId;
+        this.confirmacaoSugestao = this.criarFormularioSugestao(sugestao);
+        this.naturezasSugestao = [];
+        this.categoriasSugestao = [];
+        this.carregarCascataSugestao(sugestao.idCategoria);
+    }
+
+    cancelarEdicaoSugestao() {
+        this.sugestaoEmEdicaoId = '';
+        this.confirmacaoSugestao = this.criarFormularioSugestao();
+        this.naturezasSugestao = [];
+        this.categoriasSugestao = [];
+    }
+
+    confirmarSugestao(sugestao: SugestaoDespesaRecorrenteResponse) {
+        if (this.salvandoSugestaoRecorrente || sugestao.status !== 'Pendente') return;
+
+        const editandoSugestao = this.sugestaoEmEdicaoId === sugestao.ocorrenciaId;
+
+        if (editandoSugestao && !this.sugestaoEditadaValida()) {
+            this.mostrarAlertaCamposObrigatorios();
+            return;
+        }
+
+        const payload = editandoSugestao ? this.montarPayloadSugestao() : {};
+        this.salvandoSugestaoRecorrente = true;
+
+        this.despesaRecorrenteService.confirmarSugestao(sugestao.ocorrenciaId, payload)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    this.salvandoSugestaoRecorrente = false;
+                    this.cancelarEdicaoSugestao();
+                    this.carregarSugestoesRecorrentes();
+                    this.carregarDespesas();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Despesa confirmada!',
+                        timer: 1800,
+                        showConfirmButton: false
+                    });
+                },
+                error: (erro) => {
+                    this.salvandoSugestaoRecorrente = false;
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro ao confirmar sugestão!',
+                        text: this.extrairMensagemErroSalvar(erro),
+                        confirmButtonColor: '#dc3545'
+                    });
+                }
+            });
+    }
+
+    ignorarSugestao(sugestao: SugestaoDespesaRecorrenteResponse) {
+        if (this.salvandoSugestaoRecorrente || sugestao.status !== 'Pendente') return;
+
+        Swal.fire({
+            title: 'Ignorar sugestão?',
+            text: 'Essa sugestão mensal será cancelada, sem afetar os próximos meses.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ignorar',
+            cancelButtonText: 'Voltar',
+            confirmButtonColor: '#dc3545'
+        }).then(result => {
+            if (!result.isConfirmed) return;
+
+            this.salvandoSugestaoRecorrente = true;
+            this.despesaRecorrenteService.ignorarSugestao(sugestao.ocorrenciaId)
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                    next: () => {
+                        this.salvandoSugestaoRecorrente = false;
+                        this.cancelarEdicaoSugestao();
+                        this.carregarSugestoesRecorrentes();
+                        Swal.fire('Ignorada!', '', 'success');
+                    },
+                    error: () => {
+                        this.salvandoSugestaoRecorrente = false;
+                        Swal.fire('Erro!', 'Não foi possível ignorar a sugestão.', 'error');
+                    }
+                });
+        });
+    }
+
+    onTipoSugestaoChange() {
+        const tipoId = this.confirmacaoSugestao.idTipoDespesa;
+        this.naturezasSugestao = tipoId
+            ? this.despesaService.todasCategorias.filter(c => c.categoriaPaiId === tipoId)
+            : [];
+        this.confirmacaoSugestao.idNaturezaDespesa = '';
+        this.confirmacaoSugestao.idCategoriaEspecifica = '';
+        this.categoriasSugestao = [];
+    }
+
+    onNaturezaSugestaoChange() {
+        const naturezaId = this.confirmacaoSugestao.idNaturezaDespesa;
+        this.categoriasSugestao = naturezaId
+            ? this.despesaService.todasCategorias.filter(c => c.categoriaPaiId === naturezaId)
+            : [];
+        this.confirmacaoSugestao.idCategoriaEspecifica = '';
+    }
+
+    temSugestoesPendentes(): boolean {
+        return this.sugestoesRecorrentes.some(sugestao => sugestao.status === 'Pendente');
+    }
+
+    obterTotalSugestoesPendentes(): number {
+        return this.sugestoesRecorrentes
+            .filter(sugestao => sugestao.status === 'Pendente')
+            .reduce((total, sugestao) => total + sugestao.valorPrevisto, 0);
+    }
+
+    obterStatusSugestaoClasse(status: string): string {
+        return {
+            Pendente: 'ym-status-pendente',
+            Confirmada: 'ym-status-confirmada',
+            Ignorada: 'ym-status-ignorada'
+        }[status] ?? 'ym-status-pendente';
+    }
+
+    private criarFormularioRecorrencia(recorrencia?: DespesaRecorrenteResponse): DespesaRecorrenteForm {
+        return {
+            descricao: recorrencia?.descricao ?? '',
+            valorPrevisto: recorrencia?.valorPrevisto ?? 0,
+            dataVencimento: recorrencia
+                ? this.montarDataNoMesAtual(recorrencia.diaVencimento)
+                : this.montarDataNoMesAtual(new Date().getDate()),
+            dataInicio: this.normalizarDataInput(recorrencia?.dataInicio) || this.obterPrimeiroDiaMesInput(this.mesAtual),
+            dataTermino: this.normalizarDataInput(recorrencia?.dataTermino),
+            idContaFinanceira: recorrencia?.idContaFinanceira ?? '',
+            idTipoDespesa: '',
+            idNaturezaDespesa: '',
+            idCategoriaEspecifica: ''
+        };
+    }
+
+    private criarFormularioSugestao(sugestao?: SugestaoDespesaRecorrenteResponse): SugestaoRecorrenteForm {
+        return {
+            descricao: sugestao?.descricao ?? '',
+            valor: sugestao?.valorPrevisto ?? 0,
+            data: this.normalizarDataInput(sugestao?.dataSugerida),
+            idContaFinanceira: sugestao?.idContaFinanceira ?? '',
+            idTipoDespesa: '',
+            idNaturezaDespesa: '',
+            idCategoriaEspecifica: ''
+        };
+    }
+
+    private montarPayloadRecorrencia(): DespesaRecorrenteRequest {
+        return {
+            descricao: this.novaRecorrencia.descricao,
+            valorPrevisto: Number(this.novaRecorrencia.valorPrevisto),
+            idContaFinanceira: this.novaRecorrencia.idContaFinanceira,
+            idTipoDespesa: this.novaRecorrencia.idTipoDespesa,
+            idNaturezaDespesa: this.novaRecorrencia.idNaturezaDespesa,
+            idCategoria: this.obterIdCategoriaFinalRecorrencia(),
+            dataVencimento: this.novaRecorrencia.dataVencimento,
+            dataInicio: this.novaRecorrencia.dataInicio,
+            dataTermino: this.novaRecorrencia.dataTermino || null
+        };
+    }
+
+    private montarPayloadSugestao(): ConfirmarSugestaoDespesaRecorrenteRequest {
+        return {
+            descricao: this.confirmacaoSugestao.descricao,
+            valor: Number(this.confirmacaoSugestao.valor),
+            data: this.confirmacaoSugestao.data,
+            idContaFinanceira: this.confirmacaoSugestao.idContaFinanceira,
+            idTipoDespesa: this.confirmacaoSugestao.idTipoDespesa,
+            idNaturezaDespesa: this.confirmacaoSugestao.idNaturezaDespesa,
+            idCategoria: this.obterIdCategoriaFinalSugestao()
+        };
+    }
+
+    sugestaoEditadaValida(): boolean {
+        return !!(
+            this.confirmacaoSugestao.descricao &&
+            this.confirmacaoSugestao.valor > 0 &&
+            this.confirmacaoSugestao.data &&
+            this.confirmacaoSugestao.idContaFinanceira &&
+            this.confirmacaoSugestao.idTipoDespesa &&
+            this.confirmacaoSugestao.idNaturezaDespesa
+        );
+    }
+
+    private obterIdCategoriaFinalRecorrencia(): string {
+        return this.novaRecorrencia.idCategoriaEspecifica ||
+            this.novaRecorrencia.idNaturezaDespesa ||
+            this.novaRecorrencia.idTipoDespesa;
+    }
+
+    private obterIdCategoriaFinalSugestao(): string {
+        return this.confirmacaoSugestao.idCategoriaEspecifica ||
+            this.confirmacaoSugestao.idNaturezaDespesa ||
+            this.confirmacaoSugestao.idTipoDespesa;
+    }
+
+    private carregarCascataRecorrencia(idCategoria: string) {
+        const todas = this.despesaService.todasCategorias;
+        const cat = todas.find(c => c.id === idCategoria);
+        if (!cat) return;
+
+        if (!cat.categoriaPaiId) {
+            this.novaRecorrencia.idTipoDespesa = cat.id;
+            this.naturezasRecorrencia = todas.filter(c => c.categoriaPaiId === cat.id);
+            return;
+        }
+
+        const pai = todas.find(c => c.id === cat.categoriaPaiId);
+        if (pai && !pai.categoriaPaiId) {
+            this.novaRecorrencia.idTipoDespesa = pai.id;
+            this.novaRecorrencia.idNaturezaDespesa = cat.id;
+            this.naturezasRecorrencia = todas.filter(c => c.categoriaPaiId === pai.id);
+            this.categoriasRecorrencia = todas.filter(c => c.categoriaPaiId === cat.id);
+            return;
+        }
+
+        const avo = todas.find(c => c.id === pai?.categoriaPaiId);
+        this.novaRecorrencia.idTipoDespesa = avo?.id || '';
+        this.novaRecorrencia.idNaturezaDespesa = pai?.id || '';
+        this.novaRecorrencia.idCategoriaEspecifica = cat.id;
+        this.naturezasRecorrencia = todas.filter(c => c.categoriaPaiId === avo?.id);
+        this.categoriasRecorrencia = todas.filter(c => c.categoriaPaiId === pai?.id);
+    }
+
+    private carregarCascataSugestao(idCategoria: string) {
+        const todas = this.despesaService.todasCategorias;
+        const cat = todas.find(c => c.id === idCategoria);
+        if (!cat) return;
+
+        if (!cat.categoriaPaiId) {
+            this.confirmacaoSugestao.idTipoDespesa = cat.id;
+            this.naturezasSugestao = todas.filter(c => c.categoriaPaiId === cat.id);
+            return;
+        }
+
+        const pai = todas.find(c => c.id === cat.categoriaPaiId);
+        if (pai && !pai.categoriaPaiId) {
+            this.confirmacaoSugestao.idTipoDespesa = pai.id;
+            this.confirmacaoSugestao.idNaturezaDespesa = cat.id;
+            this.naturezasSugestao = todas.filter(c => c.categoriaPaiId === pai.id);
+            this.categoriasSugestao = todas.filter(c => c.categoriaPaiId === cat.id);
+            return;
+        }
+
+        const avo = todas.find(c => c.id === pai?.categoriaPaiId);
+        this.confirmacaoSugestao.idTipoDespesa = avo?.id || '';
+        this.confirmacaoSugestao.idNaturezaDespesa = pai?.id || '';
+        this.confirmacaoSugestao.idCategoriaEspecifica = cat.id;
+        this.naturezasSugestao = todas.filter(c => c.categoriaPaiId === avo?.id);
+        this.categoriasSugestao = todas.filter(c => c.categoriaPaiId === pai?.id);
     }
 
     // ==============================================================
@@ -859,12 +1345,36 @@ export class DespesasComponent implements OnInit, OnDestroy {
         return `${ano}-${mes}`;
     }
 
+    private obterPrimeiroDiaMesInput(data: Date): string {
+        const ano = data.getFullYear();
+        const mes = String(data.getMonth() + 1).padStart(2, '0');
+        return `${ano}-${mes}-01`;
+    }
+
+    private montarDataNoMesAtual(dia: number): string {
+        const ano = this.mesAtual.getFullYear();
+        const mesIndex = this.mesAtual.getMonth();
+        const ultimoDia = new Date(ano, mesIndex + 1, 0).getDate();
+        const diaAjustado = Math.min(Math.max(Number(dia) || 1, 1), ultimoDia);
+        const mes = String(mesIndex + 1).padStart(2, '0');
+        return `${ano}-${mes}-${String(diaAjustado).padStart(2, '0')}`;
+    }
+
+    private normalizarDataInput(data?: string | null): string {
+        return data ? data.substring(0, 10) : '';
+    }
+
     private converterMesReferenciaParaApi(mesReferencia: string): string {
         return `${mesReferencia}-01`;
     }
 
     private fecharModal() {
         const modal = (window as any).bootstrap.Modal.getInstance(document.getElementById('modalDespesa'));
+        modal?.hide();
+    }
+
+    private fecharModalPorId(id: string) {
+        const modal = (window as any).bootstrap.Modal.getInstance(document.getElementById(id));
         modal?.hide();
     }
 

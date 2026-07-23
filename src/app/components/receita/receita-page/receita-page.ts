@@ -5,12 +5,40 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { ReceitaService } from '../../../services/receita';
 import { NaturezaReceita, Receita } from '../../../models/receita.model';
-import { Despesa } from '../../../models/despesa.model';
+import { ContaFinanceira, Despesa } from '../../../models/despesa.model';
 import { DespesaService } from '../../../services/despesa';
+import { ReceitaRecorrenteService } from '../../../services/receita-recorrente';
+import {
+    ConfirmarSugestaoReceitaRecorrenteRequest,
+    ProjecaoReservaEmergenciaItem,
+    ReceitaRecorrenteRequest,
+    ReceitaRecorrenteResponse,
+    SugestaoReceitaRecorrenteResponse
+} from '../../../models/receita-recorrente.model';
 import Swal from 'sweetalert2';
 import { Observable, Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
+
+type ReceitaRecorrenteForm = {
+    descricao: string;
+    valorPrevisto: number;
+    idContaFinanceira: string;
+    natureza: Exclude<NaturezaReceita, 'Reembolso'>;
+    ehSalario: boolean;
+    consideraReservaEmergencia: boolean;
+    dataRecebimento: string;
+    dataInicio: string;
+    dataTermino: string;
+};
+
+type ConfirmacaoSugestaoReceitaForm = {
+    descricao: string;
+    valor: number;
+    data: string;
+    idContaFinanceira: string;
+    natureza: Exclude<NaturezaReceita, 'Reembolso'>;
+};
 
 @Component({
     selector: 'app-receita-page',
@@ -29,6 +57,23 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     totalReceitas = 0;
     estadoCarregamento: FinancialViewState = 'loading';
     mensagemCarregamento = '';
+    contas: ContaFinanceira[] = [];
+
+    recorrencias: ReceitaRecorrenteResponse[] = [];
+    sugestoesRecorrentes: SugestaoReceitaRecorrenteResponse[] = [];
+    projecoesReserva: ProjecaoReservaEmergenciaItem[] = [];
+    carregandoRecorrencias = false;
+    carregandoSugestoesRecorrentes = false;
+    carregandoProjecaoReserva = false;
+    erroRecorrencias = false;
+    erroSugestoesRecorrentes = false;
+    erroProjecaoReserva = false;
+    salvandoRecorrencia = false;
+    salvandoSugestaoRecorrente = false;
+    recorrenciaEditandoId = '';
+    sugestaoEmEdicaoId = '';
+    novaRecorrencia: ReceitaRecorrenteForm = this.criarFormularioRecorrencia();
+    confirmacaoSugestao: ConfirmacaoSugestaoReceitaForm = this.criarFormularioSugestao();
 
     // === FORMULÁRIO ===
     novaReceita = {
@@ -53,6 +98,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     constructor(
         private receitaService: ReceitaService,
         private despesaService: DespesaService,
+        private receitaRecorrenteService: ReceitaRecorrenteService,
         private authService: AuthService,
         private router: Router
     ) { }
@@ -69,6 +115,76 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     carregarDadosIniciais() {
         this.carregarReceitas();
         this.carregarDespesasVinculaveis();
+        this.carregarContas();
+        this.carregarRecorrencias();
+        this.carregarSugestoesRecorrentes();
+        this.carregarProjecaoReserva();
+    }
+
+    carregarContas() {
+        this.despesaService.listarContas()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: contas => this.contas = contas,
+                error: () => this.contas = []
+            });
+    }
+
+    carregarRecorrencias() {
+        this.carregandoRecorrencias = true;
+        this.erroRecorrencias = false;
+        this.receitaRecorrenteService.listar()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: response => {
+                    this.recorrencias = response.itens ?? [];
+                    this.carregandoRecorrencias = false;
+                },
+                error: () => {
+                    this.recorrencias = [];
+                    this.carregandoRecorrencias = false;
+                    this.erroRecorrencias = true;
+                }
+            });
+    }
+
+    carregarSugestoesRecorrentes() {
+        const mes = this.mesAtual.getMonth() + 1;
+        const ano = this.mesAtual.getFullYear();
+        this.carregandoSugestoesRecorrentes = true;
+        this.erroSugestoesRecorrentes = false;
+        this.receitaRecorrenteService.listarSugestoes(mes, ano)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: response => {
+                    this.sugestoesRecorrentes = response.itens ?? [];
+                    this.carregandoSugestoesRecorrentes = false;
+                    this.cancelarEdicaoSugestao();
+                },
+                error: () => {
+                    this.sugestoesRecorrentes = [];
+                    this.carregandoSugestoesRecorrentes = false;
+                    this.erroSugestoesRecorrentes = true;
+                }
+            });
+    }
+
+    carregarProjecaoReserva() {
+        this.carregandoProjecaoReserva = true;
+        this.erroProjecaoReserva = false;
+        this.receitaRecorrenteService.obterProjecaoReserva()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: response => {
+                    this.projecoesReserva = response.itens ?? [];
+                    this.carregandoProjecaoReserva = false;
+                },
+                error: () => {
+                    this.projecoesReserva = [];
+                    this.carregandoProjecaoReserva = false;
+                    this.erroProjecaoReserva = true;
+                }
+            });
     }
 
     carregarReceitas() {
@@ -119,6 +235,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         this.mesAtual = novoMes;
         this.carregarReceitas();
         this.carregarDespesasVinculaveis();
+        this.carregarSugestoesRecorrentes();
     }
 
     // === CALENDÁRIO ===
@@ -137,6 +254,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         this.mesAtual = new Date(ano, mes - 1, 1);
         this.carregarReceitas();
         this.carregarDespesasVinculaveis();
+        this.carregarSugestoesRecorrentes();
     }
 
     logout(): void {
@@ -356,6 +474,283 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
                         error: () => Swal.fire('Erro!', '', 'error')
                     });
             }
+        });
+    }
+
+    abrirModalRecorrencia(recorrencia?: ReceitaRecorrenteResponse) {
+        this.recorrenciaEditandoId = recorrencia?.id ?? '';
+        this.novaRecorrencia = this.criarFormularioRecorrencia(recorrencia);
+        const modal = new (window as any).bootstrap.Modal(document.getElementById('modalReceitaRecorrente'));
+        modal.show();
+    }
+
+    salvarRecorrencia() {
+        if (this.salvandoRecorrencia) return;
+        if (!this.recorrenciaValida()) {
+            this.mostrarAlertaCamposObrigatorios();
+            return;
+        }
+
+        const payload: ReceitaRecorrenteRequest = {
+            descricao: this.novaRecorrencia.descricao.trim(),
+            valorPrevisto: this.novaRecorrencia.valorPrevisto,
+            idContaFinanceira: this.novaRecorrencia.idContaFinanceira,
+            natureza: this.novaRecorrencia.natureza,
+            ehSalario: this.novaRecorrencia.ehSalario,
+            consideraReservaEmergencia: this.novaRecorrencia.consideraReservaEmergencia,
+            dataRecebimento: this.novaRecorrencia.dataRecebimento,
+            dataInicio: this.novaRecorrencia.dataInicio,
+            dataTermino: this.novaRecorrencia.dataTermino || null
+        };
+        const request$ = this.recorrenciaEditandoId
+            ? this.receitaRecorrenteService.atualizar(this.recorrenciaEditandoId, payload)
+            : this.receitaRecorrenteService.criar(payload);
+
+        this.salvandoRecorrencia = true;
+        request$.pipe(takeUntil(this.destroy$)).subscribe({
+            next: () => {
+                this.salvandoRecorrencia = false;
+                this.fecharModalPorId('modalReceitaRecorrente');
+                this.carregarRecorrencias();
+                this.carregarSugestoesRecorrentes();
+                this.carregarProjecaoReserva();
+                Swal.fire({
+                    icon: 'success',
+                    title: this.recorrenciaEditandoId ? 'Recorrência atualizada!' : 'Recorrência cadastrada!',
+                    timer: 1800,
+                    showConfirmButton: false
+                });
+            },
+            error: (erro: unknown) => {
+                this.salvandoRecorrencia = false;
+                this.mostrarErroRecorrencia(erro, 'Não foi possível salvar a recorrência.');
+            }
+        });
+    }
+
+    recorrenciaValida(): boolean {
+        return !!(
+            this.novaRecorrencia.descricao.trim() &&
+            this.novaRecorrencia.valorPrevisto > 0 &&
+            this.novaRecorrencia.idContaFinanceira &&
+            this.novaRecorrencia.natureza &&
+            this.novaRecorrencia.dataRecebimento &&
+            this.novaRecorrencia.dataInicio &&
+            (!this.novaRecorrencia.dataTermino || this.novaRecorrencia.dataTermino >= this.novaRecorrencia.dataInicio)
+        );
+    }
+
+    desativarRecorrencia(recorrencia: ReceitaRecorrenteResponse) {
+        Swal.fire({
+            title: 'Desativar recorrência?',
+            text: 'As sugestões futuras deixarão de ser apresentadas.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Desativar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545'
+        }).then(result => {
+            if (!result.isConfirmed) return;
+            this.receitaRecorrenteService.desativar(recorrencia.id)
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                    next: () => this.recarregarVisoesRecorrentes('Recorrência desativada!'),
+                    error: erro => this.mostrarErroRecorrencia(erro, 'Não foi possível desativar a recorrência.')
+                });
+        });
+    }
+
+    encerrarRecorrencia(recorrencia: ReceitaRecorrenteResponse) {
+        Swal.fire({
+            title: 'Encerrar recorrência',
+            input: 'date',
+            inputValue: this.normalizarDataInput(recorrencia.dataTermino) || this.normalizarDataInput(new Date()),
+            showCancelButton: true,
+            confirmButtonText: 'Encerrar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545'
+        }).then(result => {
+            if (!result.isConfirmed || !result.value) return;
+            this.receitaRecorrenteService.encerrar(recorrencia.id, { dataTermino: result.value })
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                    next: () => this.recarregarVisoesRecorrentes('Recorrência encerrada!'),
+                    error: erro => this.mostrarErroRecorrencia(erro, 'Não foi possível encerrar a recorrência.')
+                });
+        });
+    }
+
+    editarSugestao(sugestao: SugestaoReceitaRecorrenteResponse) {
+        if (sugestao.status !== 'Pendente') return;
+        this.sugestaoEmEdicaoId = sugestao.ocorrenciaId;
+        this.confirmacaoSugestao = this.criarFormularioSugestao(sugestao);
+    }
+
+    cancelarEdicaoSugestao() {
+        this.sugestaoEmEdicaoId = '';
+        this.confirmacaoSugestao = this.criarFormularioSugestao();
+    }
+
+    confirmarSugestao(sugestao: SugestaoReceitaRecorrenteResponse) {
+        if (this.salvandoSugestaoRecorrente || sugestao.status !== 'Pendente') return;
+        const editando = this.sugestaoEmEdicaoId === sugestao.ocorrenciaId;
+        if (editando && !this.sugestaoEditadaValida()) {
+            this.mostrarAlertaCamposObrigatorios();
+            return;
+        }
+
+        const payload: ConfirmarSugestaoReceitaRecorrenteRequest = editando
+            ? {
+                descricao: this.confirmacaoSugestao.descricao.trim(),
+                valor: this.confirmacaoSugestao.valor,
+                data: this.confirmacaoSugestao.data,
+                idContaFinanceira: this.confirmacaoSugestao.idContaFinanceira,
+                natureza: this.confirmacaoSugestao.natureza
+            }
+            : {};
+
+        this.salvandoSugestaoRecorrente = true;
+        this.receitaRecorrenteService.confirmarSugestao(sugestao.ocorrenciaId, payload)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    this.salvandoSugestaoRecorrente = false;
+                    this.cancelarEdicaoSugestao();
+                    this.carregarSugestoesRecorrentes();
+                    this.carregarReceitas();
+                    Swal.fire({ icon: 'success', title: 'Receita confirmada!', timer: 1800, showConfirmButton: false });
+                },
+                error: erro => {
+                    this.salvandoSugestaoRecorrente = false;
+                    this.mostrarErroRecorrencia(erro, 'Não foi possível confirmar a sugestão.');
+                }
+            });
+    }
+
+    ignorarSugestao(sugestao: SugestaoReceitaRecorrenteResponse) {
+        if (this.salvandoSugestaoRecorrente || sugestao.status !== 'Pendente') return;
+        Swal.fire({
+            title: 'Ignorar sugestão?',
+            text: 'Somente esta sugestão mensal será ignorada.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ignorar',
+            cancelButtonText: 'Voltar',
+            confirmButtonColor: '#dc3545'
+        }).then(result => {
+            if (!result.isConfirmed) return;
+            this.salvandoSugestaoRecorrente = true;
+            this.receitaRecorrenteService.ignorarSugestao(sugestao.ocorrenciaId)
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                    next: () => {
+                        this.salvandoSugestaoRecorrente = false;
+                        this.cancelarEdicaoSugestao();
+                        this.carregarSugestoesRecorrentes();
+                    },
+                    error: erro => {
+                        this.salvandoSugestaoRecorrente = false;
+                        this.mostrarErroRecorrencia(erro, 'Não foi possível ignorar a sugestão.');
+                    }
+                });
+        });
+    }
+
+    obterStatusSugestaoClasse(status: string): string {
+        return {
+            Pendente: 'ym-status-pendente',
+            Confirmada: 'ym-status-confirmada',
+            Ignorada: 'ym-status-ignorada'
+        }[status] ?? 'ym-status-pendente';
+    }
+
+    obterTotalSugestoesPendentes(): number {
+        return this.sugestoesRecorrentes
+            .filter(sugestao => sugestao.status === 'Pendente')
+            .reduce((total, sugestao) => total + sugestao.valorPrevisto, 0);
+    }
+
+    get totalReservaMensal(): number {
+        return this.projecoesReserva.reduce((total, item) => total + item.valorMensal, 0);
+    }
+
+    get totalReservaSeisMeses(): number {
+        return this.projecoesReserva.reduce((total, item) => total + item.valorSeisMeses, 0);
+    }
+
+    get totalReservaDozeMeses(): number {
+        return this.projecoesReserva.reduce((total, item) => total + item.valorDozeMeses, 0);
+    }
+
+    private criarFormularioRecorrencia(recorrencia?: ReceitaRecorrenteResponse): ReceitaRecorrenteForm {
+        return {
+            descricao: recorrencia?.descricao ?? '',
+            valorPrevisto: recorrencia?.valorPrevisto ?? 0,
+            idContaFinanceira: recorrencia?.idContaFinanceira ?? '',
+            natureza: recorrencia?.natureza ?? 'RendaDisponivel',
+            ehSalario: recorrencia?.ehSalario ?? false,
+            consideraReservaEmergencia: recorrencia?.consideraReservaEmergencia ?? false,
+            dataRecebimento: recorrencia
+                ? this.montarDataNoMesAtual(recorrencia.diaRecebimento)
+                : this.normalizarDataInput(new Date()),
+            dataInicio: this.normalizarDataInput(recorrencia?.dataInicio) || this.converterMesReferenciaParaApi(this.obterMesReferenciaInput(this.mesAtual)),
+            dataTermino: this.normalizarDataInput(recorrencia?.dataTermino)
+        };
+    }
+
+    private criarFormularioSugestao(sugestao?: SugestaoReceitaRecorrenteResponse): ConfirmacaoSugestaoReceitaForm {
+        return {
+            descricao: sugestao?.descricao ?? '',
+            valor: sugestao?.valorPrevisto ?? 0,
+            data: this.normalizarDataInput(sugestao?.dataSugerida),
+            idContaFinanceira: sugestao?.idContaFinanceira ?? '',
+            natureza: sugestao?.natureza ?? 'RendaDisponivel'
+        };
+    }
+
+    private sugestaoEditadaValida(): boolean {
+        return !!(
+            this.confirmacaoSugestao.descricao.trim() &&
+            this.confirmacaoSugestao.valor > 0 &&
+            this.confirmacaoSugestao.data &&
+            this.confirmacaoSugestao.idContaFinanceira &&
+            this.confirmacaoSugestao.natureza
+        );
+    }
+
+    private montarDataNoMesAtual(dia: number): string {
+        const ano = this.mesAtual.getFullYear();
+        const mes = this.mesAtual.getMonth() + 1;
+        const diaValido = Math.min(dia, new Date(ano, mes, 0).getDate());
+        return `${ano}-${String(mes).padStart(2, '0')}-${String(diaValido).padStart(2, '0')}`;
+    }
+
+    private normalizarDataInput(data?: Date | string | null): string {
+        if (!data) return '';
+        if (typeof data === 'string' && /^\d{4}-\d{2}-\d{2}/.test(data)) return data.substring(0, 10);
+        const valor = data instanceof Date ? data : new Date(data);
+        return `${valor.getFullYear()}-${String(valor.getMonth() + 1).padStart(2, '0')}-${String(valor.getDate()).padStart(2, '0')}`;
+    }
+
+    private fecharModalPorId(id: string) {
+        const modal = (window as any).bootstrap.Modal.getInstance(document.getElementById(id));
+        modal?.hide();
+    }
+
+    private recarregarVisoesRecorrentes(mensagem: string) {
+        this.carregarRecorrencias();
+        this.carregarSugestoesRecorrentes();
+        this.carregarProjecaoReserva();
+        Swal.fire({ icon: 'success', title: mensagem, timer: 1600, showConfirmButton: false });
+    }
+
+    private mostrarErroRecorrencia(erro: unknown, fallback: string) {
+        const httpError = erro instanceof HttpErrorResponse ? erro : null;
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro!',
+            text: typeof httpError?.error?.message === 'string' ? httpError.error.message : fallback,
+            confirmButtonColor: '#dc3545'
         });
     }
 
