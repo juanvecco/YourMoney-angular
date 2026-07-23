@@ -1,9 +1,17 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
-import { MetaMensal, MetaMensalStatus, MetasMensaisResumo } from '../../../models/meta-mensal.model';
+import {
+  AtualizarMetaMensalRequest,
+  CriarMetaMensalRequest,
+  MetaMensal,
+  MetaMensalStatus,
+  MetasMensaisResumo,
+  TipoDefinicaoMeta
+} from '../../../models/meta-mensal.model';
 import { AuthService } from '../../../services/auth.service';
 import { MetaMensalService } from '../../../services/meta-mensal';
 
@@ -18,6 +26,7 @@ type MetasViewState = 'loading' | 'loaded' | 'empty' | 'error';
 })
 export class MetasPageComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
+  private definicaoOriginal: Pick<MetaMensal, 'tipoDefinicao' | 'percentualReceita' | 'valorMeta'> | null = null;
 
   @ViewChild('calendarioInput') calendarioInput!: ElementRef<HTMLInputElement>;
 
@@ -28,7 +37,19 @@ export class MetasPageComponent implements OnInit, OnDestroy {
   mesAtual = new Date();
   salvando = false;
   editando = false;
-  formulario = { id: '', nome: '', percentualReceita: 0 };
+  formulario: {
+    id: string;
+    nome: string;
+    tipoDefinicao: TipoDefinicaoMeta;
+    percentualReceita: number | null;
+    valorMeta: number | null;
+  } = {
+    id: '',
+    nome: '',
+    tipoDefinicao: 'Percentual',
+    percentualReceita: null,
+    valorMeta: null
+  };
 
   constructor(
     private metaMensalService: MetaMensalService,
@@ -72,25 +93,35 @@ export class MetasPageComponent implements OnInit, OnDestroy {
     if (this.salvando || !this.formularioValido()) return;
 
     this.salvando = true;
-    const request = {
-      nome: this.formulario.nome.trim(),
-      percentualReceita: Number(this.formulario.percentualReceita)
-    };
+    this.mensagemErro = '';
+
+    const request = this.editando
+      ? this.criarRequestAtualizacao()
+      : this.criarRequestCadastro();
     const operacao$ = this.editando
-      ? this.metaMensalService.atualizarMeta({ id: this.formulario.id, ...request })
-      : this.metaMensalService.criarMeta({ ...request, mesReferencia: this.converterMesReferenciaParaApi(this.mesAtual) });
+      ? this.metaMensalService.atualizarMeta(request as AtualizarMetaMensalRequest)
+      : this.metaMensalService.criarMeta(request as CriarMetaMensalRequest);
 
     operacao$.pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
         this.resetarFormulario();
-        this.carregarResumo();
         this.salvando = false;
+        this.carregarResumo();
       },
-      error: () => {
-        this.mensagemErro = 'Não foi possível salvar a meta.';
+      error: (erro: HttpErrorResponse) => {
+        this.mensagemErro = this.obterMensagemErro(erro);
         this.salvando = false;
       }
     });
+  }
+
+  alterarTipoDefinicao(tipoDefinicao: TipoDefinicaoMeta): void {
+    if (tipoDefinicao === this.formulario.tipoDefinicao) return;
+
+    this.formulario.tipoDefinicao = tipoDefinicao;
+    this.formulario.percentualReceita = null;
+    this.formulario.valorMeta = null;
+    this.mensagemErro = '';
   }
 
   editarMeta(meta: MetaMensal): void {
@@ -98,8 +129,16 @@ export class MetasPageComponent implements OnInit, OnDestroy {
     this.formulario = {
       id: meta.id,
       nome: meta.nome,
-      percentualReceita: meta.percentualReceita
+      tipoDefinicao: meta.tipoDefinicao,
+      percentualReceita: meta.tipoDefinicao === 'Percentual' ? meta.percentualReceita : null,
+      valorMeta: meta.tipoDefinicao === 'Valor' ? meta.valorMeta : null
     };
+    this.definicaoOriginal = {
+      tipoDefinicao: meta.tipoDefinicao,
+      percentualReceita: meta.percentualReceita,
+      valorMeta: meta.valorMeta
+    };
+    this.mensagemErro = '';
   }
 
   cancelarEdicao(): void {
@@ -150,9 +189,15 @@ export class MetasPageComponent implements OnInit, OnDestroy {
   }
 
   formularioValido(): boolean {
-    return this.formulario.nome.trim().length > 0
-      && this.formulario.nome.trim().length <= 100
-      && Number(this.formulario.percentualReceita) > 0;
+    const nome = this.formulario.nome.trim();
+    if (!nome || nome.length > 100) return false;
+
+    if (this.formulario.tipoDefinicao === 'Percentual') {
+      return this.valorValido(this.formulario.percentualReceita, 4);
+    }
+
+    return this.valorValido(this.formulario.valorMeta, 2)
+      && (this.temReceitaElegivelPositiva || this.podeRenomearMetaPorValorSemReceita());
   }
 
   formatarMoeda(valor = 0): string {
@@ -164,7 +209,11 @@ export class MetasPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  formatarPercentual(valor = 0): string {
+  formatarPercentual(valor: number | null | undefined): string {
+    if (valor === null || valor === undefined || !Number.isFinite(valor)) {
+      return 'Indisponível';
+    }
+
     return `${valor.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%`;
   }
 
@@ -181,9 +230,62 @@ export class MetasPageComponent implements OnInit, OnDestroy {
     return !!this.resumo?.alertas?.length;
   }
 
+  get temReceitaElegivelPositiva(): boolean {
+    return (this.resumo?.receitaElegivelMetas ?? this.resumo?.receitaTotal ?? 0) > 0;
+  }
+
   private resetarFormulario(): void {
     this.editando = false;
-    this.formulario = { id: '', nome: '', percentualReceita: 0 };
+    this.definicaoOriginal = null;
+    this.formulario = {
+      id: '',
+      nome: '',
+      tipoDefinicao: 'Percentual',
+      percentualReceita: null,
+      valorMeta: null
+    };
+  }
+
+  private criarRequestCadastro(): CriarMetaMensalRequest {
+    const base = {
+      nome: this.formulario.nome.trim(),
+      mesReferencia: this.converterMesReferenciaParaApi(this.mesAtual)
+    };
+
+    return this.formulario.tipoDefinicao === 'Valor'
+      ? { ...base, tipoDefinicao: 'Valor', valorMeta: Number(this.formulario.valorMeta), percentualReceita: null }
+      : { ...base, tipoDefinicao: 'Percentual', percentualReceita: Number(this.formulario.percentualReceita), valorMeta: null };
+  }
+
+  private criarRequestAtualizacao(): AtualizarMetaMensalRequest {
+    const base = {
+      id: this.formulario.id,
+      nome: this.formulario.nome.trim()
+    };
+
+    return this.formulario.tipoDefinicao === 'Valor'
+      ? { ...base, tipoDefinicao: 'Valor', valorMeta: Number(this.formulario.valorMeta), percentualReceita: null }
+      : { ...base, tipoDefinicao: 'Percentual', percentualReceita: Number(this.formulario.percentualReceita), valorMeta: null };
+  }
+
+  private valorValido(valor: number | null, casasDecimais: number): boolean {
+    if (valor === null || !Number.isFinite(Number(valor)) || Number(valor) <= 0) return false;
+
+    const fator = 10 ** casasDecimais;
+    return Math.abs(Number(valor) * fator - Math.round(Number(valor) * fator)) < 0.0000001;
+  }
+
+  private podeRenomearMetaPorValorSemReceita(): boolean {
+    return this.editando
+      && this.definicaoOriginal?.tipoDefinicao === 'Valor'
+      && Number(this.definicaoOriginal.valorMeta) === Number(this.formulario.valorMeta);
+  }
+
+  private obterMensagemErro(erro: HttpErrorResponse): string {
+    const mensagem = erro.error?.message;
+    return typeof mensagem === 'string' && mensagem.trim()
+      ? mensagem
+      : 'Não foi possível salvar a meta.';
   }
 
   private converterMesReferenciaParaApi(data: Date): string {
