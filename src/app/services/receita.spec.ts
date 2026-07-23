@@ -85,4 +85,40 @@ describe('ReceitaService', () => {
     expect(request.request.method).toBe('GET');
     request.flush([]);
   });
+
+  it('keeps account optional for legacy records and serializes it when present', () => {
+    const legacy = {
+      id: 'legacy-1',
+      descricao: 'Receita antiga',
+      valor: 100,
+      data: '2026-05-10',
+      mesReferencia: '2026-05-01',
+      natureza: 'RendaDisponivel' as const,
+      consideraNasMetas: true,
+      despesaVinculadaId: null,
+      despesaVinculadaDescricao: null,
+      valorAbatidoEmDespesa: 0,
+      idContaFinanceira: null,
+      contaDescricao: null
+    };
+
+    service.obterPorReferencia(5, 2026).subscribe(result => {
+      expect(result[0].idContaFinanceira).toBeNull();
+    });
+    const list = httpTesting.expectOne(req => req.url.endsWith('/Receitas/por-referencia'));
+    list.flush([legacy]);
+
+    const payload: CriarReceitaRequest = {
+      descricao: 'Salário confirmado',
+      valor: 5000,
+      data: '2026-05-05',
+      mesReferencia: '2026-05-01',
+      natureza: 'RendaDisponivel',
+      idContaFinanceira: 'conta-1'
+    };
+    service.criarReceita(payload).subscribe();
+    const create = httpTesting.expectOne(`${environment.apiUrl}/Receitas`);
+    expect(create.request.body.idContaFinanceira).toBe('conta-1');
+    create.flush({ ...legacy, ...payload, id: 'receita-2', contaDescricao: 'Principal' });
+  });
 });

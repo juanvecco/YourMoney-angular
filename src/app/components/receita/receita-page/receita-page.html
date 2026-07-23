@@ -51,6 +51,102 @@
                     <p class="ym-kpi-meta">Referência: {{ mesAtual | date:'MMMM yyyy':'pt-BR' }}</p>
                 </article>
 
+                <section class="ym-recurring-band" aria-labelledby="tituloSugestoesReceita">
+                    <div class="ym-section-header ym-section-header-compact">
+                        <div>
+                            <h2 class="ym-section-title" id="tituloSugestoesReceita">Sugestões recorrentes</h2>
+                            <p class="ym-subtitle">{{ mesAtual | date:'MMMM yyyy':'pt-BR' }}</p>
+                        </div>
+                        <span class="ym-chip ym-recurring-total" *ngIf="obterTotalSugestoesPendentes() > 0">
+                            R$ {{ obterTotalSugestoesPendentes() | number:'1.2-2' }}
+                        </span>
+                    </div>
+
+                    <div *ngIf="carregandoSugestoesRecorrentes" class="ym-empty compact">Carregando sugestões...</div>
+                    <div *ngIf="!carregandoSugestoesRecorrentes && erroSugestoesRecorrentes"
+                        class="ym-empty compact ym-state-error">Não foi possível carregar as sugestões.</div>
+                    <div *ngIf="!carregandoSugestoesRecorrentes && !erroSugestoesRecorrentes && sugestoesRecorrentes.length === 0"
+                        class="ym-empty compact">Nenhuma sugestão para este mês.</div>
+
+                    <div class="ym-list ym-recurring-list"
+                        *ngIf="!carregandoSugestoesRecorrentes && !erroSugestoesRecorrentes && sugestoesRecorrentes.length > 0">
+                        <article class="ym-list-item ym-recurring-item" *ngFor="let sugestao of sugestoesRecorrentes">
+                            <div class="ym-recurring-row">
+                                <div class="ym-list-main">
+                                    <h3 class="ym-list-title">{{ sugestao.descricao }}</h3>
+                                    <div class="ym-list-meta">
+                                        <span><i class="bi bi-calendar3"></i> {{ sugestao.dataSugerida | date:'dd/MM/yyyy' }}</span>
+                                        <span><i class="bi bi-wallet2"></i> {{ sugestao.contaDescricao }}</span>
+                                        <span class="ym-chip">{{ obterNaturezaTexto(sugestao.natureza) }}</span>
+                                        <span class="ym-chip" [ngClass]="obterStatusSugestaoClasse(sugestao.status)">{{ sugestao.status }}</span>
+                                    </div>
+                                </div>
+                                <div class="ym-list-actions accent-success">
+                                    <span class="ym-amount">R$ {{ sugestao.valorPrevisto | number:'1.2-2' }}</span>
+                                    <ng-container *ngIf="sugestao.status === 'Pendente'">
+                                        <button class="ym-icon-button" type="button" (click)="editarSugestao(sugestao)"
+                                            [disabled]="salvandoSugestaoRecorrente" title="Editar antes de confirmar"
+                                            aria-label="Editar sugestão de receita">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="ym-icon-button" type="button" (click)="confirmarSugestao(sugestao)"
+                                            [disabled]="salvandoSugestaoRecorrente || sugestaoEmEdicaoId === sugestao.ocorrenciaId"
+                                            title="Confirmar receita" aria-label="Confirmar sugestão de receita">
+                                            <i class="bi bi-check2"></i>
+                                        </button>
+                                        <button class="ym-icon-button" type="button" (click)="ignorarSugestao(sugestao)"
+                                            [disabled]="salvandoSugestaoRecorrente" title="Ignorar neste mês"
+                                            aria-label="Ignorar sugestão de receita neste mês">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </ng-container>
+                                </div>
+                            </div>
+
+                            <div class="ym-recurring-edit" *ngIf="sugestaoEmEdicaoId === sugestao.ocorrenciaId">
+                                <label class="ym-filter-field">
+                                    <span>Descrição</span>
+                                    <input type="text" [(ngModel)]="confirmacaoSugestao.descricao"
+                                        name="receitaSugestaoDescricao{{ sugestao.ocorrenciaId }}">
+                                </label>
+                                <label class="ym-filter-field">
+                                    <span>Valor</span>
+                                    <input type="number" min="0.01" step="0.01" [(ngModel)]="confirmacaoSugestao.valor"
+                                        name="receitaSugestaoValor{{ sugestao.ocorrenciaId }}">
+                                </label>
+                                <label class="ym-filter-field">
+                                    <span>Data</span>
+                                    <input type="date" [(ngModel)]="confirmacaoSugestao.data"
+                                        name="receitaSugestaoData{{ sugestao.ocorrenciaId }}">
+                                </label>
+                                <label class="ym-filter-field">
+                                    <span>Conta</span>
+                                    <select [(ngModel)]="confirmacaoSugestao.idContaFinanceira"
+                                        name="receitaSugestaoConta{{ sugestao.ocorrenciaId }}">
+                                        <option value="" disabled>Selecione</option>
+                                        <option *ngFor="let conta of contas" [value]="conta.id">{{ conta.descricao }}</option>
+                                    </select>
+                                </label>
+                                <label class="ym-filter-field">
+                                    <span>Natureza</span>
+                                    <select [(ngModel)]="confirmacaoSugestao.natureza"
+                                        name="receitaSugestaoNatureza{{ sugestao.ocorrenciaId }}">
+                                        <option value="RendaDisponivel">Renda disponível</option>
+                                        <option value="EntradaVinculadaDespesa">Destinada a despesa</option>
+                                    </select>
+                                </label>
+                                <div class="ym-recurring-edit-actions">
+                                    <button class="ym-button" type="button" (click)="cancelarEdicaoSugestao()">Cancelar</button>
+                                    <button class="ym-button primary accent-success" type="button"
+                                        (click)="confirmarSugestao(sugestao)" [disabled]="salvandoSugestaoRecorrente">
+                                        <i class="bi bi-check2"></i>Confirmar
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
                 <section class="ym-card ym-card-pad">
                     <div class="ym-section-header">
                         <h2 class="ym-section-title">Receitas recentes</h2>
@@ -94,12 +190,114 @@
             </div>
 
             <aside class="ym-card ym-card-pad">
-                <h2 class="ym-section-title">Ações rápidas</h2>
-                <p class="ym-subtitle">Inclua novas entradas assim que elas acontecerem.</p>
-                <button class="ym-button primary accent-success mt-3" type="button" (click)="abrirModalReceita()">
-                    <i class="bi bi-plus-circle"></i>Nova receita
-                </button>
+                <div class="ym-section-header">
+                    <h2 class="ym-section-title">Receitas recorrentes</h2>
+                    <button class="ym-icon-button" type="button" (click)="abrirModalRecorrencia()"
+                        title="Nova recorrência" aria-label="Nova receita recorrente">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                </div>
+
+                <div *ngIf="carregandoRecorrencias" class="ym-empty compact">Carregando recorrências...</div>
+                <div *ngIf="!carregandoRecorrencias && erroRecorrencias" class="ym-empty compact ym-state-error">
+                    Não foi possível carregar as recorrências.
+                </div>
+                <div *ngIf="!carregandoRecorrencias && !erroRecorrencias && recorrencias.length === 0"
+                    class="ym-empty compact">Nenhuma recorrência cadastrada.</div>
+
+                <div class="ym-recurring-config-list"
+                    *ngIf="!carregandoRecorrencias && !erroRecorrencias && recorrencias.length > 0">
+                    <article class="ym-recurring-config" *ngFor="let recorrencia of recorrencias">
+                        <div>
+                            <h3 class="ym-list-title">{{ recorrencia.descricao }}</h3>
+                            <div class="ym-list-meta">
+                                <span>Dia {{ recorrencia.diaRecebimento }}</span>
+                                <span>{{ recorrencia.contaDescricao }}</span>
+                                <span class="ym-chip" [ngClass]="recorrencia.ativa ? 'ym-status-confirmada' : 'ym-status-ignorada'">
+                                    {{ recorrencia.ativa ? 'Ativa' : 'Inativa' }}
+                                </span>
+                                <span class="ym-chip" *ngIf="recorrencia.ehSalario">Salário</span>
+                                <span class="ym-chip" *ngIf="recorrencia.consideraReservaEmergencia">Base da reserva</span>
+                            </div>
+                        </div>
+                        <div class="ym-recurring-config-footer accent-success">
+                            <strong class="ym-amount">R$ {{ recorrencia.valorPrevisto | number:'1.2-2' }}</strong>
+                            <div class="ym-list-actions">
+                                <button class="ym-icon-button" type="button" (click)="abrirModalRecorrencia(recorrencia)"
+                                    title="Editar recorrência" aria-label="Editar receita recorrente">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="ym-icon-button" type="button" (click)="encerrarRecorrencia(recorrencia)"
+                                    [disabled]="!recorrencia.ativa" title="Encerrar recorrência"
+                                    aria-label="Encerrar receita recorrente">
+                                    <i class="bi bi-calendar-x"></i>
+                                </button>
+                                <button class="ym-icon-button" type="button" (click)="desativarRecorrencia(recorrencia)"
+                                    [disabled]="!recorrencia.ativa" title="Desativar recorrência"
+                                    aria-label="Desativar receita recorrente">
+                                    <i class="bi bi-slash-circle"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </article>
+                </div>
             </aside>
+        </section>
+
+        <section class="ym-reserve-band" aria-labelledby="tituloReservaEmergencia">
+            <div class="ym-section-header">
+                <div>
+                    <p class="ym-eyebrow">Planejamento familiar</p>
+                    <h2 class="ym-section-title" id="tituloReservaEmergencia">Reserva de emergência</h2>
+                </div>
+                <button class="ym-icon-button" type="button" (click)="carregarProjecaoReserva()"
+                    [disabled]="carregandoProjecaoReserva" title="Atualizar projeção" aria-label="Atualizar projeção da reserva">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+
+            <div *ngIf="carregandoProjecaoReserva" class="ym-empty compact">Calculando projeções...</div>
+            <div *ngIf="!carregandoProjecaoReserva && erroProjecaoReserva" class="ym-empty compact ym-state-error">
+                Não foi possível carregar a projeção da reserva.
+            </div>
+            <div *ngIf="!carregandoProjecaoReserva && !erroProjecaoReserva && projecoesReserva.length === 0"
+                class="ym-empty compact">Marque uma receita recorrente como base da reserva para visualizar a projeção.</div>
+
+            <div class="ym-reserve-totals"
+                *ngIf="!carregandoProjecaoReserva && !erroProjecaoReserva && projecoesReserva.length > 0"
+                aria-label="Totais da reserva de emergência">
+                <div class="ym-reserve-total-item">
+                    <span>Renda mensal considerada</span>
+                    <strong>R$ {{ totalReservaMensal | number:'1.2-2' }}</strong>
+                </div>
+                <div class="ym-reserve-total-item">
+                    <span>Total para 6 meses</span>
+                    <strong>R$ {{ totalReservaSeisMeses | number:'1.2-2' }}</strong>
+                </div>
+                <div class="ym-reserve-total-item emphasis">
+                    <span>Total para 12 meses</span>
+                    <strong>R$ {{ totalReservaDozeMeses | number:'1.2-2' }}</strong>
+                </div>
+            </div>
+
+            <div class="ym-reserve-grid" role="table" aria-label="Projeções individuais de reserva de emergência"
+                *ngIf="!carregandoProjecaoReserva && !erroProjecaoReserva && projecoesReserva.length > 0">
+                <div class="ym-reserve-header" role="row">
+                    <span role="columnheader">Receita</span>
+                    <span role="columnheader">Mensal</span>
+                    <span role="columnheader">6 meses</span>
+                    <span role="columnheader">12 meses</span>
+                </div>
+                <div class="ym-reserve-row" role="row" *ngFor="let projecao of projecoesReserva">
+                    <div class="ym-reserve-income" role="cell">
+                        <strong>{{ projecao.descricao }}</strong>
+                        <span>{{ projecao.contaDescricao }}<ng-container *ngIf="projecao.ehSalario"> · Salário</ng-container></span>
+                    </div>
+                    <span role="cell">R$ {{ projecao.valorMensal | number:'1.2-2' }}</span>
+                    <strong role="cell">R$ {{ projecao.valorSeisMeses | number:'1.2-2' }}</strong>
+                    <strong role="cell">R$ {{ projecao.valorDozeMeses | number:'1.2-2' }}</strong>
+                </div>
+            </div>
         </section>
     </div>
 </main>
@@ -171,6 +369,90 @@
                     <i class="bi" [class.bi-hourglass-split]="salvandoReceita"
                         [class.bi-check2]="!salvandoReceita"></i>
                     {{ salvandoReceita ? 'Salvando...' : 'Salvar Receita' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade ym-modal accent-success" id="modalReceitaRecorrente" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-arrow-repeat me-2"></i>{{ recorrenciaEditandoId ? 'Editar' : 'Nova' }} Receita Recorrente
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body pt-4">
+                <form>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label" for="recorrenciaDescricao">Descrição</label>
+                            <input id="recorrenciaDescricao" type="text" maxlength="255" class="form-control"
+                                [(ngModel)]="novaRecorrencia.descricao" name="recorrenciaDescricao" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="recorrenciaValor">Valor mensal (R$)</label>
+                            <input id="recorrenciaValor" type="number" min="0.01" step="0.01" class="form-control"
+                                [(ngModel)]="novaRecorrencia.valorPrevisto" name="recorrenciaValor" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="recorrenciaConta">Conta</label>
+                            <select id="recorrenciaConta" class="form-select" [(ngModel)]="novaRecorrencia.idContaFinanceira"
+                                name="recorrenciaConta" required>
+                                <option value="" disabled>Selecione uma conta</option>
+                                <option *ngFor="let conta of contas" [value]="conta.id">{{ conta.descricao }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="recorrenciaNatureza">Natureza</label>
+                            <select id="recorrenciaNatureza" class="form-select" [(ngModel)]="novaRecorrencia.natureza"
+                                name="recorrenciaNatureza" required>
+                                <option value="RendaDisponivel">Renda disponível</option>
+                                <option value="EntradaVinculadaDespesa">Destinada a despesa</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="recorrenciaRecebimento">Data-base de recebimento</label>
+                            <input id="recorrenciaRecebimento" type="date" class="form-control"
+                                [(ngModel)]="novaRecorrencia.dataRecebimento" name="recorrenciaRecebimento" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="recorrenciaInicio">Início</label>
+                            <input id="recorrenciaInicio" type="date" class="form-control"
+                                [(ngModel)]="novaRecorrencia.dataInicio" name="recorrenciaInicio" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="recorrenciaTermino">Término</label>
+                            <input id="recorrenciaTermino" type="date" class="form-control"
+                                [(ngModel)]="novaRecorrencia.dataTermino" name="recorrenciaTermino">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="ym-check-row accent-success" for="recorrenciaSalario">
+                                <input id="recorrenciaSalario" type="checkbox" [(ngModel)]="novaRecorrencia.ehSalario"
+                                    name="recorrenciaSalario">
+                                <span>Identificar como salário</span>
+                            </label>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="ym-check-row accent-success" for="recorrenciaReserva">
+                                <input id="recorrenciaReserva" type="checkbox"
+                                    [(ngModel)]="novaRecorrencia.consideraReservaEmergencia" name="recorrenciaReserva">
+                                <span>Usar como base da reserva</span>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="ym-button" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="ym-button primary accent-success" (click)="salvarRecorrencia()"
+                    [disabled]="salvandoRecorrencia || !recorrenciaValida()">
+                    <i class="bi" [class.bi-hourglass-split]="salvandoRecorrencia"
+                        [class.bi-check2]="!salvandoRecorrencia"></i>
+                    {{ salvandoRecorrencia ? 'Salvando...' : 'Salvar recorrência' }}
                 </button>
             </div>
         </div>

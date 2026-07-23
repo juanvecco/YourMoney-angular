@@ -11,6 +11,8 @@ export interface Receita {
   despesaVinculadaId?: string | null;
   despesaVinculadaDescricao?: string | null;
   valorAbatidoEmDespesa: number;
+  idContaFinanceira?: string | null;
+  contaDescricao?: string | null;
 }
 
 export interface CriarReceitaRequest {
@@ -20,6 +22,7 @@ export interface CriarReceitaRequest {
   mesReferencia: string;
   natureza: NaturezaReceita;
   despesaVinculadaId?: string | null;
+  idContaFinanceira?: string | null;
 }
 
 export interface CriarReceitaResponse extends Receita {

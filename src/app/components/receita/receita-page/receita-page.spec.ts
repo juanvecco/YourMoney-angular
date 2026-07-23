@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { ReceitaPageComponent } from './receita-page';
 import { ReceitaService } from '../../../services/receita';
 import { DespesaService } from '../../../services/despesa';
+import { ReceitaRecorrenteService } from '../../../services/receita-recorrente';
 import { AuthService } from '../../../services/auth.service';
 import Swal from 'sweetalert2';
 import { CriarReceitaResponse, Receita } from '../../../models/receita.model';
@@ -13,6 +14,7 @@ describe('ReceitaPageComponent', () => {
   let component: ReceitaPageComponent;
   let receitaService: jasmine.SpyObj<ReceitaService>;
   let despesaService: jasmine.SpyObj<DespesaService>;
+  let receitaRecorrenteService: jasmine.SpyObj<ReceitaRecorrenteService>;
   let authService: jasmine.SpyObj<AuthService>;
   let router: jasmine.SpyObj<Router>;
 
@@ -50,18 +52,40 @@ describe('ReceitaPageComponent', () => {
       'atualizarReceita',
       'deletarReceita'
     ]);
-    despesaService = jasmine.createSpyObj<DespesaService>('DespesaService', ['obterPorReferencia']);
+    despesaService = jasmine.createSpyObj<DespesaService>('DespesaService', ['obterPorReferencia', 'listarContas']);
+    receitaRecorrenteService = jasmine.createSpyObj<ReceitaRecorrenteService>('ReceitaRecorrenteService', [
+      'listar',
+      'obterPorId',
+      'criar',
+      'atualizar',
+      'desativar',
+      'encerrar',
+      'listarSugestoes',
+      'confirmarSugestao',
+      'ignorarSugestao',
+      'obterProjecaoReserva'
+    ]);
     authService = jasmine.createSpyObj<AuthService>('AuthService', ['logout']);
     router = jasmine.createSpyObj<Router>('Router', ['navigate']);
     receitaService.obterPorReferencia.and.returnValue(of([]));
     despesaService.obterPorReferencia.and.returnValue(of([]));
+    despesaService.listarContas.and.returnValue(of([]));
+    receitaRecorrenteService.listar.and.returnValue(of({ itens: [] }));
+    receitaRecorrenteService.listarSugestoes.and.returnValue(of({ mes: 7, ano: 2026, itens: [] }));
+    receitaRecorrenteService.obterProjecaoReserva.and.returnValue(of({ itens: [] }));
     (window as any).bootstrap = {
       Modal: {
         getInstance: () => ({ hide: () => undefined })
       }
     };
 
-    component = new ReceitaPageComponent(receitaService, despesaService, authService, router);
+    component = new ReceitaPageComponent(
+      receitaService,
+      despesaService,
+      receitaRecorrenteService,
+      authService,
+      router
+    );
   });
 
   it('loads receitas by selected month and updates total', () => {
@@ -280,5 +304,104 @@ describe('ReceitaPageComponent', () => {
       expect(component.salvandoReceita).toBeFalse();
       expect(alert).toHaveBeenCalledWith(jasmine.objectContaining({ text: message }));
     });
+  });
+
+  it('saves salary and emergency reserve flags independently', () => {
+    spyOn(Swal, 'fire').and.resolveTo({ isConfirmed: true } as any);
+    receitaRecorrenteService.criar.and.returnValue(of({
+      id: 'rec-1',
+      descricao: 'Salário principal',
+      valorPrevisto: 5000,
+      idContaFinanceira: 'conta-1',
+      contaDescricao: 'Principal',
+      natureza: 'RendaDisponivel',
+      ehSalario: true,
+      consideraReservaEmergencia: false,
+      diaRecebimento: 5,
+      dataInicio: '2026-07-01',
+      dataTermino: null,
+      ativa: true
+    }));
+    component.novaRecorrencia = {
+      descricao: ' Salário principal ',
+      valorPrevisto: 5000,
+      idContaFinanceira: 'conta-1',
+      natureza: 'RendaDisponivel',
+      ehSalario: true,
+      consideraReservaEmergencia: false,
+      dataRecebimento: '2026-07-05',
+      dataInicio: '2026-07-01',
+      dataTermino: ''
+    };
+
+    component.salvarRecorrencia();
+
+    expect(receitaRecorrenteService.criar).toHaveBeenCalledOnceWith(jasmine.objectContaining({
+      descricao: 'Salário principal',
+      ehSalario: true,
+      consideraReservaEmergencia: false,
+      dataTermino: null
+    }));
+    expect(receitaRecorrenteService.obterProjecaoReserva).toHaveBeenCalled();
+  });
+
+  it('loads separate reserve projections without combining equal descriptions', () => {
+    receitaRecorrenteService.obterProjecaoReserva.and.returnValue(of({
+      itens: [
+        {
+          receitaRecorrenteId: 'rec-1',
+          descricao: 'Salário',
+          contaDescricao: 'Principal',
+          ehSalario: true,
+          valorMensal: 5000,
+          valorSeisMeses: 30000,
+          valorDozeMeses: 60000
+        },
+        {
+          receitaRecorrenteId: 'rec-2',
+          descricao: 'Salário',
+          contaDescricao: 'Família',
+          ehSalario: true,
+          valorMensal: 3500,
+          valorSeisMeses: 21000,
+          valorDozeMeses: 42000
+        }
+      ]
+    }));
+
+    component.carregarProjecaoReserva();
+
+    expect(component.projecoesReserva.length).toBe(2);
+    expect(component.projecoesReserva[0].valorSeisMeses).toBe(30000);
+    expect(component.projecoesReserva[1].valorDozeMeses).toBe(42000);
+    expect(component.totalReservaMensal).toBe(8500);
+    expect(component.totalReservaSeisMeses).toBe(51000);
+    expect(component.totalReservaDozeMeses).toBe(102000);
+  });
+
+  it('confirms a monthly suggestion only after explicit action and reloads receitas', () => {
+    spyOn(Swal, 'fire').and.resolveTo({ isConfirmed: true } as any);
+    const sugestao = {
+      ocorrenciaId: 'oc-1',
+      receitaRecorrenteId: 'rec-1',
+      mesReferencia: '2026-07-01',
+      status: 'Pendente' as const,
+      descricao: 'Salário',
+      valorPrevisto: 5000,
+      dataSugerida: '2026-07-05',
+      idContaFinanceira: 'conta-1',
+      contaDescricao: 'Principal',
+      natureza: 'RendaDisponivel' as const,
+      receitaConfirmadaId: null
+    };
+    receitaRecorrenteService.confirmarSugestao.and.returnValue(of({
+      ...criarReceitaMock(),
+      mesReferencia: '2026-07-01'
+    }));
+
+    component.confirmarSugestao(sugestao);
+
+    expect(receitaRecorrenteService.confirmarSugestao).toHaveBeenCalledOnceWith('oc-1', {});
+    expect(receitaService.obterPorReferencia).toHaveBeenCalled();
   });
 });
