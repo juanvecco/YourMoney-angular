@@ -1,0 +1,28 @@
+* { box-sizing: border-box; }
+html { min-width: 320px; scroll-padding-top: 5.5rem; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  overflow-x: hidden;
+  color: var(--ym-text);
+  background: radial-gradient(ellipse 850px 480px at 10% -5%, var(--ym-bg-accent), transparent 68%), var(--ym-bg);
+  font-family: Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.5;
+}
+button, input, select, textarea { font: inherit; }
+input, select, textarea { color: var(--ym-text); background: var(--ym-input); border-color: var(--ym-border); }
+::placeholder { color: var(--ym-placeholder); opacity: 1; }
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--ym-focus);
+  outline-offset: 3px;
+}
+.ym-skip-link {
+  position: fixed; z-index: 3000; top: .75rem; left: .75rem; transform: translateY(-180%);
+  padding: .75rem 1rem; border-radius: var(--ym-radius-sm); color: var(--ym-inverse); background: var(--ym-primary);
+}
+.ym-skip-link:focus { transform: translateY(0); }
+.visually-hidden:not(:focus):not(:active) {
+  position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important;
+  margin: -1px !important; overflow: hidden !important; clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important; border: 0 !important;
+}

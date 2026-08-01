@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/co
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { ReceitaService } from '../../../services/receita';
 import { NaturezaReceita, Receita } from '../../../models/receita.model';
 import { ContaFinanceira, Despesa } from '../../../models/despesa.model';
@@ -19,6 +19,10 @@ import Swal from 'sweetalert2';
 import { Observable, Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
+import { FinancialNavigationContextService } from '../../../services/financial-navigation-context.service';
+import { MonthPickerComponent } from '../../shared/month-picker/month-picker';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { ViewStateComponent } from '../../shared/view-state/view-state';
 
 type ReceitaRecorrenteForm = {
     descricao: string;
@@ -43,12 +47,13 @@ type ConfirmacaoSugestaoReceitaForm = {
 @Component({
     selector: 'app-receita-page',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink],
+    imports: [CommonModule, FormsModule, MonthPickerComponent, PageHeaderComponent, ViewStateComponent],
     templateUrl: './receita-page.html',
     styleUrls: ['./receita-page.scss']
 })
 export class ReceitaPageComponent implements OnInit, OnDestroy {
     private destroy$ = new Subject<void>();
+    private loadRevision = 0;
 
     // === DADOS ===
     receitas: Receita[] = [];
@@ -100,8 +105,11 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         private despesaService: DespesaService,
         private receitaRecorrenteService: ReceitaRecorrenteService,
         private authService: AuthService,
-        private router: Router
-    ) { }
+        private router: Router,
+        private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService()
+    ) {
+        this.mesAtual = this.financialContext.period().date;
+    }
 
     ngOnInit() {
         this.carregarDadosIniciais();
@@ -188,6 +196,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     }
 
     carregarReceitas() {
+        const revision = ++this.loadRevision;
         const mes = this.mesAtual.getMonth() + 1;
         const ano = this.mesAtual.getFullYear();
         this.receitas = [];
@@ -199,6 +208,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: (dados) => {
+                    if (revision !== this.loadRevision) return;
                     this.receitas = dados.sort((a, b) =>
                         new Date(b.data).getTime() - new Date(a.data).getTime()
                     );
@@ -208,6 +218,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
                     this.verificarTrilhaCrescimento();
                 },
                 error: (erro) => {
+                    if (revision !== this.loadRevision) return;
                     console.error('Erro ao carregar receitas', erro);
                     this.receitas = [];
                     this.totalReceitas = 0;
@@ -230,9 +241,9 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     }
 
     mudarMes(direcao: number) {
-        const novoMes = new Date(this.mesAtual);
-        novoMes.setMonth(novoMes.getMonth() + direcao);
-        this.mesAtual = novoMes;
+        this.financialContext.setPeriod(this.mesAtual);
+        this.financialContext.shiftPeriod(direcao);
+        this.mesAtual = this.financialContext.period().date;
         this.carregarReceitas();
         this.carregarDespesasVinculaveis();
         this.carregarSugestoesRecorrentes();
@@ -251,7 +262,16 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     selecionarMesDoCalendario(event: Event) {
         const input = event.target as HTMLInputElement;
         const [ano, mes] = input.value.split('-').map(Number);
-        this.mesAtual = new Date(ano, mes - 1, 1);
+        this.financialContext.setPeriod(new Date(ano, mes - 1, 1));
+        this.mesAtual = this.financialContext.period().date;
+        this.carregarReceitas();
+        this.carregarDespesasVinculaveis();
+        this.carregarSugestoesRecorrentes();
+    }
+
+    selecionarMes(periodo: Date): void {
+        this.financialContext.setPeriod(periodo);
+        this.mesAtual = this.financialContext.period().date;
         this.carregarReceitas();
         this.carregarDespesasVinculaveis();
         this.carregarSugestoesRecorrentes();

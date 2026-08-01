@@ -1,6 +1,6 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, effect, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import Chart from 'chart.js/auto';
 import type { ChartConfiguration } from 'chart.js';
 import { ReceitaService } from '../../../services/receita';
@@ -8,12 +8,15 @@ import { Receita } from '../../../models/receita.model';
 import { DespesaService, Despesa, Categoria } from '../../../services/despesa';
 import { InvestimentoService, Investimento } from '../../../services/investimento';
 import { ItemGraficoFinanceiro, ResumoGraficoDashboard } from '../../../models/dashboard-grafico.model';
-import { AuthService } from '../../../services/auth.service';
+import { MonthPickerComponent } from '../../shared/month-picker/month-picker';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { ThemeService } from '../../../services/theme.service';
+import { FinancialNavigationContextService } from '../../../services/financial-navigation-context.service';
 
 @Component({
     selector: 'app-dashboard-page',
     standalone: true,
-    imports: [CommonModule, DecimalPipe, RouterLink],
+    imports: [CommonModule, DecimalPipe, MonthPickerComponent, PageHeaderComponent],
     templateUrl: './dashboard-page.html',
     styleUrls: ['./dashboard-page.css']
 })
@@ -30,6 +33,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
 
     private graficoFinanceiro?: Chart;
     private viewInicializada = false;
+    private loadRevision = 0;
     private statusCarregamentoGrafico: Record<'receitas' | 'despesas' | 'investimentos', 'carregando' | 'pronto' | 'erro'> = {
         receitas: 'carregando',
         despesas: 'carregando',
@@ -45,13 +49,26 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
 
     mesAtual = new Date();
 
+    selecionarMes(periodo: Date): void {
+        this.financialContext.setPeriod(periodo);
+        this.mesAtual = this.financialContext.period().date;
+        this.carregarDadosMesAtual();
+    }
+
     constructor(
         private router: Router,
         private receitaService: ReceitaService,
         private despesaService: DespesaService,
         private investimentoService: InvestimentoService,
-        private authService: AuthService
-    ) { }
+        private themeService: ThemeService,
+        private financialContext: FinancialNavigationContextService
+    ) {
+        this.mesAtual = this.financialContext.period().date;
+        effect(() => {
+            this.themeService.theme();
+            if (this.viewInicializada) queueMicrotask(() => this.atualizarGraficoFinanceiro());
+        });
+    }
 
     ngOnInit(): void {
         this.carregarDadosMesAtual();
@@ -67,6 +84,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     }
 
     carregarDadosMesAtual() {
+        const revision = ++this.loadRevision;
         const mes = this.mesAtual.getMonth() + 1;
         const ano = this.mesAtual.getFullYear();
         this.receitas = [];
@@ -85,20 +103,26 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
 
         this.despesaService.listarCategorias().subscribe({
             next: (categorias) => {
+                if (revision !== this.loadRevision) return;
                 this.categorias = categorias;
                 this.atualizarAgrupamentosDespesa();
             },
-            error: (erro) => console.error('Erro ao carregar categorias:', erro)
+            error: (erro) => {
+                if (revision !== this.loadRevision) return;
+                console.error('Erro ao carregar categorias:', erro);
+            }
         });
 
         this.receitaService.obterPorReferencia(mes, ano).subscribe({
             next: (receitas) => {
+                if (revision !== this.loadRevision) return;
                 this.receitas = receitas;
                 this.statusCarregamentoGrafico.receitas = 'pronto';
                 this.atualizarResumo();
                 this.atualizarResumoGrafico();
             },
             error: (erro) => {
+                if (revision !== this.loadRevision) return;
                 console.error('Erro ao carregar receitas:', erro);
                 this.receitas = [];
                 this.statusCarregamentoGrafico.receitas = 'erro';
@@ -109,6 +133,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
 
         this.despesaService.obterPorReferencia(mes, ano).subscribe({
             next: (despesas) => {
+                if (revision !== this.loadRevision) return;
                 this.despesas = despesas;
                 this.statusCarregamentoGrafico.despesas = 'pronto';
                 this.atualizarResumo();
@@ -116,6 +141,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
                 this.atualizarResumoGrafico();
             },
             error: (erro) => {
+                if (revision !== this.loadRevision) return;
                 console.error('Erro ao carregar despesas:', erro);
                 this.despesas = [];
                 this.despesasPorTipo = [];
@@ -128,12 +154,14 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
 
         this.investimentoService.obterPorReferencia(mes, ano).subscribe({
             next: (investimentos) => {
+                if (revision !== this.loadRevision) return;
                 this.investimentos = investimentos;
                 this.statusCarregamentoGrafico.investimentos = 'pronto';
                 this.atualizarResumo();
                 this.atualizarResumoGrafico();
             },
             error: (erro) => {
+                if (revision !== this.loadRevision) return;
                 console.error('Erro ao carregar investimentos:', erro);
                 this.investimentos = [];
                 this.statusCarregamentoGrafico.investimentos = 'erro';
@@ -279,8 +307,8 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
                 datasets: [
                     {
                         data: this.resumoGrafico.items.map(item => item.valor),
-                        backgroundColor: this.resumoGrafico.items.map(item => item.cor ?? '#64748b'),
-                        borderColor: '#ffffff',
+                        backgroundColor: this.resumoGrafico.items.map(item => this.corSemanticaGrafico(item.tipo)),
+                        borderColor: this.tokenCss('--ym-chart-border', '#ffffff'),
                         borderWidth: 3,
                         hoverOffset: 6
                     }
@@ -294,6 +322,9 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
                         display: false
                     },
                     tooltip: {
+                        backgroundColor: this.tokenCss('--ym-chart-tooltip', '#0f172a'),
+                        titleColor: this.tokenCss('--ym-inverse', '#ffffff'),
+                        bodyColor: this.tokenCss('--ym-inverse', '#ffffff'),
                         callbacks: {
                             label: (context) => {
                                 const label = context.label || 'Valor';
@@ -306,6 +337,18 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
                 cutout: '62%'
             }
         };
+    }
+
+    private corSemanticaGrafico(tipo: ItemGraficoFinanceiro['tipo']): string {
+        const tokens: Record<ItemGraficoFinanceiro['tipo'], string> = {
+            receita: '--ym-success', despesa: '--ym-danger', investimento: '--ym-investment', saldo: '--ym-primary'
+        };
+        return this.tokenCss(tokens[tipo], '#64748b');
+    }
+
+    private tokenCss(name: string, fallback: string): string {
+        if (typeof getComputedStyle !== 'function') return fallback;
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
     }
 
     private destruirGraficoFinanceiro(): void {
@@ -346,11 +389,6 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
         });
     }
 
-    logout(): void {
-        this.authService.logout();
-        this.router.navigate(['/login']);
-    }
-
     adicionarReceita(): void {
         this.router.navigate(['/receitas']);
     }
@@ -371,6 +409,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
         const data = new Date(this.mesAtual);
         data.setMonth(data.getMonth() - 1);
         this.mesAtual = data;
+        this.financialContext.setPeriod(data);
         this.carregarDadosMesAtual();
     }
 
@@ -378,6 +417,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
         const data = new Date(this.mesAtual);
         data.setMonth(data.getMonth() + 1);
         this.mesAtual = data;
+        this.financialContext.setPeriod(data);
         this.carregarDadosMesAtual();
     }
 }

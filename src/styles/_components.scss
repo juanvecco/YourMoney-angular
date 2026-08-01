@@ -1,0 +1,16 @@
+.ym-route-content { min-height: calc(100vh - 8rem); padding-top: 4.75rem; }
+.ym-page, .ym-shell { width: min(1180px, calc(100% - 2rem)); margin-inline: auto; padding: 2rem 0 3.5rem; }
+.ym-card, .card {
+  color: var(--ym-text); background: var(--ym-surface); border-color: var(--ym-border); box-shadow: var(--ym-shadow);
+}
+.form-control, .form-select {
+  min-height: 44px; color: var(--ym-text); background-color: var(--ym-input); border-color: var(--ym-border);
+}
+.form-control:focus, .form-select:focus {
+  color: var(--ym-text); background-color: var(--ym-input); border-color: var(--ym-primary);
+  box-shadow: 0 0 0 .2rem color-mix(in srgb, var(--ym-primary) 24%, transparent);
+}
+.btn, .ym-button { min-height: 44px; border-radius: var(--ym-radius-sm); }
+.btn-primary { color: var(--ym-inverse); background: var(--ym-primary); border-color: var(--ym-primary); }
+.text-muted { color: var(--ym-muted) !important; }
+.ym-topbar { background: var(--ym-header); border-bottom-color: var(--ym-border); }

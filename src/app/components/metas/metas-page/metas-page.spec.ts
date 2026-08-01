@@ -252,7 +252,10 @@ describe('MetasPageComponent', () => {
     fixture.componentInstance.mesAtual = new Date(2026, 5, 1);
     fixture.detectChanges();
 
-    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    const nativeElement = fixture.nativeElement as HTMLElement;
+    const shell = nativeElement.querySelector('.ym-shell');
+    const text = nativeElement.textContent ?? '';
+    expect(shell?.firstElementChild?.classList.contains('ym-container')).toBeTrue();
     expect(text).toContain('Receita elegível para metas');
     expect(text).toContain('fora das metas');
     expect(text).toContain('Bruta');

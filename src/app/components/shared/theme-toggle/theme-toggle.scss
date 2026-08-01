@@ -1,0 +1,7 @@
+.ym-theme-toggle {
+  display: inline-flex; min-height: 44px; align-items: center; gap: .5rem; padding: 0 .8rem;
+  color: var(--ym-muted); background: transparent; border: 1px solid var(--ym-border); border-radius: var(--ym-radius-sm);
+  cursor: pointer;
+}
+.ym-theme-toggle:hover { color: var(--ym-text); background: var(--ym-surface-interactive); }
+@media (min-width: 981px) { .ym-theme-toggle span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }

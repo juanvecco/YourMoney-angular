@@ -1,16 +1,16 @@
 import { Component, OnInit } from "@angular/core";
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
 import { CriarCategoriaComponent } from '../../categoria/criar-categoria/criar-categoria';
 import { Categoria } from '../../../models/despesa.model';
 import { CategoriaPayload, CategoriaService } from '../../../services/categoria';
-import { AuthService } from '../../../services/auth.service';
+import { FeedbackService } from '../../../services/feedback.service';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
 
 @Component({
     selector: "app-configuracao-page",
     standalone: true,
-    imports: [CommonModule, FormsModule, CriarCategoriaComponent, RouterLink],
+    imports: [CommonModule, FormsModule, CriarCategoriaComponent, PageHeaderComponent],
     templateUrl: "./configuracao-page.html"
 })
 export class ConfiguracaoPageComponent implements OnInit {
@@ -26,8 +26,7 @@ export class ConfiguracaoPageComponent implements OnInit {
 
     constructor(
         private categoriaService: CategoriaService,
-        private authService: AuthService,
-        private router: Router
+        private feedback: FeedbackService
     ) { }
 
     ngOnInit() {
@@ -54,11 +53,6 @@ export class ConfiguracaoPageComponent implements OnInit {
     abrirModalCategoria() {
         this.categoriaEmEdicao = null;
         this.mostrarModalCategoria = true;
-    }
-
-    logout(): void {
-        this.authService.logout();
-        this.router.navigate(['/login']);
     }
 
     editarCategoria(categoria: Categoria) {
@@ -91,8 +85,14 @@ export class ConfiguracaoPageComponent implements OnInit {
         });
     }
 
-    removerCategoria(categoria: Categoria) {
-        const confirmar = window.confirm(`Remover a categoria "${categoria.descricao}"?`);
+    async removerCategoria(categoria: Categoria): Promise<void> {
+        const confirmar = await this.feedback.confirm({
+            kind: 'confirmation',
+            title: 'Remover categoria?',
+            message: `A categoria “${categoria.descricao}” deixará de aparecer nas seleções.`,
+            confirmLabel: 'Remover categoria',
+            destructive: true,
+        });
 
         if (!confirmar) {
             return;

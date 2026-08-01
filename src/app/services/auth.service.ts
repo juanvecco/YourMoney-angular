@@ -3,11 +3,17 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap, map } from 'rxjs';
 import { ApiResponse, AuthData, LoginRequest, RegisterRequest } from '../models/auth.model';
 import { environment } from '../../environments/environment';
+import { FinancialNavigationContextService } from './financial-navigation-context.service';
+import { DespesaService } from './despesa';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
     private apiUrl = `${environment.apiUrl}/identidade`;
 
-    constructor(private http: HttpClient) { }
+    constructor(
+        private http: HttpClient,
+        private financialContext: FinancialNavigationContextService,
+        private despesaService: DespesaService
+    ) { }
 
     login(request: LoginRequest): Observable<AuthData> {
         return this.http
@@ -61,6 +67,8 @@ export class AuthService {
         localStorage.removeItem('expires_at');
         localStorage.removeItem('user_email');
         localStorage.removeItem('username');
+        this.financialContext.resetPrivateContext();
+        this.despesaService.clearUserCache();
     }
 
 }

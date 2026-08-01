@@ -1,5 +1,6 @@
-<app-menu *ngIf="!isLoginPage()"></app-menu>
-<div [ngClass]="{'full-height': isLoginPage(), 'container my-4': !isLoginPage()}">
-    <router-outlet></router-outlet>
-</div>
-<app-footer *ngIf="!isLoginPage()"></app-footer>
+<a class="ym-skip-link" href="#main-content">Ir para o conteúdo principal</a>
+<app-menu></app-menu>
+<main id="main-content" class="ym-route-content" tabindex="-1">
+  <router-outlet></router-outlet>
+</main>
+<app-footer></app-footer>

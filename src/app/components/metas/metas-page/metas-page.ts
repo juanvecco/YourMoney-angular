@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import {
   AtualizarMetaMensalRequest,
@@ -14,18 +14,24 @@ import {
 } from '../../../models/meta-mensal.model';
 import { AuthService } from '../../../services/auth.service';
 import { MetaMensalService } from '../../../services/meta-mensal';
+import { FinancialNavigationContextService } from '../../../services/financial-navigation-context.service';
+import { MonthPickerComponent } from '../../shared/month-picker/month-picker';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { ViewStateComponent } from '../../shared/view-state/view-state';
+import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
 
 type MetasViewState = 'loading' | 'loaded' | 'empty' | 'error';
 
 @Component({
   selector: 'app-metas-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, MonthPickerComponent, PageHeaderComponent, ViewStateComponent],
   templateUrl: './metas-page.html',
   styleUrls: ['./metas-page.scss']
 })
 export class MetasPageComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
+  private loadRevision = 0;
   private definicaoOriginal: Pick<MetaMensal, 'tipoDefinicao' | 'percentualReceita' | 'valorMeta'> | null = null;
 
   @ViewChild('calendarioInput') calendarioInput!: ElementRef<HTMLInputElement>;
@@ -54,8 +60,11 @@ export class MetasPageComponent implements OnInit, OnDestroy {
   constructor(
     private metaMensalService: MetaMensalService,
     private authService: AuthService,
-    private router: Router
-  ) { }
+    private router: Router,
+    private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService()
+  ) {
+    this.mesAtual = this.financialContext.period().date;
+  }
 
   ngOnInit(): void {
     this.carregarResumo();
@@ -67,6 +76,7 @@ export class MetasPageComponent implements OnInit, OnDestroy {
   }
 
   carregarResumo(): void {
+    const revision = ++this.loadRevision;
     const mes = this.mesAtual.getMonth() + 1;
     const ano = this.mesAtual.getFullYear();
     this.estado = 'loading';
@@ -76,11 +86,13 @@ export class MetasPageComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (resumo) => {
+          if (revision !== this.loadRevision) return;
           this.resumo = resumo;
           this.metas = resumo.metas;
           this.estado = resumo.metas.length > 0 ? 'loaded' : 'empty';
         },
         error: () => {
+          if (revision !== this.loadRevision) return;
           this.estado = 'error';
           this.resumo = null;
           this.metas = [];
@@ -159,9 +171,9 @@ export class MetasPageComponent implements OnInit, OnDestroy {
   }
 
   mudarMes(direcao: number): void {
-    const novoMes = new Date(this.mesAtual);
-    novoMes.setMonth(novoMes.getMonth() + direcao);
-    this.mesAtual = novoMes;
+    this.financialContext.setPeriod(this.mesAtual);
+    this.financialContext.shiftPeriod(direcao);
+    this.mesAtual = this.financialContext.period().date;
     this.resetarFormulario();
     this.carregarResumo();
   }
@@ -178,9 +190,28 @@ export class MetasPageComponent implements OnInit, OnDestroy {
   selecionarMesDoCalendario(event: Event): void {
     const input = event.target as HTMLInputElement;
     const [ano, mes] = input.value.split('-').map(Number);
-    this.mesAtual = new Date(ano, mes - 1, 1);
+    this.financialContext.setPeriod(new Date(ano, mes - 1, 1));
+    this.mesAtual = this.financialContext.period().date;
     this.resetarFormulario();
     this.carregarResumo();
+  }
+
+  selecionarMes(periodo: Date): void {
+    this.financialContext.setPeriod(periodo);
+    this.mesAtual = this.financialContext.period().date;
+    this.resetarFormulario();
+    this.carregarResumo();
+  }
+
+  get estadoCompartilhado(): FinancialViewState {
+    if (this.estado === 'loading') return 'loading';
+    if (this.estado === 'error') return 'loadError';
+    if (this.estado === 'empty') return 'emptyPeriod';
+    return 'loadedWithData';
+  }
+
+  get mensagemEstado(): string {
+    return this.mensagemErro || financialStateMessage(this.estadoCompartilhado, this.mesAtual, 'metas');
   }
 
   logout(): void {

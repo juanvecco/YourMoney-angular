@@ -1,0 +1,7 @@
+.modal-content, .dropdown-menu, .swal2-popup {
+  color: var(--ym-text) !important; background: var(--ym-surface) !important; border: 1px solid var(--ym-border) !important;
+}
+.modal-backdrop, .swal2-container.swal2-backdrop-show { background: var(--ym-overlay) !important; }
+.swal2-title, .swal2-html-container { color: var(--ym-text) !important; }
+.swal2-confirm { min-height: 44px; background: var(--ym-primary) !important; }
+.swal2-cancel { min-height: 44px; color: var(--ym-text) !important; background: var(--ym-surface-strong) !important; }

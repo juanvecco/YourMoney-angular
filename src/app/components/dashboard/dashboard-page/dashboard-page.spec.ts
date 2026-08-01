@@ -144,20 +144,12 @@ describe('DashboardPageComponent', () => {
     expect(nativeElement.textContent).toContain('Receitas');
   });
 
-  it('logs out before navigating to login', () => {
-    component.logout();
-
-    expect(authService.logout).toHaveBeenCalled();
-    expect(router.navigate).toHaveBeenCalledWith(['/login']);
-  });
-
-  it('renders an accessible logout action', () => {
+  it('does not render a duplicated logout action inside the page', () => {
     fixture.detectChanges();
 
     const nativeElement = fixture.nativeElement as HTMLElement;
     const logoutButton = nativeElement.querySelector('button[aria-label="Sair da conta"]');
 
-    expect(logoutButton).not.toBeNull();
-    expect(logoutButton?.textContent).toContain('Sair');
+    expect(logoutButton).toBeNull();
   });
 });

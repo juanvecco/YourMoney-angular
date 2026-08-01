@@ -1,0 +1,13 @@
+:host { display: block; }
+.ym-month-picker {
+  display: inline-grid; grid-template-columns: 44px minmax(11rem, 1fr) 44px; align-items: center; overflow: hidden;
+  color: var(--ym-text); background: var(--ym-surface); border: 1px solid var(--ym-border); border-radius: var(--ym-radius);
+}
+.ym-month-picker__button {
+  min-width: 44px; min-height: 44px; color: var(--ym-text); background: transparent; border: 0;
+}
+.ym-month-picker__button:hover { background: var(--ym-surface-interactive); }
+.ym-month-picker__current {
+  position: relative; display: grid; min-height: 44px; place-items: center; margin: 0; font-weight: 600; text-transform: capitalize;
+}
+.ym-month-picker__current input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }

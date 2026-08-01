@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { finalize, Subject, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import {
@@ -15,6 +15,10 @@ import { AuthService } from '../../../services/auth.service';
 import { ReceitaRecorrenteService } from '../../../services/receita-recorrente';
 import { ReservaSalarial } from '../../../models/investimento.model';
 import { SalarioElegivelInvestimento } from '../../../models/receita-recorrente.model';
+import { FinancialNavigationContextService } from '../../../services/financial-navigation-context.service';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { ViewStateComponent } from '../../shared/view-state/view-state';
+import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
 
 interface InvestimentoForm {
   id: string;
@@ -37,7 +41,7 @@ interface OpcaoReserva extends SalarioElegivelInvestimento {
 @Component({
   selector: 'app-investimento-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, ViewStateComponent],
   templateUrl: './investimento-page.html',
   styleUrls: ['./investimento-page.scss']
 })
@@ -54,11 +58,17 @@ export class InvestimentoPageComponent implements OnDestroy {
   carregandoSalarios = false;
   novoInvestimento = this.criarFormularioVazio();
 
+  get estadoCompartilhado(): FinancialViewState { return this.estadoCarregamento; }
+  get mensagemEstado(): string {
+    return financialStateMessage(this.estadoCompartilhado, this.financialContext.period().date, 'investimentos');
+  }
+
   constructor(
     private investimentoService: InvestimentoService,
     private receitaRecorrenteService: ReceitaRecorrenteService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService()
   ) {
     this.carregarInvestimentos();
   }
@@ -349,7 +359,7 @@ export class InvestimentoPageComponent implements OnDestroy {
   }
 
   private mesLocalAtual(): string {
-    return this.dataLocalHoje().substring(0, 7);
+    return this.financialContext?.period().key ?? this.dataLocalHoje().substring(0, 7);
   }
 
 }
