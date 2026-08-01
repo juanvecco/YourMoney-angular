@@ -1,20 +1,24 @@
 import { Component } from "@angular/core";
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { ReceitaService } from "../../../services/receita";
 import { Receita } from "../../../models/receita.model";
 import { Despesa, DespesaService } from "../../../services/despesa";
-import Swal from 'sweetalert2';
 import { AuthService } from '../../../services/auth.service';
 import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
+import { MonthPickerComponent } from '../../shared/month-picker/month-picker';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { ViewStateComponent } from '../../shared/view-state/view-state';
+import { FinancialNavigationContextService } from '../../../services/financial-navigation-context.service';
 
 @Component({
     selector: "app-disponivel-page",
-    imports: [CommonModule, FormsModule, RouterLink],
+    imports: [CommonModule, FormsModule, MonthPickerComponent, PageHeaderComponent, ViewStateComponent],
     templateUrl: "./disponivel-page.html"
 })
 export class DisponivelPageComponent {
+    private loadRevision = 0;
     receitas: Receita[] = [];
     despesas: Despesa[] = [];
     mesAtual: Date = new Date();
@@ -23,13 +27,26 @@ export class DisponivelPageComponent {
     mensagemCarregamento = '';
 
     mudarMes(direcao: number) {
-        const novoMes = new Date(this.mesAtual);
-        novoMes.setMonth(novoMes.getMonth() + direcao);
-        this.mesAtual = novoMes;
+        this.financialContext.setPeriod(this.mesAtual);
+        this.financialContext.shiftPeriod(direcao);
+        this.selecionarMes(this.financialContext.period().date);
+    }
+
+    selecionarMes(periodo: Date): void {
+        this.financialContext.setPeriod(periodo);
+        this.mesAtual = this.financialContext.period().date;
         this.carregarDados();
     }
 
+    get estadoDaPagina(): FinancialViewState {
+        if (this.estadoReceitas === 'loadError' || this.estadoDespesas === 'loadError') return 'loadError';
+        if (this.estadoReceitas === 'loading' || this.estadoDespesas === 'loading') return 'loading';
+        if (this.receitas.length === 0 && this.despesas.length === 0) return 'emptyPeriod';
+        return 'loadedWithData';
+    }
+
     carregarDados() {
+        const revision = ++this.loadRevision;
         const mes = this.mesAtual.getMonth() + 1;
         const ano = this.mesAtual.getFullYear();
         this.receitas = [];
@@ -37,29 +54,34 @@ export class DisponivelPageComponent {
         this.estadoReceitas = 'loading';
         this.estadoDespesas = 'loading';
         this.atualizarMensagemCarregamento();
-        this.obterReceitas(mes, ano);
-        this.obterDespesas(mes, ano);
+        this.obterReceitas(mes, ano, revision);
+        this.obterDespesas(mes, ano, revision);
     }
 
     constructor(
         private receitaService: ReceitaService,
         private despesaService: DespesaService,
         private authService: AuthService,
-        private router: Router
-    ) { }
+        private router: Router,
+        private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService()
+    ) {
+        this.mesAtual = this.financialContext.period().date;
+    }
 
     ngOnInit(): void {
         this.carregarDados();
     }
 
-    obterReceitas(mes: number, ano: number) {
+    obterReceitas(mes: number, ano: number, revision = this.loadRevision) {
         this.receitaService.obterPorReferencia(mes, ano).subscribe({
             next: (receitas) => {
+                if (revision !== this.loadRevision) return;
                 this.receitas = receitas;
                 this.estadoReceitas = receitas.length > 0 ? 'loadedWithData' : 'emptyPeriod';
                 this.atualizarMensagemCarregamento();
             },
             error: (erro) => {
+                if (revision !== this.loadRevision) return;
                 console.error('Erro ao carregar receitas', erro);
                 this.receitas = [];
                 this.estadoReceitas = 'loadError';
@@ -68,14 +90,16 @@ export class DisponivelPageComponent {
         });
     }
 
-    obterDespesas(mes: number, ano: number) {
+    obterDespesas(mes: number, ano: number, revision = this.loadRevision) {
         this.despesaService.obterPorReferencia(mes, ano).subscribe({
             next: (despesas) => {
+                if (revision !== this.loadRevision) return;
                 this.despesas = despesas;
                 this.estadoDespesas = despesas.length > 0 ? 'loadedWithData' : 'emptyPeriod';
                 this.atualizarMensagemCarregamento();
             },
             error: (erro) => {
+                if (revision !== this.loadRevision) return;
                 console.error('Erro ao carregar despesas', erro);
                 this.despesas = [];
                 this.estadoDespesas = 'loadError';
@@ -115,19 +139,7 @@ export class DisponivelPageComponent {
     }
 
     abrirModalInvestimento() {
-        Swal.fire({
-            title: 'Investir Disponível',
-            text: `Deseja investir ${this.formatarValor(this.calcularDisponivel())}?`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Sim, investir',
-            cancelButtonText: 'Cancelar'
-        }).then(result => {
-            if (result.isConfirmed) {
-                // Aqui você pode chamar um serviço de investimento
-                Swal.fire('Investido!', 'Seu valor foi direcionado para investimento.', 'success');
-            }
-        });
+        this.router.navigate(['/investimento']);
     }
 
     private atualizarMensagemCarregamento(): void {

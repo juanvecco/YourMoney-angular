@@ -3,14 +3,14 @@
 }
 
 .ym-section-subtitle {
-    color: #64748b;
+    color: var(--ym-muted);
     font-size: 0.875rem;
     margin: 0.25rem 0 0;
     text-transform: capitalize;
 }
 
 .ym-chart-total {
-    color: #0f172a;
+    color: var(--ym-text);
     font-size: 1rem;
     font-weight: 700;
     white-space: nowrap;
@@ -53,7 +53,7 @@
 
 .ym-chart-legend-row {
     align-items: center;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--ym-border);
     column-gap: 0.75rem;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto auto;
@@ -72,19 +72,19 @@
 }
 
 .ym-chart-legend-label {
-    color: #334155;
+    color: var(--ym-text);
     min-width: 0;
     overflow-wrap: anywhere;
 }
 
 .ym-chart-legend-row strong {
-    color: #0f172a;
+    color: var(--ym-text);
     font-size: 0.95rem;
     white-space: nowrap;
 }
 
 .ym-chart-legend-row small {
-    color: #64748b;
+    color: var(--ym-muted);
     font-size: 0.8rem;
     text-align: right;
     white-space: nowrap;
@@ -92,9 +92,9 @@
 
 .ym-chart-state {
     align-items: center;
-    border: 1px dashed #cbd5e1;
+    border: 1px dashed var(--ym-border);
     border-radius: 8px;
-    color: #475569;
+    color: var(--ym-muted);
     display: flex;
     gap: 0.75rem;
     justify-content: center;
@@ -104,18 +104,18 @@
 }
 
 .ym-chart-state i {
-    color: #2563eb;
+    color: var(--ym-primary);
     font-size: 1.25rem;
 }
 
 .ym-chart-state.error {
-    background: #fff7ed;
-    border-color: #fed7aa;
-    color: #9a3412;
+    background: color-mix(in srgb, var(--ym-danger) 10%, var(--ym-surface));
+    border-color: var(--ym-danger);
+    color: var(--ym-danger);
 }
 
 .ym-chart-state.error i {
-    color: #c2410c;
+    color: var(--ym-danger);
 }
 
 @media (max-width: 760px) {

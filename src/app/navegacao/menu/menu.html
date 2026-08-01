@@ -1,0 +1,30 @@
+<header class="ym-topbar">
+  <nav class="ym-nav" aria-label="Navegação principal">
+    <a class="ym-brand" routerLink="/" (click)="closeMenu()" aria-label="YourMoney — início">
+      <span class="ym-brand-icon" aria-hidden="true"><i class="bi bi-wallet2"></i></span>
+      <span>YourMoney</span>
+    </a>
+
+    <button #menuTrigger type="button" class="ym-menu-trigger" [attr.aria-label]="menuOpen ? 'Fechar menu' : 'Abrir menu'" [attr.aria-expanded]="menuOpen"
+      aria-controls="main-menu" (click)="toggleMenu()">
+      <i class="bi" [class.bi-list]="!menuOpen" [class.bi-x-lg]="menuOpen" aria-hidden="true"></i>
+    </button>
+
+    <ul id="main-menu" class="ym-menu" [class.ym-menu--open]="menuOpen" (keydown)="onMenuKeydown($event)">
+      @if (isLoggedIn()) {
+        <li><a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Dashboard</a></li>
+        <li><a routerLink="/receitas" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Receitas</a></li>
+        <li><a routerLink="/despesas" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Despesas</a></li>
+        <li><a routerLink="/disponivel" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Disponível</a></li>
+        <li><a routerLink="/investimento" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Investimentos</a></li>
+        <li><a routerLink="/metas" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Metas</a></li>
+        <li><a routerLink="/configuracao" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()" aria-label="Configurações"><i class="bi bi-gear" aria-hidden="true"></i><span class="ym-menu__settings">Configurações</span></a></li>
+        <li><button type="button" data-testid="logout" (click)="logout()"><i class="bi bi-box-arrow-right" aria-hidden="true"></i>Sair</button></li>
+      } @else {
+        <li><a routerLink="/login" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Entrar</a></li>
+        <li><a class="ym-menu__primary" routerLink="/cadastro" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Criar conta</a></li>
+      }
+      <li><app-theme-toggle></app-theme-toggle></li>
+    </ul>
+  </nav>
+</header>

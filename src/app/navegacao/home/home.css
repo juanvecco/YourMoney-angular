@@ -1,18 +1,37 @@
-body {
+:host {
+    display: block;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
 button {
-    transition: all 0.2s ease;
+    transition: transform var(--ym-transition), background var(--ym-transition);
 }
 
 button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 28px rgba(171, 153, 101, 0.5) !important;
+    background: var(--ym-primary-strong) !important;
+    box-shadow: var(--ym-shadow) !important;
 }
 
 button:active {
     transform: translateY(0);
 }
+
+.ym-home-container { max-width: 75rem; margin-inline: auto; padding-inline: 1.25rem; }
+.ym-home-container--narrow { max-width: 50rem; }
+.ym-home-hero { padding: clamp(4.5rem, 10vw, 7.5rem) 0; background: linear-gradient(180deg, var(--ym-surface), var(--ym-bg)); }
+.ym-home-title { color: var(--ym-text); font-size: clamp(3rem, 7vw, 5rem); line-height: 1.05; letter-spacing: -.04em; }
+.ym-home-lead { max-width: 38rem; color: var(--ym-muted); font-size: clamp(1.15rem, 3vw, 1.75rem); line-height: 1.4; }
+.ym-home-action { min-height: 44px; padding: .875rem 2.5rem; border: 0; border-radius: 999px; color: var(--ym-inverse); background: var(--ym-primary); font-weight: 700; box-shadow: var(--ym-shadow); }
+.ym-home-note { color: var(--ym-subtle); font-size: .875rem; }
+.ym-home-features { background: var(--ym-surface-strong); }
+.ym-home-card { height: 100%; border: 1px solid var(--ym-border); border-radius: var(--ym-radius); color: var(--ym-text); background: var(--ym-surface); box-shadow: var(--ym-shadow); }
+.ym-home-card p { color: var(--ym-muted); font-size: 1.0625rem; line-height: 1.5; }
+.ym-home-icon { font-size: 3rem; }
+.ym-home-card-title { color: var(--ym-text); font-size: 1.5rem; letter-spacing: -.02em; }
+.ym-home-cta { padding: clamp(4rem, 8vw, 5rem) 0; background: var(--ym-surface); }
+.ym-home-cta-title { color: var(--ym-text); font-size: clamp(2.25rem, 5vw, 3.5rem); line-height: 1.1; letter-spacing: -.03em; }
+
+@media (prefers-reduced-motion: reduce) { button { transition: none; } }

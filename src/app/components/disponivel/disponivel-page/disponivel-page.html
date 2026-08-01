@@ -1,48 +1,13 @@
-<header class="ym-topbar">
-    <nav class="ym-nav">
-        <a class="ym-brand" routerLink="/dashboard">
-            <img src="assets/logo.png" alt="Your Money" class="ym-logo" />
-        </a>
-        <ul class="ym-menu">
-            <li><a routerLink="/dashboard"><i class="bi bi-speedometer2"></i>Dashboard</a></li>
-            <li><a routerLink="/receitas"><i class="bi bi-arrow-up-circle"></i>Receitas</a></li>
-            <li><a routerLink="/despesas"><i class="bi bi-arrow-down-circle"></i>Despesas</a></li>
-            <li><a routerLink="/investimento"><i class="bi bi-graph-up-arrow"></i>Investimentos</a></li>
-            <li><a routerLink="/metas"><i class="bi bi-bullseye"></i>Metas</a></li>
-            <li><a routerLink="/configuracao"><i class="bi bi-gear"></i>Configurações</a></li>
-            <li>
-                <button class="ym-logout-link" type="button" (click)="logout()" aria-label="Sair da conta">
-                    <i class="bi bi-box-arrow-right"></i>Sair
-                </button>
-            </li>
-        </ul>
-    </nav>
-</header>
-
-<main class="ym-shell">
+<div class="ym-shell">
     <div class="ym-container">
-        <div class="ym-page-header">
-            <div class="ym-title-group">
-                <p class="ym-eyebrow">Saldo operacional</p>
-                <h1 class="ym-title">Disponível</h1>
-                <p class="ym-subtitle">Veja quanto restou depois das receitas e despesas do mês.</p>
-            </div>
-            <div class="ym-month-picker">
-                <button class="ym-icon-button" type="button" (click)="mudarMes(-1)" aria-label="Mês anterior">
-                    <i class="bi bi-chevron-left"></i>
-                </button>
-                <span class="ym-month-label">{{ mesAtual | date:'MMMM yyyy':'pt-BR' }}</span>
-                <button class="ym-icon-button" type="button" (click)="mudarMes(1)" aria-label="Próximo mês">
-                    <i class="bi bi-chevron-right"></i>
-                </button>
-            </div>
-        </div>
+        <app-page-header eyebrow="Saldo operacional" heading="Disponível"
+            description="Veja quanto restou depois das receitas e despesas do mês.">
+            <app-month-picker pageHeaderActions [period]="mesAtual" (periodChange)="selecionarMes($event)"></app-month-picker>
+        </app-page-header>
 
         <section class="ym-card ym-card-pad">
-            <div *ngIf="mensagemCarregamento" class="ym-empty ym-state-message"
-                [class.ym-state-error]="estadoReceitas === 'loadError' || estadoDespesas === 'loadError'">
-                {{ mensagemCarregamento }}
-            </div>
+            <app-view-state [state]="estadoDaPagina" [message]="mensagemCarregamento"
+                [retryAvailable]="estadoDaPagina === 'loadError'" (retry)="carregarDados()"></app-view-state>
             <article class="ym-kpi" [class.accent-success]="calcularDisponivel() >= 0"
                 [class.accent-danger]="calcularDisponivel() < 0">
                 <i class="ym-kpi-icon" [class]="obterIconeDisponivel()"></i>
@@ -56,4 +21,4 @@
             </article>
         </section>
     </div>
-</main>
+</div>

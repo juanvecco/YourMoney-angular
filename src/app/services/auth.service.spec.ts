@@ -3,6 +3,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
+import { FinancialNavigationContextService } from './financial-navigation-context.service';
+import { ThemeService } from './theme.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -34,6 +36,9 @@ describe('AuthService', () => {
     localStorage.setItem('user_email', 'user@example.com');
     localStorage.setItem('username', 'legacy-user');
     localStorage.setItem('financial_filter', '2026-05');
+    localStorage.setItem('ym_theme_v1', 'dark');
+    const context = TestBed.inject(FinancialNavigationContextService);
+    context.setPeriod('2022-01');
 
     service.logout();
 
@@ -42,6 +47,9 @@ describe('AuthService', () => {
     expect(localStorage.getItem('user_email')).toBeNull();
     expect(localStorage.getItem('username')).toBeNull();
     expect(localStorage.getItem('financial_filter')).toBe('2026-05');
+    expect(localStorage.getItem('ym_theme_v1')).toBe('dark');
+    expect(context.period().key).not.toBe('2022-01');
+    expect(TestBed.inject(ThemeService)).toBeTruthy();
   });
 
   it('treats missing or partial local authentication state as logged out', () => {

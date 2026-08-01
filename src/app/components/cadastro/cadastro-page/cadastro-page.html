@@ -1,4 +1,4 @@
-<main class="register-container">
+<div class="register-container">
     <section class="branding-section">
         <div class="logo-container">
             <div class="logo-icon">
@@ -32,28 +32,28 @@
 
             <form [formGroup]="form" (ngSubmit)="onSubmit()">
                 <div class="form-group">
-                    <label class="form-label">
+                    <label class="form-label" for="cadastroNome">
                         <i class="bi bi-person"></i>Nome
                     </label>
-                    <input type="text" class="form-control" formControlName="nome" placeholder="Seu nome" />
+                    <input id="cadastroNome" type="text" class="form-control" formControlName="nome" placeholder="Seu nome" />
                     <small *ngIf="hasError('nome', 'required')" class="field-error">Informe seu nome.</small>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">
+                    <label class="form-label" for="cadastroEmail">
                         <i class="bi bi-envelope"></i>E-mail
                     </label>
-                    <input type="email" class="form-control" formControlName="email" placeholder="seu@email.com" />
+                    <input id="cadastroEmail" type="email" class="form-control" formControlName="email" placeholder="seu@email.com" />
                     <small *ngIf="hasError('email', 'required')" class="field-error">Informe seu e-mail.</small>
                     <small *ngIf="hasError('email', 'email')" class="field-error">Informe um e-mail valido.</small>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">
+                    <label class="form-label" for="cadastroSenha">
                         <i class="bi bi-lock"></i>Senha
                     </label>
                     <div class="password-wrapper">
-                        <input [type]="showPassword ? 'text' : 'password'" class="form-control" formControlName="senha"
+                        <input id="cadastroSenha" [type]="showPassword ? 'text' : 'password'" class="form-control" formControlName="senha"
                             placeholder="Minimo de 6 caracteres" />
                         <button type="button" class="toggle-password" (click)="togglePasswordVisibility()"
                             aria-label="Alternar visualizacao da senha">
@@ -65,11 +65,11 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">
+                    <label class="form-label" for="cadastroSenhaConfirmacao">
                         <i class="bi bi-lock-fill"></i>Confirmar senha
                     </label>
                     <div class="password-wrapper">
-                        <input [type]="showPasswordConfirmation ? 'text' : 'password'" class="form-control"
+                        <input id="cadastroSenhaConfirmacao" [type]="showPasswordConfirmation ? 'text' : 'password'" class="form-control"
                             formControlName="senhaConfirmacao" placeholder="Repita sua senha" />
                         <button type="button" class="toggle-password" (click)="togglePasswordConfirmationVisibility()"
                             aria-label="Alternar visualizacao da confirmacao">
@@ -84,7 +84,7 @@
                     <span *ngIf="loading"><i class="bi bi-hourglass-split"></i>Criando conta...</span>
                 </button>
 
-                <div *ngIf="error" class="alert-error">
+                <div *ngIf="error" class="alert-error" role="alert">
                     <i class="bi bi-exclamation-circle"></i>{{ error }}
                 </div>
             </form>
@@ -96,4 +96,4 @@
             </a>
         </div>
     </section>
-</main>
+</div>
