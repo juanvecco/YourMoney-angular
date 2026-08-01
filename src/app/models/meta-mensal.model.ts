@@ -1,9 +1,12 @@
 export type MetaMensalStatus = 'disponivel' | 'zerado' | 'faltando';
+export type TipoDefinicaoMeta = 'Percentual' | 'Valor';
 
 export interface MetaMensal {
   id: string;
   nome: string;
-  percentualReceita: number;
+  tipoDefinicao: TipoDefinicaoMeta;
+  percentualReceita: number | null;
+  valorMeta: number | null;
   valorCalculado: number;
   mesReferencia: string;
 }
@@ -17,9 +20,9 @@ export interface MetasMensaisResumo {
   despesaTotal: number;
   despesaTotalBruta: number;
   despesaTotalReembolsada: number;
-  percentualTotalComprometido: number;
+  percentualTotalComprometido: number | null;
   valorTotalReservado: number;
-  percentualRestante: number;
+  percentualRestante: number | null;
   valorRestanteAntesDespesas: number;
   saldoFinal: number;
   valorFaltante: number;
@@ -28,14 +31,36 @@ export interface MetasMensaisResumo {
   metas: MetaMensal[];
 }
 
-export interface CriarMetaMensalRequest {
+interface CriarMetaMensalRequestBase {
   nome: string;
-  percentualReceita: number;
   mesReferencia?: string;
 }
 
-export interface AtualizarMetaMensalRequest {
+export type CriarMetaMensalRequest =
+  | (CriarMetaMensalRequestBase & {
+      tipoDefinicao: 'Percentual';
+      percentualReceita: number;
+      valorMeta?: null;
+    })
+  | (CriarMetaMensalRequestBase & {
+      tipoDefinicao: 'Valor';
+      percentualReceita?: null;
+      valorMeta: number;
+    });
+
+interface AtualizarMetaMensalRequestBase {
   id: string;
   nome: string;
-  percentualReceita: number;
 }
+
+export type AtualizarMetaMensalRequest =
+  | (AtualizarMetaMensalRequestBase & {
+      tipoDefinicao: 'Percentual';
+      percentualReceita: number;
+      valorMeta?: null;
+    })
+  | (AtualizarMetaMensalRequestBase & {
+      tipoDefinicao: 'Valor';
+      percentualReceita?: null;
+      valorMeta: number;
+    });

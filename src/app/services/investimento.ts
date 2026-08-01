@@ -6,7 +6,8 @@ import {
   AtualizarInvestimentoRequest,
   CriarInvestimentoRequest,
   CriarInvestimentoResponse,
-  Investimento
+  Investimento,
+  CarteiraInvestimentosConsolidada
 } from '../models/investimento.model';
 
 export type {
@@ -28,6 +29,14 @@ export class InvestimentoService {
     return this.http.get<Investimento[]>(`${this.baseUrl}/Investimento/por-referencia`, {
       params: { mes: mes.toString(), ano: ano.toString() }
     });
+  }
+
+  obterConsolidado(): Observable<CarteiraInvestimentosConsolidada> {
+    return this.http.get<CarteiraInvestimentosConsolidada>(`${this.baseUrl}/Investimento/consolidado`);
+  }
+
+  obterPorId(id: string): Observable<Investimento> {
+    return this.http.get<Investimento>(`${this.baseUrl}/Investimento/${id}`);
   }
 
   criarInvestimento(request: CriarInvestimentoRequest): Observable<CriarInvestimentoResponse> {

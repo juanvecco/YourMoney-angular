@@ -1,1 +1,20 @@
 
+.ym-reserve-section { margin-bottom: 1.5rem; }
+.ym-reserve-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 1rem; }
+.ym-reserve-card { display: grid; gap: 1rem; }
+.ym-reserve-heading { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+.ym-reserve-heading h3 { margin: 0; font-size: 1.05rem; }
+.ym-reserve-heading p, .ym-goal p { margin: .2rem 0 0; color: var(--ym-muted, #68707c); font-size: .82rem; }
+.ym-reserve-total { display: grid; margin: 0; font-size: 1.55rem; font-weight: 700; }
+.ym-reserve-total small { font-size: .75rem; font-weight: 500; color: var(--ym-muted, #68707c); }
+.ym-badge { display: inline-flex; padding: .25rem .55rem; border-radius: 999px; font-size: .72rem; color: #17633c; background: #def7e9; }
+.ym-badge.unavailable { color: #7a4c0a; background: #fff0cf; }
+.ym-goal-label { display: flex; justify-content: space-between; font-size: .85rem; }
+.ym-progress { height: .55rem; margin-top: .45rem; overflow: hidden; border-radius: 999px; background: #e9edf2; }
+.ym-progress span { display: block; height: 100%; border-radius: inherit; background: #b49452; transition: width .2s ease; }
+.ym-association { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin: .55rem 0 0; color: #526173; font-size: .82rem; }
+
+@media (max-width: 640px) {
+  .ym-reserve-heading { flex-direction: column; }
+  .ym-page-header { align-items: flex-start; }
+}

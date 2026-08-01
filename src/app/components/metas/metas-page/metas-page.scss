@@ -165,11 +165,25 @@
   font-weight: 600;
 }
 
-.metas-panel input {
+.metas-panel input,
+.metas-panel select {
   min-height: 42px;
   border: 1px solid #d0d5dd;
   border-radius: 6px;
   padding: 0 12px;
+  background: #ffffff;
+}
+
+.metas-field-hint {
+  margin: -4px 0 0;
+  color: #667085;
+  font-size: 0.88rem;
+}
+
+.metas-field-hint.warning {
+  border-left: 3px solid #f79009;
+  padding-left: 10px;
+  color: #93370d;
 }
 
 .metas-button {
@@ -220,6 +234,17 @@
 
 .metas-row p {
   color: #667085;
+}
+
+.metas-mode {
+  display: inline-block;
+  margin: 4px 0;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: #eff8ff;
+  color: #175cd3;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .metas-row strong {
