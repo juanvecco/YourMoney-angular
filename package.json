@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium"
   },
   "prettier": {
     "overrides": [
@@ -39,6 +41,8 @@
     "@angular/build": "^20.1.4",
     "@angular/cli": "^20.1.4",
     "@angular/compiler-cli": "^20.1.0",
+    "@axe-core/playwright": "^4.12.1",
+    "@playwright/test": "^1.62.1",
     "@types/chart.js": "^2.9.41",
     "@types/jasmine": "~5.1.0",
     "jasmine-core": "~5.8.0",

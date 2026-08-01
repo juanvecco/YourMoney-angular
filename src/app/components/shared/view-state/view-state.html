@@ -1,0 +1,14 @@
+@if (isVisible) {
+  <section class="ym-view-state" [class.ym-view-state--error]="isError"
+    [attr.role]="isError ? 'alert' : 'status'" [attr.aria-live]="isProgress ? 'polite' : null">
+    @if (isProgress) {
+      <span class="ym-view-state__spinner" aria-hidden="true"></span>
+    } @else {
+      <i class="bi" [class.bi-inbox]="state === 'emptyPeriod'" [class.bi-exclamation-triangle]="isError" aria-hidden="true"></i>
+    }
+    <p>{{ message }}</p>
+    @if (retryAvailable && (state === 'loadError' || state === 'stale')) {
+      <button type="button" class="btn btn-primary" (click)="retry.emit()">Tentar novamente</button>
+    }
+  </section>
+}

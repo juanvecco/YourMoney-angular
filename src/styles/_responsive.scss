@@ -1,0 +1,11 @@
+@media (max-width: 768px) {
+  .ym-page, .ym-shell { width: min(100% - 1rem, 1180px); padding-top: 1rem; }
+  .ym-route-content { padding-top: 4.25rem; }
+  .ym-grid, .row { min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important; animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important; transition-duration: .01ms !important;
+  }
+}

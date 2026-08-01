@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { DespesaService, Despesa, Categoria, CriarParcelamentoRequest, ParcelaPreview } from '../../../services/despesa';
 import { DespesaRecorrenteService } from '../../../services/despesa-recorrente';
 import {
@@ -14,6 +14,10 @@ import Swal from 'sweetalert2';
 import { forkJoin, Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
+import { FinancialNavigationContextService } from '../../../services/financial-navigation-context.service';
+import { MonthPickerComponent } from '../../shared/month-picker/month-picker';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { ViewStateComponent } from '../../shared/view-state/view-state';
 
 type DespesaLote = {
     descricao: string;
@@ -51,12 +55,13 @@ type SugestaoRecorrenteForm = {
 @Component({
     selector: 'app-despesas-page',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink],
+    imports: [CommonModule, FormsModule, MonthPickerComponent, PageHeaderComponent, ViewStateComponent],
     templateUrl: './despesas-page.html',
     styleUrls: ['./despesas-page.scss']
 })
 export class DespesasComponent implements OnInit, OnDestroy {
     private destroy$ = new Subject<void>();
+    private loadRevision = 0;
 
     // === FORMULÁRIO ===
     novaDespesa = {
@@ -131,10 +136,14 @@ export class DespesasComponent implements OnInit, OnDestroy {
         private despesaService: DespesaService,
         private despesaRecorrenteService: DespesaRecorrenteService,
         private authService: AuthService,
-        private router: Router
-    ) { }
+        private router: Router,
+        private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService()
+    ) {
+        this.mesAtual = this.financialContext.period().date;
+    }
 
     ngOnInit() {
+        this.filtrosTransacoes = { ...this.financialContext.expenseFilters() };
         this.carregarDadosIniciais();
     }
 
@@ -173,12 +182,16 @@ export class DespesasComponent implements OnInit, OnDestroy {
                     this.tiposDespesa = categorias.filter(c =>
                         c.categoriaPaiId === null && c.tipoTransacao === 1
                     );
+                    this.naturezasFiltroDespesa = this.filtrosTransacoes.idTipoDespesa
+                        ? categorias.filter(c => c.categoriaPaiId === this.filtrosTransacoes.idTipoDespesa)
+                        : [];
                 },
                 error: (erro) => console.error('Erro ao carregar categorias', erro)
             });
     }
 
     carregarDespesas() {
+        const revision = ++this.loadRevision;
         const mes = this.mesAtual.getMonth() + 1;
         const ano = this.mesAtual.getFullYear();
         this.despesas = [];
@@ -202,6 +215,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: (response) => {
+                    if (revision !== this.loadRevision) return;
                     this.despesas = response.itens;
                     this.paginaAtual = response.paginaAtual;
                     this.tamanhoPagina = response.tamanhoPagina;
@@ -215,9 +229,10 @@ export class DespesasComponent implements OnInit, OnDestroy {
                     this.verificarTrilhaOrganizador();
                 },
                 error: (erro) => {
+                    if (revision !== this.loadRevision) return;
                     console.error('Erro ao carregar despesas', erro);
                     if (this.deveUsarConsultaLegada(erro)) {
-                        this.carregarDespesasPorReferenciaLegada(mes, ano);
+                        this.carregarDespesasPorReferenciaLegada(mes, ano, revision);
                         return;
                     }
 
@@ -265,12 +280,16 @@ export class DespesasComponent implements OnInit, OnDestroy {
             });
     }
 
-    private carregarDespesasPorReferenciaLegada(mes: number, ano: number) {
+    private carregarDespesasPorReferenciaLegada(mes: number, ano: number, revision: number) {
         this.despesaService.obterPorReferencia(mes, ano)
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: (dados) => this.aplicarResultadoLocal(dados),
+                next: (dados) => {
+                    if (revision !== this.loadRevision) return;
+                    this.aplicarResultadoLocal(dados);
+                },
                 error: (erro) => {
+                    if (revision !== this.loadRevision) return;
                     console.error('Erro ao carregar despesas por referência', erro);
                     this.aplicarErroCarregamento();
                 }
@@ -386,9 +405,9 @@ export class DespesasComponent implements OnInit, OnDestroy {
     // ==============================================================
 
     public mudarMes(direcao: number) {
-        const novo = new Date(this.mesAtual);
-        novo.setMonth(novo.getMonth() + direcao);
-        this.mesAtual = novo;
+        this.financialContext.setPeriod(this.mesAtual);
+        this.financialContext.shiftPeriod(direcao);
+        this.mesAtual = this.financialContext.period().date;
         this.paginaAtual = 1;
         this.carregarDespesas();
         this.carregarSugestoesRecorrentes();
@@ -406,7 +425,16 @@ export class DespesasComponent implements OnInit, OnDestroy {
     public selecionarMesDoCalendario(event: Event) {
         const input = event.target as HTMLInputElement;
         const [ano, mes] = input.value.split('-').map(Number);
-        this.mesAtual = new Date(ano, mes - 1, 1);
+        this.financialContext.setPeriod(new Date(ano, mes - 1, 1));
+        this.mesAtual = this.financialContext.period().date;
+        this.paginaAtual = 1;
+        this.carregarDespesas();
+        this.carregarSugestoesRecorrentes();
+    }
+
+    selecionarMes(periodo: Date): void {
+        this.financialContext.setPeriod(periodo);
+        this.mesAtual = this.financialContext.period().date;
         this.paginaAtual = 1;
         this.carregarDespesas();
         this.carregarSugestoesRecorrentes();
@@ -928,6 +956,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
     aplicarFiltrosTransacoes() {
         this.paginaAtual = 1;
+        this.financialContext.setExpenseFilters(this.filtrosTransacoes);
         this.carregarDespesas();
     }
 
@@ -938,6 +967,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
             idNaturezaDespesa: ''
         };
         this.naturezasFiltroDespesa = [];
+        this.financialContext.clearExpenseFilters();
         this.aplicarFiltrosTransacoes();
     }
 

@@ -1,0 +1,6 @@
+<button type="button" class="ym-theme-toggle" [attr.aria-label]="'Ativar modo ' + destination"
+  [attr.title]="'Ativar modo ' + destination" [attr.aria-pressed]="themeService.theme() === 'dark'"
+  (click)="themeService.toggleTheme()">
+  <i class="bi" [class.bi-moon-stars]="themeService.theme() === 'light'" [class.bi-sun]="themeService.theme() === 'dark'" aria-hidden="true"></i>
+  <span>Modo {{ destination }}</span>
+</button>

@@ -1,55 +1,35 @@
-<!-- Header minimalista -->
-<header class="py-3 px-5"
-    style="background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid rgba(0, 0, 0, 0.06);">
-    <div class="d-flex justify-content-between align-items-center" style="max-width: 1400px; margin: 0 auto;">
-        <div class="fw-semibold fs-5" style="letter-spacing: -0.5px;">
-            YourMoney
-        </div>
-        <button class="btn btn-sm px-4" (click)="goToLogin()"
-            style="background: #007AFF; color: white; border: none; border-radius: 20px; font-size: 14px; padding: 8px 20px; font-weight: 600;">
-            Entrar
-        </button>
-    </div>
-</header>
-
 <!-- Hero Section -->
-<section class="text-center"
-    style="padding: 120px 40px 100px; background: linear-gradient(180deg, #ffffff 0%, #f5f5f7 100%);">
-    <div style="max-width: 1200px; margin: 0 auto;">
-        <h1 class="fw-bold mb-3"
-            style="font-size: clamp(48px, 7vw, 80px); line-height: 1.05; letter-spacing: -2px; color: #1d1d1f;">
+<section class="ym-home-hero text-center">
+    <div class="ym-home-container">
+        <h1 class="fw-bold mb-3 ym-home-title">
             Controle total<br />do seu dinheiro.
         </h1>
 
-        <p class="mx-auto mb-5"
-            style="font-size: clamp(21px, 3vw, 28px); line-height: 1.4; color: #6e6e73; max-width: 600px; font-weight: 400;">
+        <p class="mx-auto mb-5 ym-home-lead">
             Acompanhe para onde cada real vai.
         </p>
 
-        <button class="btn btn-lg px-5 mb-2" (click)="goToLogin()"
-            style="background: #007AFF; color: white; border: none; border-radius: 30px; font-size: 17px; padding: 14px 40px; font-weight: 500; box-shadow: 0 4px 16px rgba(0, 122, 255, 0.25);">
+        <button type="button" class="btn btn-lg px-5 mb-2 ym-home-action" (click)="goToLogin()">
             Acessar meu painel
         </button>
 
-        <div class="mt-2" style="font-size: 14px; color: #86868b;">
+        <div class="mt-2 ym-home-note">
             Gratuito para começar
         </div>
     </div>
 </section>
-
 <!-- Features Section -->
-<section class="py-5" style="background: #f5f5f7;">
-    <div class="container" style="max-width: 1200px; padding: 60px 20px;">
+<section class="py-5 ym-home-features">
+    <div class="container ym-home-container">
         <div class="row g-4">
             <!-- Feature 1 -->
             <div class="col-md-4">
-                <div class="text-center p-4"
-                    style="background: white; border-radius: 18px; height: 100%; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);">
-                    <div class="mb-3" style="font-size: 48px;">📊</div>
-                    <h5 class="fw-semibold mb-3" style="font-size: 24px; letter-spacing: -0.5px; color: #1d1d1f;">
+                <div class="text-center p-4 ym-home-card">
+                    <div class="mb-3 ym-home-icon" aria-hidden="true">📊</div>
+                    <h2 class="fw-semibold mb-3 ym-home-card-title">
                         Clareza total
-                    </h5>
-                    <p style="font-size: 17px; line-height: 1.5; color: #6e6e73;">
+                    </h2>
+                    <p>
                         Veja exatamente para onde seu dinheiro vai.
                     </p>
                 </div>
@@ -57,13 +37,12 @@
 
             <!-- Feature 2 -->
             <div class="col-md-4">
-                <div class="text-center p-4"
-                    style="background: white; border-radius: 18px; height: 100%; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);">
-                    <div class="mb-3" style="font-size: 48px;">🎯</div>
-                    <h5 class="fw-semibold mb-3" style="font-size: 24px; letter-spacing: -0.5px; color: #1d1d1f;">
+                <div class="text-center p-4 ym-home-card">
+                    <div class="mb-3 ym-home-icon" aria-hidden="true">🎯</div>
+                    <h2 class="fw-semibold mb-3 ym-home-card-title">
                         Decida com dados reais
-                    </h5>
-                    <p style="font-size: 17px; line-height: 1.5; color: #6e6e73;">
+                    </h2>
+                    <p>
                         Planeje com dados, não com suposições.
                     </p>
                 </div>
@@ -71,13 +50,12 @@
 
             <!-- Feature 3 -->
             <div class="col-md-4">
-                <div class="text-center p-4"
-                    style="background: white; border-radius: 18px; height: 100%; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);">
-                    <div class="mb-3" style="font-size: 48px;">✨</div>
-                    <h5 class="fw-semibold mb-3" style="font-size: 24px; letter-spacing: -0.5px; color: #1d1d1f;">
+                <div class="text-center p-4 ym-home-card">
+                    <div class="mb-3 ym-home-icon" aria-hidden="true">✨</div>
+                    <h2 class="fw-semibold mb-3 ym-home-card-title">
                         Evite surpresas no fim do mês
-                    </h5>
-                    <p style="font-size: 17px; line-height: 1.5; color: #6e6e73;">
+                    </h2>
+                    <p>
                         Saiba exatamente quanto pode gastar.
                     </p>
                 </div>
@@ -87,27 +65,16 @@
 </section>
 
 <!-- CTA Section -->
-<section class="text-center" style="padding: 80px 20px; background: white;">
-    <div class="container" style="max-width: 800px;">
-        <h2 class="fw-bold mb-4"
-            style="font-size: clamp(36px, 5vw, 56px); line-height: 1.1; letter-spacing: -1.5px; color: #1d1d1f;">
+<section class="text-center ym-home-cta">
+    <div class="container ym-home-container ym-home-container--narrow">
+        <h2 class="fw-bold mb-4 ym-home-cta-title">
             Comece hoje mesmo.
         </h2>
-        <p class="mb-4" style="font-size: 21px; line-height: 1.4; color: #6e6e73;">
+        <p class="mb-4 ym-home-lead">
             Simples, rápido e totalmente gratuito.
         </p>
-        <button class="btn btn-lg px-5" (click)="goToLogin()"
-            style="background: #007AFF; color: white; border: none; border-radius: 30px; font-size: 17px; padding: 14px 40px; font-weight: 500;">
+        <button type="button" class="btn btn-lg px-5 ym-home-action" (click)="goToLogin()">
             Acessar meu painel
         </button>
     </div>
 </section>
-
-<!-- Footer -->
-<footer class="text-center py-4" style="background: #f5f5f7; border-top: 1px solid rgba(0, 0, 0, 0.06);">
-    <div class="container">
-        <p class="mb-0" style="font-size: 12px; color: #86868b;">
-            © {{ anoAtual }} YourMoney. Todos os direitos reservados.
-        </p>
-    </div>
-</footer>

@@ -48,6 +48,10 @@ export class DespesaService {
     this._todasCategorias = categorias;
   }
 
+  clearUserCache(): void {
+    this._todasCategorias = [];
+  }
+
   constructor(private http: HttpClient) { }
 
   obterPorReferencia(mes: number, ano: number): Observable<Despesa[]> {

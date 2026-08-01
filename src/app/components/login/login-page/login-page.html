@@ -1,4 +1,4 @@
-<main class="login-container">
+<div class="login-container">
     <section class="branding-section">
         <div class="logo-container">
             <div class="logo-icon">
@@ -32,19 +32,19 @@
 
             <form [formGroup]="form" (ngSubmit)="onSubmit()">
                 <div class="form-group">
-                    <label class="form-label">
+                    <label class="form-label" for="loginEmail">
                         <i class="bi bi-envelope"></i>E-mail
                     </label>
-                    <input type="email" class="form-control" formControlName="email" placeholder="seu@email.com"
+                    <input id="loginEmail" type="email" class="form-control" formControlName="email" placeholder="seu@email.com"
                         required />
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">
+                    <label class="form-label" for="loginSenha">
                         <i class="bi bi-lock"></i>Senha
                     </label>
                     <div class="password-wrapper">
-                        <input [type]="showPassword ? 'text' : 'password'" class="form-control" formControlName="senha"
+                        <input id="loginSenha" [type]="showPassword ? 'text' : 'password'" class="form-control" formControlName="senha"
                             placeholder="Sua senha" required />
                         <button type="button" class="toggle-password" (click)="togglePasswordVisibility()"
                             aria-label="Alternar visualização da senha">
@@ -58,7 +58,7 @@
                     <span *ngIf="loading"><i class="bi bi-hourglass-split"></i>Autenticando...</span>
                 </button>
 
-                <div *ngIf="error" class="alert-error">
+                <div *ngIf="error" class="alert-error" role="alert">
                     <i class="bi bi-exclamation-circle"></i>{{ error }}
                 </div>
             </form>
@@ -76,4 +76,4 @@
             </button>
         </div>
     </section>
-</main>
+</div>

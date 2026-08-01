@@ -1,11 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { finalize, Subject, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
-import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
 import {
   AtualizarInvestimentoRequest,
   CriarInvestimentoRequest,
@@ -13,6 +12,13 @@ import {
   InvestimentoService
 } from '../../../services/investimento';
 import { AuthService } from '../../../services/auth.service';
+import { ReceitaRecorrenteService } from '../../../services/receita-recorrente';
+import { ReservaSalarial } from '../../../models/investimento.model';
+import { SalarioElegivelInvestimento } from '../../../models/receita-recorrente.model';
+import { FinancialNavigationContextService } from '../../../services/financial-navigation-context.service';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { ViewStateComponent } from '../../shared/view-state/view-state';
+import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
 
 interface InvestimentoForm {
   id: string;
@@ -24,14 +30,18 @@ interface InvestimentoForm {
   valorAtual: number;
   dataInvestimento: string;
   mesReferencia: string;
-  dataResgate: string | null;
-  ativo: boolean;
+  receitaRecorrenteId: string | null;
+  operacaoId: string;
+}
+
+interface OpcaoReserva extends SalarioElegivelInvestimento {
+  historica?: boolean;
 }
 
 @Component({
   selector: 'app-investimento-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, ViewStateComponent],
   templateUrl: './investimento-page.html',
   styleUrls: ['./investimento-page.scss']
 })
@@ -39,20 +49,26 @@ export class InvestimentoPageComponent implements OnDestroy {
   private destroy$ = new Subject<void>();
 
   investimentos: Investimento[] = [];
-  mesAtual: Date = new Date();
+  reservas: ReservaSalarial[] = [];
+  salariosElegiveis: OpcaoReserva[] = [];
   totalInvestimentos = 0;
-  estadoCarregamento: FinancialViewState = 'loading';
-  mensagemCarregamento = '';
+  estadoCarregamento: 'loading' | 'loadedWithData' | 'emptyPeriod' | 'loadError' = 'loading';
   salvandoInvestimento = false;
   editando = false;
+  carregandoSalarios = false;
   novoInvestimento = this.criarFormularioVazio();
 
-  @ViewChild('calendarioInput') calendarioInput!: ElementRef<HTMLInputElement>;
+  get estadoCompartilhado(): FinancialViewState { return this.estadoCarregamento; }
+  get mensagemEstado(): string {
+    return financialStateMessage(this.estadoCompartilhado, this.financialContext.period().date, 'investimentos');
+  }
 
   constructor(
     private investimentoService: InvestimentoService,
+    private receitaRecorrenteService: ReceitaRecorrenteService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService()
   ) {
     this.carregarInvestimentos();
   }
@@ -63,54 +79,25 @@ export class InvestimentoPageComponent implements OnDestroy {
   }
 
   carregarInvestimentos(): void {
-    const mes = this.mesAtual.getMonth() + 1;
-    const ano = this.mesAtual.getFullYear();
     this.investimentos = [];
+    this.reservas = [];
     this.totalInvestimentos = 0;
     this.estadoCarregamento = 'loading';
-    this.atualizarMensagemCarregamento();
 
-    this.investimentoService.obterPorReferencia(mes, ano)
+    this.investimentoService.obterConsolidado()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: dados => {
-          this.investimentos = [...dados].sort(
-            (a, b) => this.dataCivilParaDate(b.dataInvestimento).getTime() -
-              this.dataCivilParaDate(a.dataInvestimento).getTime()
-          );
-          this.totalInvestimentos = dados.reduce((soma, investimento) => soma + investimento.valorAtual, 0);
-          this.estadoCarregamento = dados.length > 0 ? 'loadedWithData' : 'emptyPeriod';
-          this.atualizarMensagemCarregamento();
+        next: carteira => {
+          this.investimentos = carteira.itens;
+          this.reservas = carteira.reservas;
+          this.totalInvestimentos = carteira.totalInvestido;
+          this.estadoCarregamento = carteira.itens.length > 0 ? 'loadedWithData' : 'emptyPeriod';
         },
         error: erro => {
           console.error('Erro ao carregar investimentos', erro);
           this.estadoCarregamento = 'loadError';
-          this.atualizarMensagemCarregamento();
         }
       });
-  }
-
-  mudarMes(direcao: number): void {
-    const novoMes = new Date(this.mesAtual);
-    novoMes.setMonth(novoMes.getMonth() + direcao);
-    this.mesAtual = novoMes;
-    this.carregarInvestimentos();
-  }
-
-  abrirCalendario(): void {
-    const input = this.calendarioInput.nativeElement;
-    if (typeof input.showPicker === 'function') {
-      input.showPicker();
-    } else {
-      input.click();
-    }
-  }
-
-  selecionarMesDoCalendario(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const [ano, mes] = input.value.split('-').map(Number);
-    this.mesAtual = new Date(ano, mes - 1, 1);
-    this.carregarInvestimentos();
   }
 
   logout(): void {
@@ -121,6 +108,7 @@ export class InvestimentoPageComponent implements OnDestroy {
   abrirModalInvestimento(): void {
     this.editando = false;
     this.novoInvestimento = this.criarFormularioVazio();
+    this.carregarSalariosElegiveis();
     const modalElement = document.getElementById('modalInvestimento');
     if (modalElement) {
       new (window as any).bootstrap.Modal(modalElement).show();
@@ -133,8 +121,10 @@ export class InvestimentoPageComponent implements OnDestroy {
       ...investimento,
       dataInvestimento: investimento.dataInvestimento.substring(0, 10),
       mesReferencia: (investimento.mesReferencia ?? investimento.dataInvestimento).substring(0, 7),
-      dataResgate: investimento.dataResgate?.substring(0, 10) ?? null
+      receitaRecorrenteId: investimento.receitaRecorrenteId ?? null,
+      operacaoId: ''
     };
+    this.carregarSalariosElegiveis(investimento);
     const modalElement = document.getElementById('modalInvestimento');
     if (modalElement) {
       new (window as any).bootstrap.Modal(modalElement).show();
@@ -163,11 +153,7 @@ export class InvestimentoPageComponent implements OnDestroy {
         finalize(() => this.salvandoInvestimento = false)
       )
       .subscribe({
-        next: investimento => {
-          const referencia = this.mesParaDate(
-            investimento.mesReferencia ?? investimento.dataInvestimento.substring(0, 7)
-          );
-          this.mesAtual = referencia;
+        next: () => {
           this.fecharModal();
           this.carregarInvestimentos();
           this.mostrarSucesso();
@@ -195,8 +181,7 @@ export class InvestimentoPageComponent implements OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
-            this.investimentos = this.investimentos.filter(investimento => investimento.id !== id);
-            this.totalInvestimentos = this.investimentos.reduce((soma, investimento) => soma + investimento.valorAtual, 0);
+            this.carregarInvestimentos();
             Swal.fire('Deletado!', '', 'success');
           },
           error: () => Swal.fire('Erro!', '', 'error')
@@ -219,8 +204,8 @@ export class InvestimentoPageComponent implements OnDestroy {
       valorAtual: 0,
       dataInvestimento: this.dataLocalHoje(),
       mesReferencia: this.mesLocalAtual(),
-      dataResgate: null,
-      ativo: true
+      receitaRecorrenteId: null,
+      operacaoId: this.novaOperacaoId()
     };
   }
 
@@ -233,13 +218,16 @@ export class InvestimentoPageComponent implements OnDestroy {
       precoMedio: this.novoInvestimento.precoMedio,
       valorAtual: this.novoInvestimento.valorAtual,
       dataInvestimento: this.novoInvestimento.dataInvestimento,
-      mesReferencia: `${this.novoInvestimento.mesReferencia}-01`
+      mesReferencia: `${this.novoInvestimento.mesReferencia}-01`,
+      receitaRecorrenteId: this.novoInvestimento.receitaRecorrenteId || null,
+      operacaoId: this.novoInvestimento.operacaoId
     };
   }
 
   private montarPayloadAtualizacao(): AtualizarInvestimentoRequest {
+    const { operacaoId: _, ...payload } = this.montarPayloadCriacao();
     return {
-      ...this.montarPayloadCriacao(),
+      ...payload,
       id: this.novoInvestimento.id
     };
   }
@@ -247,6 +235,7 @@ export class InvestimentoPageComponent implements OnDestroy {
   private validarFormulario(): string | null {
     if (!this.novoInvestimento.nome.trim()) return 'Informe o nome do investimento.';
     if (this.novoInvestimento.nome.trim().length > 100) return 'O nome deve ter no máximo 100 caracteres.';
+    if (!this.novoInvestimento.descricao.trim()) return 'Informe a descrição do investimento.';
     if (this.novoInvestimento.descricao.trim().length > 500) return 'A descrição deve ter no máximo 500 caracteres.';
     if (!this.novoInvestimento.tipo.trim()) return 'Informe o tipo do investimento.';
     if (this.novoInvestimento.tipo.trim().length > 100) return 'O tipo deve ter no máximo 100 caracteres.';
@@ -256,6 +245,49 @@ export class InvestimentoPageComponent implements OnDestroy {
     if (!this.novoInvestimento.dataInvestimento) return 'Informe a data do investimento.';
     if (!this.novoInvestimento.mesReferencia) return 'Informe o mês de referência.';
     return null;
+  }
+
+  formatarPercentual(valor: number): string {
+    return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(valor) + '%';
+  }
+
+  larguraProgresso(valor: number): number {
+    return Math.min(Math.max(valor, 0), 100);
+  }
+
+  formatarDataCivil(valor: string): string {
+    const [ano, mes, dia] = valor.substring(0, 10).split('-');
+    return `${dia}/${mes}/${ano}`;
+  }
+
+  private carregarSalariosElegiveis(investimentoHistorico?: Investimento): void {
+    this.carregandoSalarios = true;
+    this.salariosElegiveis = [];
+    this.receitaRecorrenteService.listarElegiveisParaInvestimento()
+      .pipe(takeUntil(this.destroy$), finalize(() => this.carregandoSalarios = false))
+      .subscribe({
+        next: resposta => {
+          this.salariosElegiveis = resposta.itens;
+          this.incluirOpcaoHistorica(investimentoHistorico);
+        },
+        error: () => this.incluirOpcaoHistorica(investimentoHistorico)
+      });
+  }
+
+  private incluirOpcaoHistorica(investimento?: Investimento): void {
+    if (!investimento?.receitaRecorrenteId || !investimento.reservaAssociada) return;
+    if (this.salariosElegiveis.some(item => item.id === investimento.receitaRecorrenteId)) return;
+    this.salariosElegiveis.unshift({
+      id: investimento.receitaRecorrenteId,
+      descricao: investimento.reservaAssociada.descricao,
+      contaDescricao: investimento.reservaAssociada.contaDescricao,
+      valorPrevisto: 0,
+      historica: true
+    });
+  }
+
+  private novaOperacaoId(): string {
+    return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   }
 
   private mostrarAviso(mensagem: string): void {
@@ -298,6 +330,7 @@ export class InvestimentoPageComponent implements OnDestroy {
 
     if (httpError.status === 401) return 'Sessão expirada. Faça login novamente.';
     if (httpError.status === 403) return 'Você não tem permissão para cadastrar este investimento.';
+    if (httpError.status === 409) return 'Esta operação já foi enviada com dados diferentes. Reabra o cadastro e tente novamente.';
     if ([0, 502, 503, 504].includes(httpError.status)) {
       return 'Serviço temporariamente indisponível. Tente novamente.';
     }
@@ -317,11 +350,6 @@ export class InvestimentoPageComponent implements OnDestroy {
     (window as any).bootstrap?.Modal.getInstance(modal)?.hide();
   }
 
-  private dataCivilParaDate(valor: string): Date {
-    const [ano, mes, dia] = valor.substring(0, 10).split('-').map(Number);
-    return new Date(ano, mes - 1, dia);
-  }
-
   private dataLocalHoje(): string {
     const hoje = new Date();
     const ano = hoje.getFullYear();
@@ -331,15 +359,7 @@ export class InvestimentoPageComponent implements OnDestroy {
   }
 
   private mesLocalAtual(): string {
-    return this.dataLocalHoje().substring(0, 7);
+    return this.financialContext?.period().key ?? this.dataLocalHoje().substring(0, 7);
   }
 
-  private mesParaDate(valor: string): Date {
-    const [ano, mes] = valor.substring(0, 7).split('-').map(Number);
-    return new Date(ano, mes - 1, 1);
-  }
-
-  private atualizarMensagemCarregamento(): void {
-    this.mensagemCarregamento = financialStateMessage(this.estadoCarregamento, this.mesAtual, 'investimentos');
-  }
 }

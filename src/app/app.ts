@@ -1,8 +1,7 @@
 import { Component } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
+import { RouterOutlet } from '@angular/router';
 import { MenuComponent } from './navegacao/menu/menu';
 import { FooterComponent } from './navegacao/footer/footer';
-import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-root',
@@ -10,16 +9,9 @@ import { CommonModule } from '@angular/common';
   imports: [
     RouterOutlet,
     MenuComponent,
-    FooterComponent,
-    CommonModule
+    FooterComponent
   ],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })
-export class AppComponent {
-  constructor(private router: Router) { }
-
-  isLoginPage(): boolean {
-    return this.router.url.startsWith('/login');
-  }
-}
+export class AppComponent {}
