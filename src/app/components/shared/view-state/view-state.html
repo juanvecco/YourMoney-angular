@@ -4,7 +4,7 @@
     @if (isProgress) {
       <span class="ym-view-state__spinner" aria-hidden="true"></span>
     } @else {
-      <i class="bi" [class.bi-inbox]="state === 'emptyPeriod'" [class.bi-exclamation-triangle]="isError" aria-hidden="true"></i>
+      <i class="bi" [class.bi-inbox]="state === 'emptyPeriod' || state === 'emptyFilter'" [class.bi-exclamation-triangle]="isError" aria-hidden="true"></i>
     }
     <p>{{ message }}</p>
     @if (retryAvailable && (state === 'loadError' || state === 'stale')) {

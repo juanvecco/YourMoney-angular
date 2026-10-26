@@ -5,9 +5,20 @@
         <button pageHeaderActions class="ym-button primary accent-investment" type="button" (click)="abrirModalInvestimento()">
           <i class="bi bi-plus-lg"></i>Novo investimento
         </button>
+        <button pageHeaderActions class="ym-button secondary" type="button" (click)="abrirGerenciadorObjetivos()">
+          <i class="bi bi-bullseye"></i>Gerenciar objetivos
+        </button>
     </app-page-header>
     <app-view-state [state]="estadoCompartilhado" [message]="mensagemEstado"
-      [retryAvailable]="estadoCompartilhado === 'loadError'" (retry)="carregarInvestimentos()"></app-view-state>
+      [retryAvailable]="estadoCompartilhado === 'loadError' || estadoCompartilhado === 'stale'" (retry)="carregarInvestimentos()"></app-view-state>
+
+    <section class="ym-card ym-card-pad ym-investment-filters" aria-labelledby="filtrosInvestimentosTitulo">
+      <div class="ym-section-header"><div><h2 class="ym-section-title" id="filtrosInvestimentosTitulo">Organizar carteira</h2><p class="ym-subtitle">Objetivo é para que o dinheiro será usado; tipo de ativo é onde ou como ele está investido.</p></div><button *ngIf="filtrosAtivos" class="ym-button secondary" type="button" (click)="limparFiltros()">Limpar filtros</button></div>
+      <div class="ym-filter-grid">
+        <div><label for="filtroObjetivo">Objetivo financeiro</label><select id="filtroObjetivo" class="form-select" [(ngModel)]="filtroGrupo" (ngModelChange)="aplicarFiltros()"><option value="todos">Todos os objetivos</option><option value="semGrupo">Sem grupo</option><option *ngFor="let grupo of grupos" [value]="grupo.id">{{ grupo.nome }}</option></select></div>
+        <div><label for="filtroTipoAtivo">Tipo de ativo</label><select id="filtroTipoAtivo" class="form-select" [(ngModel)]="filtroTipo" (ngModelChange)="aplicarFiltros()"><option value="todos">Todos os tipos</option><option value="naoClassificado">Não classificado</option><option *ngFor="let tipo of tiposAtivo" [value]="tipo.codigo">{{ tipo.nome }}</option></select></div>
+      </div>
+    </section>
 
     <section class="ym-reserve-section" *ngIf="reservas.length">
       <div class="ym-section-header"><h2 class="ym-section-title">Reservas por renda</h2></div>
@@ -31,22 +42,22 @@
 
     <section class="ym-grid">
       <div class="ym-stack">
-        <article class="ym-card ym-kpi accent-investment">
+        <div class="ym-investment-kpis"><article class="ym-card ym-kpi accent-investment">
           <i class="ym-kpi-icon bi bi-gem"></i>
           <h2 class="ym-kpi-label">Total investido</h2>
           <p class="ym-kpi-value">R$ {{ totalInvestimentos | number:'1.2-2' }}</p>
           <p class="ym-kpi-meta">Soma de todos os investimentos cadastrados</p>
-        </article>
+        </article><article class="ym-card ym-kpi accent-investment" *ngIf="filtrosAtivos"><i class="ym-kpi-icon bi bi-funnel"></i><h2 class="ym-kpi-label">Total filtrado</h2><p class="ym-kpi-value">R$ {{ totalFiltrado | number:'1.2-2' }}</p><p class="ym-kpi-meta">Interseção dos filtros selecionados</p></article></div>
 
         <section class="ym-card ym-card-pad">
           <div class="ym-section-header">
-            <h2 class="ym-section-title">Carteira completa</h2>
+            <h2 class="ym-section-title">{{ filtrosAtivos ? 'Resultado filtrado' : 'Carteira completa' }}</h2>
             <button class="ym-button primary accent-investment" type="button" (click)="abrirModalInvestimento()">
               <i class="bi bi-plus-lg"></i>Novo investimento
             </button>
           </div>
 
-          <div *ngIf="estadoCarregamento !== 'loadedWithData'" class="ym-empty ym-state-message"
+          <div *ngIf="estadoCarregamento !== 'loadedWithData' && estadoCarregamento !== 'refreshing' && estadoCarregamento !== 'stale'" class="ym-empty ym-state-message"
             [class.ym-state-error]="estadoCarregamento === 'loadError'">
             {{ estadoCarregamento === 'loading' ? 'Carregando investimentos...' : estadoCarregamento === 'loadError' ? 'Não foi possível carregar os investimentos.' : 'Nenhum investimento cadastrado.' }}
           </div>
@@ -55,9 +66,10 @@
               <div class="ym-list-main">
                 <h3 class="ym-list-title">{{ investimento.nome }}</h3>
                 <div class="ym-list-meta">
-                  <span>{{ investimento.tipo || 'Sem tipo' }}</span>
+                  <span>Produto ou modalidade: {{ investimento.tipo }}</span>
                   <span><i class="bi bi-calendar3"></i> {{ formatarDataCivil(investimento.dataInvestimento) }}</span>
                 </div>
+                <div class="ym-organization-chips"><span class="ym-badge"><i class="bi bi-bullseye"></i>{{ investimento.grupoObjetivo?.nome || 'Sem grupo' }}</span><span class="ym-badge"><i class="bi bi-pie-chart"></i>{{ rotuloTipoAtivo(investimento.tipoAtivo) }}</span></div>
                 <p class="ym-association" *ngIf="investimento.reservaAssociada">
                   <i class="bi bi-shield-check"></i>{{ investimento.reservaAssociada.descricao }} · {{ investimento.reservaAssociada.contaDescricao }}
                   <span class="ym-badge unavailable" *ngIf="!investimento.reservaAssociada.elegivelParaNovaAssociacao">Indisponível</span>
@@ -80,11 +92,9 @@
       </div>
 
       <aside class="ym-card ym-card-pad">
-        <h2 class="ym-section-title">Ações rápidas</h2>
-        <p class="ym-subtitle">Cadastre novos ativos para manter a carteira atualizada.</p>
-        <button class="ym-button primary accent-investment mt-3" type="button" (click)="abrirModalInvestimento()">
-          <i class="bi bi-plus-circle"></i>Novo investimento
-        </button>
+        <h2 class="ym-section-title">Subtotais da seleção</h2><p class="ym-subtitle">Valores calculados pelo servidor, sem duplicação.</p>
+        <section class="ym-subtotal-section"><h3>Por objetivo</h3><p *ngIf="!subtotaisPorGrupo.length">Nenhum subtotal disponível.</p><ul><li *ngFor="let subtotal of subtotaisPorGrupo"><span>{{ subtotal.nome }} <small>({{ subtotal.quantidadeInvestimentos }})</small></span><span class="ym-subtotal-value"><strong>{{ formatarMoeda(subtotal.valorAtual) }}</strong><span class="ym-objective-percentage">{{ subtotal.percentual ?? 0 | number:'1.1-1' }}%</span></span></li></ul></section>
+        <section class="ym-subtotal-section"><h3>Por tipo de ativo</h3><p *ngIf="!subtotaisPorTipoAtivo.length">Nenhum subtotal disponível.</p><ul><li *ngFor="let subtotal of subtotaisPorTipoAtivo"><span>{{ subtotal.nome }} <small>({{ subtotal.quantidadeInvestimentos }})</small></span><strong>{{ formatarMoeda(subtotal.valorAtual) }}</strong></li></ul></section>
       </aside>
     </section>
   </div>
@@ -104,48 +114,51 @@
         <form>
           <div class="row g-3">
             <div class="col-12">
-              <label class="form-label">Nome</label>
-              <input type="text" class="form-control" [(ngModel)]="novoInvestimento.nome" name="nome"
+              <label class="form-label" for="nomeInvestimento">Nome</label>
+              <input id="nomeInvestimento" type="text" class="form-control" [(ngModel)]="novoInvestimento.nome" name="nome"
                 maxlength="100" required aria-required="true" />
             </div>
             <div class="col-12">
-              <label class="form-label">Descrição</label>
-              <input type="text" class="form-control" [(ngModel)]="novoInvestimento.descricao" name="descricao"
+              <label class="form-label" for="descricaoInvestimento">Descrição</label>
+              <input id="descricaoInvestimento" type="text" class="form-control" [(ngModel)]="novoInvestimento.descricao" name="descricao"
                 maxlength="500" required aria-required="true" />
             </div>
             <div class="col-12">
-              <label class="form-label">Tipo</label>
-              <input type="text" class="form-control" [(ngModel)]="novoInvestimento.tipo" name="tipo"
+              <label class="form-label" for="modalidadeInvestimento">Produto ou modalidade</label>
+              <input id="modalidadeInvestimento" type="text" class="form-control" [(ngModel)]="novoInvestimento.tipo" name="tipo"
                 maxlength="100" required aria-required="true" />
+              <div class="form-text">Ex.: Tesouro Selic 2029, CDB Banco X ou ETF IVVB11.</div>
             </div>
+            <div class="col-md-6"><label class="form-label" for="objetivoInvestimento">Objetivo financeiro (opcional)</label><select id="objetivoInvestimento" class="form-select" [(ngModel)]="novoInvestimento.grupoObjetivoId" name="grupoObjetivoId"><option [ngValue]="null">Sem grupo</option><option *ngFor="let grupo of grupos" [ngValue]="grupo.id">{{ grupo.nome }}</option></select></div>
+            <div class="col-md-6"><label class="form-label" for="tipoAtivoInvestimento">Tipo de ativo (opcional)</label><select id="tipoAtivoInvestimento" class="form-select" [(ngModel)]="novoInvestimento.tipoAtivo" name="tipoAtivo"><option [ngValue]="null">Não classificado</option><option *ngFor="let tipo of tiposAtivo" [ngValue]="tipo.codigo">{{ tipo.nome }}</option></select></div>
             <div class="col-md-6">
-              <label class="form-label">Quantidade</label>
-              <input type="number" step="0.01" min="0.01" class="form-control"
+              <label class="form-label" for="quantidadeInvestimento">Quantidade</label>
+              <input id="quantidadeInvestimento" type="number" step="0.01" min="0.01" class="form-control"
                 [(ngModel)]="novoInvestimento.quantidade" name="quantidade" required aria-required="true" />
             </div>
             <div class="col-md-6">
-              <label class="form-label">Preço médio (R$)</label>
-              <input type="number" step="0.01" min="0.01" class="form-control"
+              <label class="form-label" for="precoMedioInvestimento">Preço médio (R$)</label>
+              <input id="precoMedioInvestimento" type="number" step="0.01" min="0.01" class="form-control"
                 [(ngModel)]="novoInvestimento.precoMedio" name="precoMedio" required aria-required="true" />
             </div>
             <div class="col-md-6">
-              <label class="form-label">Valor (R$)</label>
-              <input type="number" step="0.01" min="0.01" class="form-control"
+              <label class="form-label" for="valorAtualInvestimento">Valor (R$)</label>
+              <input id="valorAtualInvestimento" type="number" step="0.01" min="0.01" class="form-control"
                 [(ngModel)]="novoInvestimento.valorAtual" name="valor" required aria-required="true" />
             </div>
             <div class="col-md-6">
-              <label class="form-label">Data do investimento</label>
-              <input type="date" class="form-control" [(ngModel)]="novoInvestimento.dataInvestimento" name="data"
+              <label class="form-label" for="dataInvestimento">Data do investimento</label>
+              <input id="dataInvestimento" type="date" class="form-control" [(ngModel)]="novoInvestimento.dataInvestimento" name="data"
                 required aria-required="true" />
             </div>
             <div class="col-md-6">
-              <label class="form-label">Mês de referência</label>
-              <input type="month" class="form-control" [(ngModel)]="novoInvestimento.mesReferencia"
+              <label class="form-label" for="mesReferenciaInvestimento">Mês de referência</label>
+              <input id="mesReferenciaInvestimento" type="month" class="form-control" [(ngModel)]="novoInvestimento.mesReferencia"
                 name="mesReferencia" required aria-required="true" />
             </div>
             <div class="col-12">
-              <label class="form-label">Reserva salarial (opcional)</label>
-              <select class="form-select" [(ngModel)]="novoInvestimento.receitaRecorrenteId" name="receitaRecorrenteId" [disabled]="carregandoSalarios">
+              <label class="form-label" for="reservaSalarialInvestimento">Reserva salarial (opcional)</label>
+              <select id="reservaSalarialInvestimento" class="form-select" [(ngModel)]="novoInvestimento.receitaRecorrenteId" name="receitaRecorrenteId" [disabled]="carregandoSalarios">
                 <option [ngValue]="null">Sem vínculo com uma renda</option>
                 <option *ngFor="let salario of salariosElegiveis" [ngValue]="salario.id">
                   {{ salario.descricao }} · {{ salario.contaDescricao }}{{ salario.historica ? ' (indisponível — vínculo atual)' : '' }}
@@ -169,3 +182,5 @@
     </div>
   </div>
 </div>
+
+<app-grupo-objetivo-dialog [grupos]="grupos" (alterado)="objetivosAlterados()"></app-grupo-objetivo-dialog>

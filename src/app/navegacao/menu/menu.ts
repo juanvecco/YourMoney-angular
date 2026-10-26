@@ -13,19 +13,23 @@ import { ThemeToggleComponent } from '../../components/shared/theme-toggle/theme
 export class MenuComponent {
   @ViewChild('menuTrigger') private menuTrigger?: ElementRef<HTMLButtonElement>;
   menuOpen = false;
+  moreOpen = false;
 
   constructor(private readonly authService: AuthService, private readonly router: Router) {}
 
   isLoggedIn(): boolean { return this.authService.isLoggedIn(); }
   closeMenu(restoreFocus = false): void {
     const wasOpen = this.menuOpen;
+    const focusTarget = restoreFocus && wasOpen ? this.menuTrigger?.nativeElement : undefined;
     this.menuOpen = false;
-    if (restoreFocus && wasOpen) queueMicrotask(() => this.menuTrigger?.nativeElement.focus());
+    this.moreOpen = false;
+    focusTarget?.focus();
   }
   toggleMenu(): void { this.menuOpen = !this.menuOpen; }
+  toggleMore(): void { this.moreOpen = !this.moreOpen; }
 
   onMenuKeydown(event: KeyboardEvent): void {
-    if (event.key !== 'Escape' || !this.menuOpen) return;
+    if (event.key !== 'Escape' || (!this.menuOpen && !this.moreOpen)) return;
     event.preventDefault();
     this.closeMenu(true);
   }

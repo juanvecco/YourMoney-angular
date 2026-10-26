@@ -28,3 +28,48 @@
     </ul>
   </nav>
 </header>
+
+@if (isLoggedIn()) {
+  <nav class="ym-mobile-nav" aria-label="Navegação do aplicativo">
+    <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">
+      <i class="bi bi-grid-1x2" aria-hidden="true"></i>
+      <span>Início</span>
+    </a>
+    <a routerLink="/receitas" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">
+      <i class="bi bi-arrow-down-left-circle" aria-hidden="true"></i>
+      <span>Receitas</span>
+    </a>
+    <a class="ym-mobile-nav__primary" routerLink="/despesas" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">
+      <i class="bi bi-plus-lg" aria-hidden="true"></i>
+      <span>Despesa</span>
+    </a>
+    <a routerLink="/investimento" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">
+      <i class="bi bi-graph-up-arrow" aria-hidden="true"></i>
+      <span>Investir</span>
+    </a>
+    <button type="button" [class.active]="moreOpen" [attr.aria-expanded]="moreOpen" aria-controls="mobile-more-menu" (click)="toggleMore()">
+      <i class="bi bi-three-dots" aria-hidden="true"></i>
+      <span>Mais</span>
+    </button>
+  </nav>
+
+  @if (moreOpen) {
+    <button class="ym-mobile-backdrop" type="button" aria-label="Fechar mais opções" (click)="closeMenu()"></button>
+    <section id="mobile-more-menu" class="ym-mobile-sheet" role="dialog" aria-modal="true" aria-label="Mais opções" (keydown)="onMenuKeydown($event)">
+      <div class="ym-mobile-sheet__handle" aria-hidden="true"></div>
+      <div class="ym-mobile-sheet__header">
+        <strong>Mais opções</strong>
+        <button type="button" class="ym-mobile-sheet__close" aria-label="Fechar mais opções" (click)="closeMenu()">
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="ym-mobile-sheet__links">
+        <a routerLink="/disponivel" routerLinkActive="active" (click)="closeMenu()"><i class="bi bi-wallet2" aria-hidden="true"></i>Disponível</a>
+        <a routerLink="/metas" routerLinkActive="active" (click)="closeMenu()"><i class="bi bi-bullseye" aria-hidden="true"></i>Metas</a>
+        <a routerLink="/configuracao" routerLinkActive="active" (click)="closeMenu()"><i class="bi bi-gear" aria-hidden="true"></i>Configurações</a>
+        <div class="ym-mobile-sheet__theme"><span><i class="bi bi-circle-half" aria-hidden="true"></i>Tema</span><app-theme-toggle></app-theme-toggle></div>
+        <button type="button" data-testid="mobile-logout" class="ym-mobile-sheet__logout" (click)="logout()"><i class="bi bi-box-arrow-right" aria-hidden="true"></i>Sair</button>
+      </div>
+    </section>
+  }
+}

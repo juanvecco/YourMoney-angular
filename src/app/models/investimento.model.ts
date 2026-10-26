@@ -12,6 +12,36 @@ export interface Investimento {
   ativo: boolean;
   receitaRecorrenteId?: string | null;
   reservaAssociada?: ReservaAssociadaInvestimento | null;
+  grupoObjetivoId?: string | null;
+  grupoObjetivo?: GrupoObjetivoResumo | null;
+  tipoAtivo?: TipoAtivoCodigo | null;
+}
+
+export type TipoAtivoCodigo =
+  | 'FundoInvestimento'
+  | 'Exterior'
+  | 'Criptomoeda'
+  | 'RendaFixa'
+  | 'Acoes'
+  | 'Outros';
+
+export interface OpcaoTipoAtivo {
+  codigo: TipoAtivoCodigo;
+  nome: string;
+}
+
+export const TIPOS_ATIVO: readonly OpcaoTipoAtivo[] = [
+  { codigo: 'FundoInvestimento', nome: 'Fundo de investimento' },
+  { codigo: 'Exterior', nome: 'Investimento no exterior' },
+  { codigo: 'Criptomoeda', nome: 'Criptomoeda' },
+  { codigo: 'RendaFixa', nome: 'Renda fixa' },
+  { codigo: 'Acoes', nome: 'Ações' },
+  { codigo: 'Outros', nome: 'Outros' },
+] as const;
+
+export interface GrupoObjetivoResumo {
+  id: string;
+  nome: string;
 }
 
 export interface ReservaAssociadaInvestimento {
@@ -42,8 +72,33 @@ export interface ReservaSalarial {
 
 export interface CarteiraInvestimentosConsolidada {
   totalInvestido: number;
+  totalFiltrado?: number;
   itens: Investimento[];
   reservas: ReservaSalarial[];
+  subtotaisPorGrupo?: SubtotalGrupoInvestimento[];
+  subtotaisPorTipoAtivo?: SubtotalTipoAtivoInvestimento[];
+}
+
+export interface SubtotalGrupoInvestimento {
+  grupoObjetivoId: string | null;
+  nome: string;
+  quantidadeInvestimentos: number;
+  valorAtual: number;
+  percentual?: number;
+}
+
+export interface SubtotalTipoAtivoInvestimento {
+  tipoAtivo: TipoAtivoCodigo | null;
+  nome: string;
+  quantidadeInvestimentos: number;
+  valorAtual: number;
+}
+
+export interface FiltroOrganizacaoInvestimentos {
+  grupoObjetivoId?: string;
+  semGrupo?: boolean;
+  tipoAtivo?: TipoAtivoCodigo;
+  naoClassificado?: boolean;
 }
 
 export interface CriarInvestimentoRequest extends InvestimentoWriteRequest {
@@ -60,6 +115,8 @@ export interface InvestimentoWriteRequest {
   dataInvestimento: string;
   mesReferencia: string;
   receitaRecorrenteId: string | null;
+  grupoObjetivoId?: string | null;
+  tipoAtivo?: TipoAtivoCodigo | null;
 }
 
 export interface CriarInvestimentoResponse extends Investimento {}

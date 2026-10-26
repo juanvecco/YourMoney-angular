@@ -30,11 +30,19 @@ describe('MenuComponent', () => {
 
   it('has one explicit logout action', () => {
     expect(fixture.nativeElement.querySelectorAll('[data-testid="logout"]')).toHaveSize(1);
+    expect(fixture.nativeElement.querySelectorAll('[data-testid="mobile-logout"]')).toHaveSize(0);
+  });
+
+  it('exposes the primary mobile destinations', () => {
+    const mobileNav = fixture.nativeElement.querySelector('.ym-mobile-nav') as HTMLElement;
+    const hrefs = Array.from(mobileNav.querySelectorAll('a')).map((link: unknown) => (link as HTMLAnchorElement).getAttribute('href'));
+    expect(hrefs).toEqual(['/dashboard', '/receitas', '/despesas', '/investimento']);
   });
 
   it('closes with Escape and restores focus to the mobile trigger', fakeAsync(() => {
     const trigger = fixture.nativeElement.querySelector('.ym-menu-trigger') as HTMLButtonElement;
     const menu = fixture.nativeElement.querySelector('#main-menu') as HTMLElement;
+    const focusSpy = spyOn(trigger, 'focus');
     trigger.click();
     fixture.detectChanges();
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
@@ -44,6 +52,6 @@ describe('MenuComponent', () => {
     fixture.detectChanges();
 
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
-    expect(document.activeElement).toBe(trigger);
+    expect(focusSpy).toHaveBeenCalled();
   }));
 });

@@ -10,9 +10,11 @@ for (const viewport of viewports) {
     await page.setViewportSize(viewport);
     await mockApi();
     await authenticateAs(userA);
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
-    const overflows = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
-    expect(overflows).toBe(false);
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    for (const route of ['/dashboard', '/investimento']) {
+      await page.goto(route, { waitUntil: 'domcontentloaded' });
+      const overflows = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+      expect(overflows, `${route} should not overflow at ${viewport.width}px`).toBe(false);
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    }
   });
 }

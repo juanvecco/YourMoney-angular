@@ -1,10 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { finalize, Subject, takeUntil } from 'rxjs';
-import Swal from 'sweetalert2';
 import {
   AtualizarInvestimentoRequest,
   CriarInvestimentoRequest,
@@ -13,12 +12,16 @@ import {
 } from '../../../services/investimento';
 import { AuthService } from '../../../services/auth.service';
 import { ReceitaRecorrenteService } from '../../../services/receita-recorrente';
-import { ReservaSalarial } from '../../../models/investimento.model';
+import { FiltroOrganizacaoInvestimentos, ReservaSalarial, SubtotalGrupoInvestimento, SubtotalTipoAtivoInvestimento, TIPOS_ATIVO, TipoAtivoCodigo } from '../../../models/investimento.model';
+import { GrupoObjetivoInvestimento } from '../../../models/investimento-grupo.model';
 import { SalarioElegivelInvestimento } from '../../../models/receita-recorrente.model';
 import { FinancialNavigationContextService } from '../../../services/financial-navigation-context.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { ViewStateComponent } from '../../shared/view-state/view-state';
 import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
+import { InvestimentoGrupoService } from '../../../services/investimento-grupo';
+import { FeedbackService } from '../../../services/feedback.service';
+import { GrupoObjetivoDialogComponent } from '../grupo-objetivo-dialog/grupo-objetivo-dialog';
 
 interface InvestimentoForm {
   id: string;
@@ -32,6 +35,8 @@ interface InvestimentoForm {
   mesReferencia: string;
   receitaRecorrenteId: string | null;
   operacaoId: string;
+  grupoObjetivoId: string | null;
+  tipoAtivo: TipoAtivoCodigo | null;
 }
 
 interface OpcaoReserva extends SalarioElegivelInvestimento {
@@ -41,18 +46,27 @@ interface OpcaoReserva extends SalarioElegivelInvestimento {
 @Component({
   selector: 'app-investimento-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, ViewStateComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, ViewStateComponent, GrupoObjetivoDialogComponent],
   templateUrl: './investimento-page.html',
   styleUrls: ['./investimento-page.scss']
 })
 export class InvestimentoPageComponent implements OnDestroy {
+  @ViewChild(GrupoObjetivoDialogComponent) grupoDialog?: GrupoObjetivoDialogComponent;
   private destroy$ = new Subject<void>();
+  private revisaoConsulta = 0;
 
   investimentos: Investimento[] = [];
   reservas: ReservaSalarial[] = [];
   salariosElegiveis: OpcaoReserva[] = [];
   totalInvestimentos = 0;
-  estadoCarregamento: 'loading' | 'loadedWithData' | 'emptyPeriod' | 'loadError' = 'loading';
+  totalFiltrado = 0;
+  grupos: GrupoObjetivoInvestimento[] = [];
+  subtotaisPorGrupo: SubtotalGrupoInvestimento[] = [];
+  subtotaisPorTipoAtivo: SubtotalTipoAtivoInvestimento[] = [];
+  filtroGrupo = 'todos';
+  filtroTipo = 'todos';
+  readonly tiposAtivo = TIPOS_ATIVO;
+  estadoCarregamento: FinancialViewState = 'loading';
   salvandoInvestimento = false;
   editando = false;
   carregandoSalarios = false;
@@ -68,8 +82,11 @@ export class InvestimentoPageComponent implements OnDestroy {
     private receitaRecorrenteService: ReceitaRecorrenteService,
     private authService: AuthService,
     private router: Router,
-    private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService()
+    private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService(),
+    private investimentoGrupoService: InvestimentoGrupoService = undefined!,
+    private feedbackService: FeedbackService = new FeedbackService()
   ) {
+    this.carregarGrupos();
     this.carregarInvestimentos();
   }
 
@@ -79,25 +96,47 @@ export class InvestimentoPageComponent implements OnDestroy {
   }
 
   carregarInvestimentos(): void {
-    this.investimentos = [];
-    this.reservas = [];
-    this.totalInvestimentos = 0;
-    this.estadoCarregamento = 'loading';
+    const revisao = ++this.revisaoConsulta;
+    const tinhaDados = this.investimentos.length > 0;
+    this.estadoCarregamento = tinhaDados ? 'refreshing' : 'loading';
 
-    this.investimentoService.obterConsolidado()
+    this.investimentoService.obterConsolidado(this.montarFiltro())
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: carteira => {
+          if (revisao !== this.revisaoConsulta) return;
           this.investimentos = carteira.itens;
           this.reservas = carteira.reservas;
           this.totalInvestimentos = carteira.totalInvestido;
-          this.estadoCarregamento = carteira.itens.length > 0 ? 'loadedWithData' : 'emptyPeriod';
+          this.totalFiltrado = carteira.totalFiltrado ?? carteira.totalInvestido;
+          this.subtotaisPorGrupo = this.adicionarPercentuaisObjetivos(carteira.subtotaisPorGrupo ?? []);
+          this.subtotaisPorTipoAtivo = carteira.subtotaisPorTipoAtivo ?? [];
+          this.estadoCarregamento = carteira.itens.length > 0 ? 'loadedWithData' : (this.filtrosAtivos ? 'emptyFilter' : 'emptyPeriod');
         },
         error: erro => {
+          if (revisao !== this.revisaoConsulta) return;
           console.error('Erro ao carregar investimentos', erro);
-          this.estadoCarregamento = 'loadError';
+          this.estadoCarregamento = tinhaDados ? 'stale' : 'loadError';
         }
       });
+  }
+
+  private adicionarPercentuaisObjetivos(subtotais: SubtotalGrupoInvestimento[]): SubtotalGrupoInvestimento[] {
+    const total = subtotais.reduce((soma, subtotal) => soma + subtotal.valorAtual, 0);
+    if (total <= 0) return subtotais.map(subtotal => ({ ...subtotal, percentual: 0 }));
+
+    const partes = subtotais.map((subtotal, indice) => {
+      const decimosExatos = subtotal.valorAtual / total * 1000;
+      const decimosInteiros = Math.floor(decimosExatos);
+      return { indice, decimosInteiros, resto: decimosExatos - decimosInteiros };
+    });
+    let decimosRestantes = 1000 - partes.reduce((soma, parte) => soma + parte.decimosInteiros, 0);
+    const porMaiorResto = [...partes].sort((a, b) => b.resto - a.resto || a.indice - b.indice);
+    for (let indice = 0; indice < decimosRestantes; indice++)
+      porMaiorResto[indice % porMaiorResto.length].decimosInteiros++;
+
+    const percentuais = new Map(partes.map(parte => [parte.indice, parte.decimosInteiros / 10]));
+    return subtotais.map((subtotal, indice) => ({ ...subtotal, percentual: percentuais.get(indice) ?? 0 }));
   }
 
   logout(): void {
@@ -110,9 +149,7 @@ export class InvestimentoPageComponent implements OnDestroy {
     this.novoInvestimento = this.criarFormularioVazio();
     this.carregarSalariosElegiveis();
     const modalElement = document.getElementById('modalInvestimento');
-    if (modalElement) {
-      new (window as any).bootstrap.Modal(modalElement).show();
-    }
+    this.mostrarModal(modalElement);
   }
 
   abrirModalEditar(investimento: Investimento): void {
@@ -122,13 +159,13 @@ export class InvestimentoPageComponent implements OnDestroy {
       dataInvestimento: investimento.dataInvestimento.substring(0, 10),
       mesReferencia: (investimento.mesReferencia ?? investimento.dataInvestimento).substring(0, 7),
       receitaRecorrenteId: investimento.receitaRecorrenteId ?? null,
+      grupoObjetivoId: investimento.grupoObjetivoId ?? null,
+      tipoAtivo: investimento.tipoAtivo ?? null,
       operacaoId: ''
     };
     this.carregarSalariosElegiveis(investimento);
     const modalElement = document.getElementById('modalInvestimento');
-    if (modalElement) {
-      new (window as any).bootstrap.Modal(modalElement).show();
-    }
+    this.mostrarModal(modalElement);
   }
 
   salvarInvestimento(): void {
@@ -166,25 +203,17 @@ export class InvestimentoPageComponent implements OnDestroy {
   }
 
   deletarInvestimento(id: string): void {
-    Swal.fire({
-      title: 'Deletar?',
-      text: 'Não pode ser desfeito.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sim',
-      cancelButtonText: 'Não',
-      confirmButtonColor: '#dc3545'
-    }).then(result => {
-      if (!result.isConfirmed) return;
+    this.feedbackService.confirm({ kind: 'confirmation', title: 'Excluir investimento?', message: 'Esta ação não pode ser desfeita.', destructive: true }).then(confirmado => {
+      if (!confirmado) return;
 
       this.investimentoService.deletarInvestimento(id)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
             this.carregarInvestimentos();
-            Swal.fire('Deletado!', '', 'success');
+            void this.feedbackService.success('Investimento excluído');
           },
-          error: () => Swal.fire('Erro!', '', 'error')
+          error: () => void this.feedbackService.error('Não foi possível excluir o investimento')
         });
     });
   }
@@ -205,6 +234,8 @@ export class InvestimentoPageComponent implements OnDestroy {
       dataInvestimento: this.dataLocalHoje(),
       mesReferencia: this.mesLocalAtual(),
       receitaRecorrenteId: null,
+      grupoObjetivoId: null,
+      tipoAtivo: null,
       operacaoId: this.novaOperacaoId()
     };
   }
@@ -220,6 +251,8 @@ export class InvestimentoPageComponent implements OnDestroy {
       dataInvestimento: this.novoInvestimento.dataInvestimento,
       mesReferencia: `${this.novoInvestimento.mesReferencia}-01`,
       receitaRecorrenteId: this.novoInvestimento.receitaRecorrenteId || null,
+      grupoObjetivoId: this.novoInvestimento.grupoObjetivoId || null,
+      tipoAtivo: this.novoInvestimento.tipoAtivo || null,
       operacaoId: this.novoInvestimento.operacaoId
     };
   }
@@ -291,32 +324,17 @@ export class InvestimentoPageComponent implements OnDestroy {
   }
 
   private mostrarAviso(mensagem: string): void {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Revise os dados',
-      text: mensagem,
-      confirmButtonColor: '#b49452'
-    });
+    void this.feedbackService.warning('Revise os dados', mensagem);
   }
 
   private mostrarSucesso(): void {
-    Swal.fire({
-      icon: 'success',
-      title: this.editando ? 'Investimento atualizado!' : 'Investimento cadastrado!',
-      text: this.editando
+    void this.feedbackService.success(this.editando ? 'Investimento atualizado!' : 'Investimento cadastrado!', this.editando
         ? 'Seu investimento foi atualizado com sucesso.'
-        : 'Seu investimento foi registrado com sucesso.',
-      confirmButtonColor: '#b49452'
-    });
+        : 'Seu investimento foi registrado com sucesso.');
   }
 
   private mostrarErro(erro: unknown): void {
-    Swal.fire({
-      icon: 'error',
-      title: 'Não foi possível salvar',
-      text: this.extrairMensagemErro(erro),
-      confirmButtonColor: '#b49452'
-    });
+    void this.feedbackService.error('Não foi possível salvar', this.extrairMensagemErro(erro));
   }
 
   private extrairMensagemErro(erro: unknown): string {
@@ -347,7 +365,26 @@ export class InvestimentoPageComponent implements OnDestroy {
 
   private fecharModal(): void {
     const modal = document.getElementById('modalInvestimento');
-    (window as any).bootstrap?.Modal.getInstance(modal)?.hide();
+    const bootstrapModal = (window as any).bootstrap?.Modal;
+    if (bootstrapModal) bootstrapModal.getInstance(modal)?.hide();
+    else if (modal) {
+      modal.classList.remove('show');
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  private mostrarModal(modal: HTMLElement | null): void {
+    if (!modal) return;
+    const bootstrapModal = (window as any).bootstrap?.Modal;
+    if (bootstrapModal) new bootstrapModal(modal).show();
+    else {
+      modal.classList.add('show');
+      modal.style.display = 'block';
+      modal.removeAttribute('aria-hidden');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('role', 'dialog');
+    }
   }
 
   private dataLocalHoje(): string {
@@ -360,6 +397,44 @@ export class InvestimentoPageComponent implements OnDestroy {
 
   private mesLocalAtual(): string {
     return this.financialContext?.period().key ?? this.dataLocalHoje().substring(0, 7);
+  }
+
+  get filtrosAtivos(): boolean { return this.filtroGrupo !== 'todos' || this.filtroTipo !== 'todos'; }
+
+  aplicarFiltros(): void { this.carregarInvestimentos(); }
+
+  limparFiltros(): void {
+    this.filtroGrupo = 'todos';
+    this.filtroTipo = 'todos';
+    this.carregarInvestimentos();
+  }
+
+  abrirGerenciadorObjetivos(): void { this.grupoDialog?.abrir(); }
+
+  objetivosAlterados(): void {
+    this.carregarGrupos();
+    this.carregarInvestimentos();
+  }
+
+  rotuloTipoAtivo(tipo: TipoAtivoCodigo | null | undefined): string {
+    return this.tiposAtivo.find(item => item.codigo === tipo)?.nome ?? 'Não classificado';
+  }
+
+  private carregarGrupos(): void {
+    if (!this.investimentoGrupoService) return;
+    this.investimentoGrupoService.listar().pipe(takeUntil(this.destroy$)).subscribe({
+      next: grupos => this.grupos = grupos,
+      error: () => this.grupos = []
+    });
+  }
+
+  private montarFiltro(): FiltroOrganizacaoInvestimentos {
+    const filtro: FiltroOrganizacaoInvestimentos = {};
+    if (this.filtroGrupo === 'semGrupo') filtro.semGrupo = true;
+    else if (this.filtroGrupo !== 'todos') filtro.grupoObjetivoId = this.filtroGrupo;
+    if (this.filtroTipo === 'naoClassificado') filtro.naoClassificado = true;
+    else if (this.filtroTipo !== 'todos') filtro.tipoAtivo = this.filtroTipo as TipoAtivoCodigo;
+    return filtro;
   }
 
 }

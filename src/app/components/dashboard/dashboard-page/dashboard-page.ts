@@ -239,9 +239,12 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
         const itensBase: ItemGraficoFinanceiro[] = [
             { id: 'receitas', rotulo: 'Receitas', tipo: 'receita', valor: totalReceitas, cor: '#16794c' },
             { id: 'despesas', rotulo: 'Despesas', tipo: 'despesa', valor: totalDespesas, cor: '#c2413a' },
-            { id: 'investimentos', rotulo: 'Investimentos', tipo: 'investimento', valor: totalInvestimentos, cor: '#5d5fef' },
-            { id: 'saldo', rotulo: saldo >= 0 ? 'Saldo positivo' : 'Saldo negativo', tipo: 'saldo', valor: Math.abs(saldo), cor: saldo >= 0 ? '#2563eb' : '#b45309' }
+            { id: 'investimentos', rotulo: 'Investimentos', tipo: 'investimento', valor: totalInvestimentos, cor: '#5d5fef' }
         ];
+
+        if (saldo < 0) {
+            itensBase.push({ id: 'saldo', rotulo: 'Saldo negativo', tipo: 'saldo', valor: Math.abs(saldo), cor: '#b45309' });
+        }
 
         const items = itensBase.filter(item => Number.isFinite(item.valor) && item.valor > 0);
         const total = this.arredondarMoeda(items.reduce((soma, item) => soma + item.valor, 0));

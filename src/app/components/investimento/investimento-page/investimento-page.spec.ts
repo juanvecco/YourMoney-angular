@@ -322,4 +322,75 @@ describe('InvestimentoPageComponent consolidated view', () => {
     expect(component.formatarPercentual(125.5)).toContain('125,50');
     expect(component.larguraProgresso(125.5)).toBe(100);
   });
+
+  it('uses authoritative filtered totals and ignores out-of-order responses', () => {
+    const older = new Subject<any>();
+    const newer = new Subject<any>();
+    investimentoService.obterConsolidado.and.returnValues(older, newer);
+    const ordered = new InvestimentoPageComponent(
+      investimentoService,
+      receitaService,
+      jasmine.createSpyObj<AuthService>('AuthService', ['logout']),
+      jasmine.createSpyObj<Router>('Router', ['navigate'])
+    );
+    ordered.filtroGrupo = 'semGrupo';
+    ordered.carregarInvestimentos();
+    newer.next({ totalInvestido: 1000, totalFiltrado: 100, itens: [investimento], reservas: [], subtotaisPorGrupo: [], subtotaisPorTipoAtivo: [] });
+    newer.complete();
+    older.next({ totalInvestido: 999, totalFiltrado: 999, itens: [], reservas: [] });
+    older.complete();
+    expect(ordered.totalInvestimentos).toBe(1000);
+    expect(ordered.totalFiltrado).toBe(100);
+    expect(ordered.investimentos.length).toBe(1);
+  });
+
+  it('distributes objective percentages in tenths that add up to exactly one hundred percent', () => {
+    investimentoService.obterConsolidado.and.returnValue(of({
+      totalInvestido: 3,
+      totalFiltrado: 3,
+      itens: [investimento],
+      reservas: [],
+      subtotaisPorGrupo: [
+        { grupoObjetivoId: 'g1', nome: 'Reserva', quantidadeInvestimentos: 1, valorAtual: 1 },
+        { grupoObjetivoId: 'g2', nome: 'Renda', quantidadeInvestimentos: 1, valorAtual: 1 },
+        { grupoObjetivoId: null, nome: 'Sem grupo', quantidadeInvestimentos: 1, valorAtual: 1 }
+      ]
+    }));
+
+    component.carregarInvestimentos();
+
+    expect(component.subtotaisPorGrupo.map(subtotal => subtotal.percentual)).toEqual([33.4, 33.3, 33.3]);
+    expect(component.subtotaisPorGrupo.reduce((total, subtotal) => total + (subtotal.percentual ?? 0), 0)).toBeCloseTo(100, 10);
+  });
+
+  it('uses zero percent when objective values have no positive total', () => {
+    investimentoService.obterConsolidado.and.returnValue(of({
+      totalInvestido: 0,
+      totalFiltrado: 0,
+      itens: [],
+      reservas: [],
+      subtotaisPorGrupo: [
+        { grupoObjetivoId: null, nome: 'Sem grupo', quantidadeInvestimentos: 0, valorAtual: 0 }
+      ]
+    }));
+
+    component.carregarInvestimentos();
+
+    expect(component.subtotaisPorGrupo[0].percentual).toBe(0);
+  });
+
+  it('maps stable labels and explicit null organization', () => {
+    expect(component.rotuloTipoAtivo('FundoInvestimento')).toBe('Fundo de investimento');
+    expect(component.rotuloTipoAtivo(null)).toBe('Não classificado');
+    component.abrirModalInvestimento();
+    component.novoInvestimento = {
+      ...component.novoInvestimento, nome: 'ETF', descricao: 'Exterior', tipo: 'IVVB11',
+      quantidade: 1, precoMedio: 100, valorAtual: 100, grupoObjetivoId: null, tipoAtivo: null
+    };
+    investimentoService.criarInvestimento.and.returnValue(of(investimento));
+    component.salvarInvestimento();
+    expect(investimentoService.criarInvestimento).toHaveBeenCalledWith(jasmine.objectContaining({
+      tipo: 'IVVB11', grupoObjetivoId: null, tipoAtivo: null, receitaRecorrenteId: null
+    }));
+  });
 });

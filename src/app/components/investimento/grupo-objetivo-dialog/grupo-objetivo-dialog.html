@@ -1,0 +1,27 @@
+<dialog #dialog class="ym-objective-dialog ym-modal accent-investment" id="modalObjetivosInvestimento" aria-labelledby="modalObjetivosInvestimentoLabel" (cancel)="fechar()">
+  <div class="modal-content">
+    <div class="modal-header"><div><p class="ym-dialog-eyebrow">Organização</p><h2 class="modal-title" id="modalObjetivosInvestimentoLabel">Objetivos financeiros</h2></div><button type="button" class="btn-close btn-close-white" (click)="fechar()" aria-label="Fechar"></button></div>
+    <div class="modal-body">
+      <p class="ym-dialog-help">Objetivo indica para que o dinheiro será usado. Cada investimento pode ter um objetivo.</p>
+      <form class="ym-group-form" (ngSubmit)="salvar()">
+        <label for="nomeObjetivo">{{ editando ? 'Novo nome do objetivo' : 'Nome do novo objetivo' }}</label>
+        <div class="ym-group-form__row">
+          <input #nomeInput id="nomeObjetivo" name="nomeObjetivo" class="form-control" maxlength="100" [(ngModel)]="nome" required />
+          <button class="ym-button primary accent-investment" type="submit" [disabled]="salvando || !nome.trim() || nome.trim().length > 100">{{ editando ? 'Salvar nome' : 'Criar objetivo' }}</button>
+          <button *ngIf="editando" class="ym-button secondary" type="button" (click)="cancelarEdicao()">Cancelar</button>
+        </div>
+        <small *ngIf="nome.trim().length > 100" role="alert">Use no máximo 100 caracteres.</small>
+      </form>
+      <p class="ym-empty" *ngIf="!grupos.length">Você ainda não criou objetivos financeiros.</p>
+      <ul class="ym-group-list" *ngIf="grupos.length" aria-label="Objetivos financeiros cadastrados">
+        <li *ngFor="let grupo of grupos"><div><strong>{{ grupo.nome }}</strong><small>{{ grupo.quantidadeInvestimentos }} investimento(s)</small></div><div class="ym-group-actions"><button type="button" class="ym-icon-button" (click)="editar(grupo)" [attr.aria-label]="'Editar ' + grupo.nome"><i class="bi bi-pencil"></i></button><button type="button" class="ym-icon-button danger" (click)="prepararExclusao(grupo)" [attr.aria-label]="'Excluir ' + grupo.nome"><i class="bi bi-trash"></i></button></div></li>
+      </ul>
+      <section class="ym-delete-flow" *ngIf="excluindo">
+        <h3>Excluir “{{ excluindo.nome }}”</h3><p>Este objetivo possui {{ excluindo.quantidadeInvestimentos }} investimento(s). Escolha o destino dos vínculos.</p>
+        <fieldset><legend>O que fazer com os investimentos?</legend><label *ngIf="outrosGrupos(excluindo).length"><input type="radio" name="acaoExclusao" value="Transferir" [(ngModel)]="acaoExclusao" /> Transferir para outro objetivo</label><label><input type="radio" name="acaoExclusao" value="Desassociar" [(ngModel)]="acaoExclusao" /> Deixar sem grupo</label></fieldset>
+        <div *ngIf="acaoExclusao === 'Transferir'" class="ym-field"><label for="grupoDestino">Objetivo de destino</label><select id="grupoDestino" class="form-select" [(ngModel)]="grupoDestinoId" name="grupoDestino"><option value="">Selecione</option><option *ngFor="let grupo of outrosGrupos(excluindo)" [value]="grupo.id">{{ grupo.nome }}</option></select></div>
+        <div class="ym-delete-actions"><button class="ym-button danger" type="button" (click)="confirmarExclusao()" [disabled]="salvando || (acaoExclusao === 'Transferir' && !grupoDestinoId)">Confirmar exclusão</button><button class="ym-button secondary" type="button" (click)="cancelarEdicao()" [disabled]="salvando">Cancelar</button></div>
+      </section>
+    </div>
+  </div>
+</dialog>

@@ -5,6 +5,69 @@ type ApiFixtures = {
   mockApi: () => Promise<void>;
 };
 
+export type AssetTypeCode =
+  | 'FundoInvestimento'
+  | 'Exterior'
+  | 'Criptomoeda'
+  | 'RendaFixa'
+  | 'Acoes'
+  | 'Outros';
+
+export interface OrganizationGroupFixture {
+  id: string;
+  nome: string;
+  versao: string;
+  quantidadeInvestimentos: number;
+}
+
+export function organizationGroupFixture(
+  overrides: Partial<OrganizationGroupFixture> = {}
+): OrganizationGroupFixture {
+  return {
+    id: 'grupo-reserva',
+    nome: 'Reserva de emergência',
+    versao: 'AQIDBA==',
+    quantidadeInvestimentos: 0,
+    ...overrides,
+  };
+}
+
+export function organizationInvestmentFixture(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    id: 'investimento-reserva',
+    nome: 'Tesouro Selic',
+    descricao: 'Reserva de emergência',
+    tipo: 'Tesouro Selic 2029',
+    quantidade: 1,
+    precoMedio: 100,
+    valorAtual: 100,
+    dataInvestimento: '2026-08-01T00:00:00',
+    mesReferencia: '2026-08-01T00:00:00',
+    dataResgate: null,
+    ativo: true,
+    receitaRecorrenteId: null,
+    reservaAssociada: null,
+    grupoObjetivoId: 'grupo-reserva',
+    grupoObjetivo: { id: 'grupo-reserva', nome: 'Reserva de emergência' },
+    tipoAtivo: 'RendaFixa' satisfies AssetTypeCode,
+    ...overrides,
+  };
+}
+
+export function consolidatedOrganizationFixture(
+  investments: Record<string, unknown>[] = []
+): Record<string, unknown> {
+  const total = investments.reduce((sum, item) => sum + Number(item['valorAtual'] ?? 0), 0);
+  return {
+    totalInvestido: total,
+    totalFiltrado: total,
+    itens: investments,
+    reservas: [],
+    subtotaisPorGrupo: [],
+    subtotaisPorTipoAtivo: [],
+  };
+}
+
 function responseFor(url: string): unknown {
   const path = new URL(url).pathname.toLowerCase();
   if (path.includes('/metas/resumo')) return {
@@ -13,7 +76,8 @@ function responseFor(url: string): unknown {
     percentualTotalComprometido: 0, valorTotalReservado: 0, percentualRestante: 0,
     valorRestanteAntesDespesas: 0, saldoFinal: 0, valorFaltante: 0, status: 'zerado', alertas: [], metas: []
   };
-  if (path.includes('/investimento/consolidado')) return { investimentos: [], reservas: [], totalInvestimentos: 0 };
+  if (path.includes('/investimento/consolidado')) return consolidatedOrganizationFixture();
+  if (path.includes('/investimentogrupos')) return [];
   if (path.includes('/despesas/consulta')) return {
     itens: [], paginaAtual: 1, tamanhoPagina: 10, totalPaginas: 0, totalResultados: 0,
     valorTotalFiltrado: 0, totaisPorConta: []

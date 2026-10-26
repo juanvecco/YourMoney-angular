@@ -3,6 +3,7 @@ export type FinancialViewState =
   | 'refreshing'
   | 'loadedWithData'
   | 'emptyPeriod'
+  | 'emptyFilter'
   | 'loadError'
   | 'stale'
   | 'unauthenticated';
@@ -28,6 +29,10 @@ export function financialStateMessage(
 
   if (state === 'emptyPeriod') {
     return `Nenhum registro de ${resourceLabel} em ${periodLabel}. Use as setas para consultar outro período.`;
+  }
+
+  if (state === 'emptyFilter') {
+    return `Nenhum ${resourceLabel} corresponde aos filtros selecionados.`;
   }
 
   if (state === 'loadError') {

@@ -46,7 +46,7 @@ describe('DashboardPageComponent', () => {
     component = fixture.componentInstance;
   });
 
-  it('maps positive monthly totals into chart items', () => {
+  it('maps positive monthly totals without adding the positive balance to the chart', () => {
     const resumo = component.criarResumoGrafico(
       [
         {
@@ -89,8 +89,42 @@ describe('DashboardPageComponent', () => {
     expect(resumo.estado).toBe('pronto');
     expect(resumo.periodoReferencia.mes).toBe(5);
     expect(resumo.periodoReferencia.ano).toBe(2026);
-    expect(resumo.items.map(item => item.id)).toEqual(['receitas', 'despesas', 'investimentos', 'saldo']);
-    expect(resumo.items.find(item => item.id === 'saldo')?.valor).toBe(3800);
+    expect(resumo.items.map(item => item.id)).toEqual(['receitas', 'despesas', 'investimentos']);
+    expect(resumo.items.find(item => item.id === 'saldo')).toBeUndefined();
+    expect(resumo.total).toBe(7700);
+  });
+
+  it('keeps a negative balance in the chart', () => {
+    const resumo = component.criarResumoGrafico(
+      [
+        {
+          id: 'receita-1',
+          descricao: 'Salario',
+          valor: 1000,
+          data: '2026-05-01',
+          natureza: 'RendaDisponivel',
+          consideraNasMetas: true,
+          valorAbatidoEmDespesa: 0
+        }
+      ],
+      [
+        {
+          id: 'despesa-1',
+          descricao: 'Mercado',
+          valor: 1200,
+          data: '2026-05-02',
+          idContaFinanceira: 'conta-1',
+          idCategoria: 'categoria-1'
+        }
+      ],
+      [],
+      new Date(2026, 4, 1)
+    );
+
+    expect(resumo.items.find(item => item.id === 'saldo')).toEqual(jasmine.objectContaining({
+      rotulo: 'Saldo negativo',
+      valor: 200
+    }));
   });
 
   it('recalculates chart data when the dashboard month changes', () => {
