@@ -12,16 +12,27 @@ import { MonthPickerComponent } from '../../shared/month-picker/month-picker';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { ThemeService } from '../../../services/theme.service';
 import { FinancialNavigationContextService } from '../../../services/financial-navigation-context.service';
+import { MovimentacaoService } from '../../../services/movimentacao';
+import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
+import { ViewStateComponent } from '../../shared/view-state/view-state';
+import { FinancialValuePipe } from '../../../pipes/financial-value.pipe';
+import { FinancialVisibilityService } from '../../../services/financial-visibility.service';
+import { ResumoFinanceiroMensal } from '../../../models/movimentacao.model';
+
+interface HistoricoFinanceiroItem extends ResumoFinanceiroMensal {
+    rotulo: string;
+}
 
 @Component({
     selector: 'app-dashboard-page',
     standalone: true,
-    imports: [CommonModule, DecimalPipe, MonthPickerComponent, PageHeaderComponent],
+    imports: [CommonModule, DecimalPipe, FinancialValuePipe, MonthPickerComponent, PageHeaderComponent, ViewStateComponent],
     templateUrl: './dashboard-page.html',
     styleUrls: ['./dashboard-page.css']
 })
 export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy {
     @ViewChild('graficoFinanceiroCanvas') graficoFinanceiroCanvas?: ElementRef<HTMLCanvasElement>;
+    @ViewChild('graficoHistoricoCanvas') graficoHistoricoCanvas?: ElementRef<HTMLCanvasElement>;
 
     receitas: Receita[] = [];
     despesas: Despesa[] = [];
@@ -30,8 +41,12 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     despesasPorTipo: { descricao: string; valor: number }[] = [];
     despesasPorNatureza: { descricao: string; valor: number }[] = [];
     resumoGrafico: ResumoGraficoDashboard = this.criarResumoGrafico([], [], [], new Date(), 'carregando');
+    historicoFinanceiro: HistoricoFinanceiroItem[] = [];
+    estadoHistorico: FinancialViewState = 'loading';
+    mensagemHistorico = '';
 
     private graficoFinanceiro?: Chart;
+    private graficoHistorico?: Chart;
     private viewInicializada = false;
     private loadRevision = 0;
     private statusCarregamentoGrafico: Record<'receitas' | 'despesas' | 'investimentos', 'carregando' | 'pronto' | 'erro'> = {
@@ -46,6 +61,8 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
         investimentos: 0,
         sobrou: 0
     };
+    estadoResumo: FinancialViewState = 'loading';
+    mensagemResumo = '';
 
     mesAtual = new Date();
 
@@ -61,12 +78,18 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
         private despesaService: DespesaService,
         private investimentoService: InvestimentoService,
         private themeService: ThemeService,
-        private financialContext: FinancialNavigationContextService
+        private financialContext: FinancialNavigationContextService,
+        private movimentacaoService: MovimentacaoService,
+        private readonly financialVisibility: FinancialVisibilityService
     ) {
         this.mesAtual = this.financialContext.period().date;
         effect(() => {
             this.themeService.theme();
-            if (this.viewInicializada) queueMicrotask(() => this.atualizarGraficoFinanceiro());
+            this.financialVisibility.valuesHidden();
+            if (this.viewInicializada) queueMicrotask(() => {
+                this.atualizarGraficoFinanceiro();
+                this.atualizarGraficoHistorico();
+            });
         });
     }
 
@@ -77,10 +100,12 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     ngAfterViewInit(): void {
         this.viewInicializada = true;
         this.atualizarGraficoFinanceiro();
+        this.atualizarGraficoHistorico();
     }
 
     ngOnDestroy(): void {
         this.destruirGraficoFinanceiro();
+        this.destruirGraficoHistorico();
     }
 
     carregarDadosMesAtual() {
@@ -92,6 +117,11 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
         this.investimentos = [];
         this.despesasPorTipo = [];
         this.despesasPorNatureza = [];
+        this.estadoResumo = 'loading';
+        this.mensagemResumo = financialStateMessage('loading', this.mesAtual, 'o resumo financeiro');
+        this.historicoFinanceiro = [];
+        this.estadoHistorico = 'loading';
+        this.mensagemHistorico = '';
         this.atualizarResumo();
         this.statusCarregamentoGrafico = {
             receitas: 'carregando',
@@ -100,6 +130,44 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
         };
         this.resumoGrafico = this.criarResumoGrafico([], [], [], this.mesAtual, 'carregando');
         this.atualizarGraficoFinanceiro();
+        this.atualizarGraficoHistorico();
+
+        const referencia = ano + '-' + String(mes).padStart(2, '0');
+        const inicioHistorico = new Date(ano, mes - 6, 1);
+        const referenciaInicial = this.formatarReferenciaMes(inicioHistorico);
+        this.movimentacaoService.consultar({
+            mesInicial: referenciaInicial, mesFinal: referencia, pagina: 1, tamanhoPagina: 10
+        }).subscribe({
+            next: response => {
+                if (revision !== this.loadRevision) return;
+                const totaisPorMes = response.totaisPorMes ?? [];
+                const totalMesAtual = totaisPorMes.find(item => item.mesReferencia === referencia);
+                this.resumo = {
+                    receitas: totalMesAtual?.receitas ?? 0,
+                    despesas: totalMesAtual?.despesas ?? 0,
+                    investimentos: totalMesAtual?.investimentos ?? 0,
+                    sobrou: totalMesAtual?.saldo ?? 0
+                };
+                this.estadoResumo = totalMesAtual?.totalItens ? 'loadedWithData' : 'emptyPeriod';
+                this.mensagemResumo = totalMesAtual?.totalItens
+                    ? ''
+                    : financialStateMessage('emptyPeriod', this.mesAtual, 'movimentações');
+                this.historicoFinanceiro = this.criarHistoricoMensal(totaisPorMes, inicioHistorico, this.mesAtual);
+                this.estadoHistorico = response.totalItens ? 'loadedWithData' : 'emptyPeriod';
+                this.mensagemHistorico = response.totalItens
+                    ? ''
+                    : 'Ainda não há movimentações suficientes para montar o histórico.';
+                this.atualizarGraficoHistorico();
+            },
+            error: () => {
+                if (revision !== this.loadRevision) return;
+                this.resumo = { receitas: 0, despesas: 0, investimentos: 0, sobrou: 0 };
+                this.estadoResumo = 'loadError';
+                this.mensagemResumo = financialStateMessage('loadError', this.mesAtual, 'o resumo financeiro');
+                this.estadoHistorico = 'loadError';
+                this.mensagemHistorico = 'Não foi possível carregar o histórico financeiro.';
+            }
+        });
 
         this.despesaService.listarCategorias().subscribe({
             next: (categorias) => {
@@ -172,6 +240,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     }
 
     atualizarResumo() {
+        if (this.estadoResumo !== 'loading') return;
         const totalReceitas = this.receitas.reduce((soma, r) => soma + r.valor, 0);
         const totalDespesas = this.despesas.reduce((soma, d) => soma + d.valor, 0);
         const totalInvestimentos = this.investimentos.reduce((soma, i) => soma + i.valorAtual, 0);
@@ -359,6 +428,116 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
         this.graficoFinanceiro = undefined;
     }
 
+    private criarHistoricoMensal(
+        totais: ResumoFinanceiroMensal[],
+        inicio: Date,
+        fim: Date
+    ): HistoricoFinanceiroItem[] {
+        const porReferencia = new Map(totais.map(item => [item.mesReferencia, item]));
+        const historico: HistoricoFinanceiroItem[] = [];
+        const cursor = new Date(inicio.getFullYear(), inicio.getMonth(), 1);
+        const ultimoMes = new Date(fim.getFullYear(), fim.getMonth(), 1);
+
+        while (cursor <= ultimoMes) {
+            const mesReferencia = this.formatarReferenciaMes(cursor);
+            const total = porReferencia.get(mesReferencia);
+            historico.push({
+                mesReferencia,
+                totalItens: total?.totalItens ?? 0,
+                receitas: total?.receitas ?? 0,
+                despesas: total?.despesas ?? 0,
+                investimentos: total?.investimentos ?? 0,
+                saldo: total?.saldo ?? 0,
+                rotulo: cursor.toLocaleDateString('pt-BR', { month: 'short' })
+            });
+            cursor.setMonth(cursor.getMonth() + 1);
+        }
+
+        return historico;
+    }
+
+    private formatarReferenciaMes(data: Date): string {
+        return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    private atualizarGraficoHistorico(): void {
+        if (!this.viewInicializada || !this.graficoHistoricoCanvas) return;
+        if (this.estadoHistorico !== 'loadedWithData' || this.historicoFinanceiro.length === 0) {
+            this.destruirGraficoHistorico();
+            return;
+        }
+
+        const configuracao = this.criarConfiguracaoGraficoHistorico();
+        if (!this.graficoHistorico) {
+            this.graficoHistorico = new Chart(this.graficoHistoricoCanvas.nativeElement, configuracao);
+            return;
+        }
+
+        this.graficoHistorico.data = configuracao.data;
+        this.graficoHistorico.options = configuracao.options ?? {};
+        this.graficoHistorico.update();
+    }
+
+    private criarConfiguracaoGraficoHistorico(): ChartConfiguration<'bar', number[], string> {
+        const valuesVisible = !this.financialVisibility.valuesHidden();
+        const months = this.historicoFinanceiro;
+        const dados = (selector: (item: HistoricoFinanceiroItem) => number) =>
+            months.map(item => valuesVisible ? selector(item) : 0);
+        const formatter = new Intl.NumberFormat('pt-BR', {
+            style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1
+        });
+
+        return {
+            type: 'bar',
+            data: {
+                labels: months.map(item => item.rotulo),
+                datasets: [
+                    { label: 'Receitas', data: dados(item => item.receitas), backgroundColor: this.tokenCss('--ym-success', '#16794c'), borderRadius: 5, maxBarThickness: 28 },
+                    { label: 'Despesas', data: dados(item => item.despesas), backgroundColor: this.tokenCss('--ym-danger', '#c2413a'), borderRadius: 5, maxBarThickness: 28 },
+                    { label: 'Investimentos', data: dados(item => item.investimentos), backgroundColor: this.tokenCss('--ym-investment', '#5d5fef'), borderRadius: 5, maxBarThickness: 28 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: this.tokenCss('--ym-text', '#1f2937'), usePointStyle: true, padding: 18 }
+                    },
+                    tooltip: {
+                        backgroundColor: this.tokenCss('--ym-chart-tooltip', '#0f172a'),
+                        titleColor: this.tokenCss('--ym-inverse', '#ffffff'),
+                        bodyColor: this.tokenCss('--ym-inverse', '#ffffff'),
+                        callbacks: {
+                            label: context => `${context.dataset.label}: ${this.formatarMoeda(Number(context.parsed.y))}`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: this.tokenCss('--ym-muted', '#64748b') }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: this.tokenCss('--ym-border', 'rgba(100,116,139,.18)') },
+                        ticks: {
+                            color: this.tokenCss('--ym-muted', '#64748b'),
+                            callback: value => this.financialVisibility.valuesHidden() ? '....' : formatter.format(Number(value))
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    private destruirGraficoHistorico(): void {
+        this.graficoHistorico?.destroy();
+        this.graficoHistorico = undefined;
+    }
+
     private obterMensagemEstadoGrafico(estado: ResumoGraficoDashboard['estado']): string | undefined {
         if (estado === 'carregando') {
             return 'Carregando grafico financeiro...';
@@ -384,12 +563,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     }
 
     formatarMoeda(valor: number): string {
-        return valor.toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
+        return this.financialVisibility.valuesHidden() ? '....' : this.financialVisibility.formatCurrency(valor);
     }
 
     adicionarReceita(): void {

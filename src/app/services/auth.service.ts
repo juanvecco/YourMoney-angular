@@ -1,7 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, map } from 'rxjs';
-import { ApiResponse, AuthData, LoginRequest, RegisterRequest } from '../models/auth.model';
+import {
+    ApiResponse, AuthData, LoginRequest, PasswordResetConfirmRequest,
+    PasswordResetMessage, PasswordResetRequest, RegisterRequest
+} from '../models/auth.model';
 import { environment } from '../../environments/environment';
 import { FinancialNavigationContextService } from './financial-navigation-context.service';
 import { DespesaService } from './despesa';
@@ -37,6 +40,20 @@ export class AuthService {
                 tap(response => this.storeAuthData(response.data)),
                 map(response => response.data)
             );
+    }
+
+    requestPasswordReset(request: PasswordResetRequest): Observable<PasswordResetMessage> {
+        return this.http.post<ApiResponse<PasswordResetMessage>>(
+            this.apiUrl + '/esqueci-minha-senha',
+            request
+        ).pipe(map(response => response.data));
+    }
+
+    resetPassword(request: PasswordResetConfirmRequest): Observable<PasswordResetMessage> {
+        return this.http.post<ApiResponse<PasswordResetMessage>>(
+            this.apiUrl + '/resetar-senha',
+            request
+        ).pipe(map(response => response.data));
     }
 
     isLoggedIn(): boolean {

@@ -4,17 +4,54 @@
     <div class="modal-body">
       <p class="ym-dialog-help">Objetivo indica para que o dinheiro será usado. Cada investimento pode ter um objetivo.</p>
       <form class="ym-group-form" (ngSubmit)="salvar()">
-        <label for="nomeObjetivo">{{ editando ? 'Novo nome do objetivo' : 'Nome do novo objetivo' }}</label>
-        <div class="ym-group-form__row">
-          <input #nomeInput id="nomeObjetivo" name="nomeObjetivo" class="form-control" maxlength="100" [(ngModel)]="nome" required />
-          <button class="ym-button primary accent-investment" type="submit" [disabled]="salvando || !nome.trim() || nome.trim().length > 100">{{ editando ? 'Salvar nome' : 'Criar objetivo' }}</button>
-          <button *ngIf="editando" class="ym-button secondary" type="button" (click)="cancelarEdicao()">Cancelar</button>
+        <button *ngIf="!editando" class="ym-objective-suggestion" type="button" (click)="aplicarSugestaoCarro()">
+          <img src="/assets/objectives/city-lx-sedan.jpg" alt="" />
+          <span><small>Sugestão pronta</small><strong>Carro / Família</strong><span>City LX Sedan · {{ 117700 | financialValue }}</span></span>
+          <i class="bi bi-arrow-right" aria-hidden="true"></i>
+        </button>
+        <div class="ym-field">
+          <label for="nomeObjetivo">Nome do objetivo</label>
+          <input #nomeInput id="nomeObjetivo" name="nomeObjetivo" class="form-control" maxlength="100" [(ngModel)]="nome" placeholder="Ex.: Carro / Família" required />
         </div>
-        <small *ngIf="nome.trim().length > 100" role="alert">Use no máximo 100 caracteres.</small>
+        <div class="ym-field">
+          <label for="descricaoObjetivo">Descrição</label>
+          <input id="descricaoObjetivo" name="descricaoObjetivo" class="form-control" maxlength="160" [(ngModel)]="descricao" placeholder="Ex.: City LX Sedan" />
+        </div>
+        <div class="ym-field">
+          <label for="grupoPaiObjetivo">Subobjetivo de (opcional)</label>
+          <select id="grupoPaiObjetivo" name="grupoPaiObjetivo" class="form-select" [(ngModel)]="grupoPaiId">
+            <option [ngValue]="null">Objetivo principal</option>
+            <option *ngFor="let pai of objetivosPrincipaisDisponiveis()" [ngValue]="pai.id">{{ pai.nome }}</option>
+          </select>
+          <small>Ex.: Carro / Família pode ficar dentro de Longo Prazo.</small>
+        </div>
+        <div class="ym-group-form__row ym-group-form__row--fields">
+          <div class="ym-field"><label for="valorAlvoObjetivo">Valor-alvo</label><input id="valorAlvoObjetivo" name="valorAlvoObjetivo" class="form-control" type="number" financialValueInput min="0.01" step="0.01" [(ngModel)]="valorAlvo" placeholder="0,00" /></div>
+          <div class="ym-field"><label for="dataAlvoObjetivo">Data-alvo (opcional)</label><input id="dataAlvoObjetivo" name="dataAlvoObjetivo" class="form-control" type="date" [(ngModel)]="dataAlvo" /></div>
+        </div>
+        <div class="ym-image-field">
+          <div class="ym-image-preview" [class.empty]="!imagemPreview()">
+            <img *ngIf="imagemPreview() as preview" [src]="preview" [alt]="'Prévia da imagem de ' + (nome || 'objetivo')" />
+            <i *ngIf="!imagemPreview()" class="bi bi-image" aria-hidden="true"></i>
+          </div>
+          <div class="ym-image-actions">
+            <label for="imagemObjetivo">Imagem do objetivo</label>
+            <p>Escolha uma imagem que ajude a visualizar a conquista.</p>
+            <input #imagemInput id="imagemObjetivo" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp" (change)="selecionarImagem($event)" />
+            <div><label class="ym-button secondary" for="imagemObjetivo" [attr.aria-disabled]="enviandoImagem">{{ enviandoImagem ? 'Enviando...' : 'Escolher imagem' }}</label><button *ngIf="imagemUrl" class="ym-button secondary" type="button" (click)="removerImagem()">Remover</button></div>
+            <small>PNG, JPEG ou WebP · até 5 MB</small>
+            <small *ngIf="mensagemImagem" class="ym-field-error" role="alert">{{ mensagemImagem }}</small>
+          </div>
+        </div>
+        <small *ngIf="nome.trim().length > 100 || descricao.trim().length > 160" role="alert">Revise o limite de caracteres dos campos.</small>
+        <div class="ym-form-actions">
+          <button class="ym-button primary accent-investment" type="submit" [disabled]="salvando || enviandoImagem || !nome.trim() || nome.trim().length > 100 || descricao.trim().length > 160">{{ salvando ? 'Salvando...' : (editando ? 'Salvar objetivo' : 'Criar objetivo') }}</button>
+          <button *ngIf="editando" class="ym-button secondary" type="button" (click)="cancelarEdicao()">Cancelar edição</button>
+        </div>
       </form>
       <p class="ym-empty" *ngIf="!grupos.length">Você ainda não criou objetivos financeiros.</p>
       <ul class="ym-group-list" *ngIf="grupos.length" aria-label="Objetivos financeiros cadastrados">
-        <li *ngFor="let grupo of grupos"><div><strong>{{ grupo.nome }}</strong><small>{{ grupo.quantidadeInvestimentos }} investimento(s)</small></div><div class="ym-group-actions"><button type="button" class="ym-icon-button" (click)="editar(grupo)" [attr.aria-label]="'Editar ' + grupo.nome"><i class="bi bi-pencil"></i></button><button type="button" class="ym-icon-button danger" (click)="prepararExclusao(grupo)" [attr.aria-label]="'Excluir ' + grupo.nome"><i class="bi bi-trash"></i></button></div></li>
+        <li *ngFor="let grupo of grupos"><div class="ym-group-list__identity"><div class="ym-group-list__thumb" [class.empty]="!imagemDoGrupo(grupo)"><img *ngIf="imagemDoGrupo(grupo) as imagem" [src]="imagem" alt="" /><i *ngIf="!imagemDoGrupo(grupo)" class="bi bi-bullseye" aria-hidden="true"></i></div><div><strong>{{ grupo.nome }}</strong><span *ngIf="grupo.descricao">{{ grupo.descricao }}</span><small *ngIf="nomeGrupoPai(grupo) as nomePai">Subobjetivo de {{ nomePai }}</small><small>{{ grupo.quantidadeInvestimentos }} investimento(s)<span *ngIf="grupo.valorAlvo"> · alvo {{ grupo.valorAlvo | financialValue }}</span></small></div></div><div class="ym-group-actions"><button type="button" class="ym-icon-button" (click)="editar(grupo)" [attr.aria-label]="'Editar ' + grupo.nome"><i class="bi bi-pencil"></i></button><button type="button" class="ym-icon-button" (click)="alterarEstado(grupo)" [attr.aria-label]="(grupo.ativo === false ? 'Reativar ' : 'Arquivar ') + grupo.nome"><i class="bi" [ngClass]="grupo.ativo === false ? 'bi-arrow-counterclockwise' : 'bi-archive'"></i></button><button type="button" class="ym-icon-button danger" (click)="prepararExclusao(grupo)" [attr.aria-label]="'Excluir ' + grupo.nome"><i class="bi bi-trash"></i></button></div></li>
       </ul>
       <section class="ym-delete-flow" *ngIf="excluindo">
         <h3>Excluir “{{ excluindo.nome }}”</h3><p>Este objetivo possui {{ excluindo.quantidadeInvestimentos }} investimento(s). Escolha o destino dos vínculos.</p>

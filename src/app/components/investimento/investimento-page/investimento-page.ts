@@ -13,7 +13,8 @@ import {
 import { AuthService } from '../../../services/auth.service';
 import { ReceitaRecorrenteService } from '../../../services/receita-recorrente';
 import { FiltroOrganizacaoInvestimentos, ReservaSalarial, SubtotalGrupoInvestimento, SubtotalTipoAtivoInvestimento, TIPOS_ATIVO, TipoAtivoCodigo } from '../../../models/investimento.model';
-import { GrupoObjetivoInvestimento } from '../../../models/investimento-grupo.model';
+import { GrupoObjetivoInvestimento, GrupoObjetivoResumo } from '../../../models/investimento-grupo.model';
+import { imagemSugeridaObjetivo, resolverImagemObjetivo } from '../../../models/objetivo-imagem';
 import { SalarioElegivelInvestimento } from '../../../models/receita-recorrente.model';
 import { FinancialNavigationContextService } from '../../../services/financial-navigation-context.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
@@ -22,6 +23,8 @@ import { FinancialViewState, financialStateMessage } from '../../../models/finan
 import { InvestimentoGrupoService } from '../../../services/investimento-grupo';
 import { FeedbackService } from '../../../services/feedback.service';
 import { GrupoObjetivoDialogComponent } from '../grupo-objetivo-dialog/grupo-objetivo-dialog';
+import { FinancialValuePipe } from '../../../pipes/financial-value.pipe';
+import { FinancialValueInputDirective } from '../../../directives/financial-value-input.directive';
 
 interface InvestimentoForm {
   id: string;
@@ -46,7 +49,7 @@ interface OpcaoReserva extends SalarioElegivelInvestimento {
 @Component({
   selector: 'app-investimento-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, ViewStateComponent, GrupoObjetivoDialogComponent],
+  imports: [CommonModule, FormsModule, FinancialValuePipe, FinancialValueInputDirective, PageHeaderComponent, ViewStateComponent, GrupoObjetivoDialogComponent],
   templateUrl: './investimento-page.html',
   styleUrls: ['./investimento-page.scss']
 })
@@ -61,6 +64,8 @@ export class InvestimentoPageComponent implements OnDestroy {
   totalInvestimentos = 0;
   totalFiltrado = 0;
   grupos: GrupoObjetivoInvestimento[] = [];
+  objetivosResumo: GrupoObjetivoResumo[] = [];
+  private subobjetivosExpandidos = new Set<string>();
   subtotaisPorGrupo: SubtotalGrupoInvestimento[] = [];
   subtotaisPorTipoAtivo: SubtotalTipoAtivoInvestimento[] = [];
   filtroGrupo = 'todos';
@@ -87,6 +92,7 @@ export class InvestimentoPageComponent implements OnDestroy {
     private feedbackService: FeedbackService = new FeedbackService()
   ) {
     this.carregarGrupos();
+    this.carregarResumoObjetivos();
     this.carregarInvestimentos();
   }
 
@@ -288,6 +294,38 @@ export class InvestimentoPageComponent implements OnDestroy {
     return Math.min(Math.max(valor, 0), 100);
   }
 
+  imagemObjetivo(objetivo: GrupoObjetivoResumo): string | null {
+    return resolverImagemObjetivo(objetivo.imagemUrl) ?? imagemSugeridaObjetivo(objetivo.nome, objetivo.descricao);
+  }
+
+  nomeGrupoObjetivo(grupo: GrupoObjetivoInvestimento): string {
+    const pai = this.grupos.find(item => item.id === grupo.grupoPaiId);
+    return pai ? `${pai.nome} › ${grupo.nome}` : grupo.nome;
+  }
+
+  valorRestanteObjetivo(objetivo: GrupoObjetivoResumo): number {
+    return Math.max((objetivo.valorAlvo ?? 0) - objetivo.valorAtualCarteira, 0);
+  }
+
+  objetivosPrincipais(): GrupoObjetivoResumo[] {
+    return this.objetivosResumo.filter(objetivo => !objetivo.grupoPaiId);
+  }
+
+  subobjetivosDe(objetivoId: string): GrupoObjetivoResumo[] {
+    return this.objetivosResumo.filter(objetivo => objetivo.grupoPaiId === objetivoId);
+  }
+
+  subobjetivosAbertos(objetivoId: string): boolean {
+    return this.subobjetivosExpandidos.has(objetivoId);
+  }
+
+  alternarSubobjetivos(objetivoId: string): void {
+    const atualizados = new Set(this.subobjetivosExpandidos);
+    if (atualizados.has(objetivoId)) atualizados.delete(objetivoId);
+    else atualizados.add(objetivoId);
+    this.subobjetivosExpandidos = atualizados;
+  }
+
   formatarDataCivil(valor: string): string {
     const [ano, mes, dia] = valor.substring(0, 10).split('-');
     return `${dia}/${mes}/${ano}`;
@@ -400,6 +438,7 @@ export class InvestimentoPageComponent implements OnDestroy {
   }
 
   get filtrosAtivos(): boolean { return this.filtroGrupo !== 'todos' || this.filtroTipo !== 'todos'; }
+  get gruposAtivos(): GrupoObjetivoInvestimento[] { return this.grupos.filter(grupo => grupo.ativo !== false); }
 
   aplicarFiltros(): void { this.carregarInvestimentos(); }
 
@@ -414,6 +453,7 @@ export class InvestimentoPageComponent implements OnDestroy {
   objetivosAlterados(): void {
     this.carregarGrupos();
     this.carregarInvestimentos();
+    this.carregarResumoObjetivos();
   }
 
   rotuloTipoAtivo(tipo: TipoAtivoCodigo | null | undefined): string {
@@ -422,10 +462,17 @@ export class InvestimentoPageComponent implements OnDestroy {
 
   private carregarGrupos(): void {
     if (!this.investimentoGrupoService) return;
-    this.investimentoGrupoService.listar().pipe(takeUntil(this.destroy$)).subscribe({
+    this.investimentoGrupoService.listar(true).pipe(takeUntil(this.destroy$)).subscribe({
       next: grupos => this.grupos = grupos,
       error: () => this.grupos = []
     });
+  }
+
+  private carregarResumoObjetivos(): void {
+    if (!this.investimentoGrupoService) return;
+    const periodo = this.financialContext.period().date;
+    this.investimentoGrupoService.resumo(periodo.getMonth() + 1, periodo.getFullYear())
+      .pipe(takeUntil(this.destroy$)).subscribe({ next: itens => this.objetivosResumo = itens, error: () => this.objetivosResumo = [] });
   }
 
   private montarFiltro(): FiltroOrganizacaoInvestimentos {

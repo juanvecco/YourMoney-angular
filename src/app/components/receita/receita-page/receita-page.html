@@ -12,7 +12,7 @@
                 <article class="ym-card ym-kpi accent-success">
                     <i class="ym-kpi-icon bi bi-cash-stack"></i>
                     <h2 class="ym-kpi-label">Total de receitas</h2>
-                    <p class="ym-kpi-value">R$ {{ totalReceitas | number:'1.2-2' }}</p>
+                    <p class="ym-kpi-value">{{ totalReceitas | financialValue }}</p>
                     <p class="ym-kpi-meta">Referência: {{ mesAtual | date:'MMMM yyyy':'pt-BR' }}</p>
                 </article>
 
@@ -23,7 +23,7 @@
                             <p class="ym-subtitle">{{ mesAtual | date:'MMMM yyyy':'pt-BR' }}</p>
                         </div>
                         <span class="ym-chip ym-recurring-total" *ngIf="obterTotalSugestoesPendentes() > 0">
-                            R$ {{ obterTotalSugestoesPendentes() | number:'1.2-2' }}
+                            {{ obterTotalSugestoesPendentes() | financialValue }}
                         </span>
                     </div>
 
@@ -47,7 +47,7 @@
                                     </div>
                                 </div>
                                 <div class="ym-list-actions accent-success">
-                                    <span class="ym-amount">R$ {{ sugestao.valorPrevisto | number:'1.2-2' }}</span>
+                                    <span class="ym-amount">{{ sugestao.valorPrevisto | financialValue }}</span>
                                     <ng-container *ngIf="sugestao.status === 'Pendente'">
                                         <button class="ym-icon-button" type="button" (click)="editarSugestao(sugestao)"
                                             [disabled]="salvandoSugestaoRecorrente" title="Editar antes de confirmar"
@@ -76,7 +76,7 @@
                                 </label>
                                 <label class="ym-filter-field">
                                     <span>Valor</span>
-                                    <input type="number" min="0.01" step="0.01" [(ngModel)]="confirmacaoSugestao.valor"
+                                    <input type="number" financialValueInput min="0.01" step="0.01" [(ngModel)]="confirmacaoSugestao.valor"
                                         name="receitaSugestaoValor{{ sugestao.ocorrenciaId }}">
                                 </label>
                                 <label class="ym-filter-field">
@@ -139,7 +139,7 @@
                                 </div>
                             </div>
                             <div class="ym-list-actions accent-success">
-                                <span class="ym-amount">R$ {{ receita.valor | number:'1.2-2' }}</span>
+                                <span class="ym-amount">{{ receita.valor | financialValue }}</span>
                                 <button class="ym-icon-button" type="button" (click)="abrirModalEditar(receita)"
                                     aria-label="Editar receita">
                                     <i class="bi bi-pencil"></i>
@@ -186,7 +186,7 @@
                             </div>
                         </div>
                         <div class="ym-recurring-config-footer accent-success">
-                            <strong class="ym-amount">R$ {{ recorrencia.valorPrevisto | number:'1.2-2' }}</strong>
+                            <strong class="ym-amount">{{ recorrencia.valorPrevisto | financialValue }}</strong>
                             <div class="ym-list-actions">
                                 <button class="ym-icon-button" type="button" (click)="abrirModalRecorrencia(recorrencia)"
                                     title="Editar recorrência" aria-label="Editar receita recorrente">
@@ -233,15 +233,15 @@
                 aria-label="Totais da reserva de emergência">
                 <div class="ym-reserve-total-item">
                     <span>Renda mensal considerada</span>
-                    <strong>R$ {{ totalReservaMensal | number:'1.2-2' }}</strong>
+                    <strong>{{ totalReservaMensal | financialValue }}</strong>
                 </div>
                 <div class="ym-reserve-total-item">
                     <span>Total para 6 meses</span>
-                    <strong>R$ {{ totalReservaSeisMeses | number:'1.2-2' }}</strong>
+                    <strong>{{ totalReservaSeisMeses | financialValue }}</strong>
                 </div>
                 <div class="ym-reserve-total-item emphasis">
                     <span>Total para 12 meses</span>
-                    <strong>R$ {{ totalReservaDozeMeses | number:'1.2-2' }}</strong>
+                    <strong>{{ totalReservaDozeMeses | financialValue }}</strong>
                 </div>
             </div>
 
@@ -258,9 +258,9 @@
                         <strong>{{ projecao.descricao }}</strong>
                         <span>{{ projecao.contaDescricao }}<ng-container *ngIf="projecao.ehSalario"> · Salário</ng-container></span>
                     </div>
-                    <span role="cell">R$ {{ projecao.valorMensal | number:'1.2-2' }}</span>
-                    <strong role="cell">R$ {{ projecao.valorSeisMeses | number:'1.2-2' }}</strong>
-                    <strong role="cell">R$ {{ projecao.valorDozeMeses | number:'1.2-2' }}</strong>
+                    <span role="cell">{{ projecao.valorMensal | financialValue }}</span>
+                    <strong role="cell">{{ projecao.valorSeisMeses | financialValue }}</strong>
+                    <strong role="cell">{{ projecao.valorDozeMeses | financialValue }}</strong>
                 </div>
             </div>
         </section>
@@ -286,7 +286,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Valor (R$)</label>
-                            <input type="number" step="0.01" class="form-control" [(ngModel)]="novaReceita.valor"
+                            <input type="number" financialValueInput step="0.01" class="form-control" [(ngModel)]="novaReceita.valor"
                                 name="valor" required />
                         </div>
                         <div class="col-md-6">
@@ -314,14 +314,14 @@
                                 name="despesaVinculada" required>
                                 <option value="" disabled>Selecione a despesa</option>
                                 <option *ngFor="let despesa of despesasVinculaveis" [value]="despesa.id">
-                                    {{ despesa.descricao }} - R$ {{ obterValorPendenteDespesa(despesa) | number:'1.2-2' }}
+                                    {{ despesa.descricao }} - {{ obterValorPendenteDespesa(despesa) | financialValue }}
                                 </option>
                             </select>
                         </div>
                         <div class="col-12" *ngIf="novaReceita.natureza === 'Reembolso' && obterDespesaSelecionada() as despesaSelecionada">
                             <div class="ym-empty compact text-start receita-reembolso-detalhe">
                                 Reembolso para {{ despesaSelecionada.descricao }}. Pendente atual:
-                                R$ {{ obterValorPendenteDespesa(despesaSelecionada) | number:'1.2-2' }}.
+                                {{ obterValorPendenteDespesa(despesaSelecionada) | financialValue }}.
                             </div>
                         </div>
                     </div>
@@ -360,7 +360,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label" for="recorrenciaValor">Valor mensal (R$)</label>
-                            <input id="recorrenciaValor" type="number" min="0.01" step="0.01" class="form-control"
+                            <input id="recorrenciaValor" type="number" financialValueInput min="0.01" step="0.01" class="form-control"
                                 [(ngModel)]="novaRecorrencia.valorPrevisto" name="recorrenciaValor" required>
                         </div>
                         <div class="col-md-6">

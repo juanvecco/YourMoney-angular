@@ -4,4 +4,10 @@
   cursor: pointer;
 }
 .ym-theme-toggle:hover { color: var(--ym-text); background: var(--ym-surface-interactive); }
-@media (min-width: 981px) { .ym-theme-toggle span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
+@media (min-width: 1200px) { .ym-theme-toggle span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
+@media (min-width: 1200px) {
+  :host-context(.ym-topbar--app) .ym-theme-toggle { width: 100%; justify-content: flex-start; }
+  :host-context(.ym-topbar--app) .ym-theme-toggle span { position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: nowrap; }
+  :host-context(.ym-topbar--collapsed) .ym-theme-toggle { width: 44px; justify-content: center; padding-inline: 0; }
+  :host-context(.ym-topbar--collapsed) .ym-theme-toggle span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}

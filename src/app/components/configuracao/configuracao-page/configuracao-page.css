@@ -1,0 +1,20 @@
+:host { display: block; }
+.settings-tabs { display: flex; gap: .5rem; margin-bottom: 1rem; padding: .35rem; overflow-x: auto; border: 1px solid var(--ym-border); border-radius: var(--ym-radius); background: var(--ym-surface); }
+.settings-tabs button { min-height: 44px; display: inline-flex; align-items: center; gap: .5rem; padding: .6rem 1rem; border: 0; border-radius: var(--ym-radius-sm); color: var(--ym-muted); background: transparent; font-weight: 700; white-space: nowrap; }
+.settings-tabs button.active { color: var(--ym-inverse); background: var(--ym-primary); }
+.settings-feedback { min-height: 2rem; }
+.ym-section-header p, .account-form p, .connection-card p { margin: .25rem 0 0; color: var(--ym-muted); }
+.settings-grid { display: grid; grid-template-columns: minmax(16rem, .8fr) minmax(0, 1.2fr); gap: 1rem; align-items: start; }
+.account-form { display: grid; gap: .75rem; }
+.account-form h2 { margin: 0; }
+.account-form label { font-weight: 700; }
+.account-form input { min-height: 44px; padding: .65rem .75rem; border: 1px solid var(--ym-border); border-radius: var(--ym-radius-sm); }
+.settings-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.connection-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 1rem; }
+.connection-card > i { font-size: 2rem; color: var(--ym-primary); }
+.connection-card h2 { margin: 0; }
+@media (max-width: 760px) {
+  .settings-grid { grid-template-columns: 1fr; }
+  .connection-card { grid-template-columns: auto minmax(0, 1fr); }
+  .connection-card > a { grid-column: 1 / -1; }
+}

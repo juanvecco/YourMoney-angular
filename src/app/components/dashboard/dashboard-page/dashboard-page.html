@@ -5,11 +5,16 @@
             <app-month-picker pageHeaderActions [period]="mesAtual" (periodChange)="selecionarMes($event)"></app-month-picker>
         </app-page-header>
 
-        <section class="ym-kpi-grid">
+        @if (estadoResumo !== 'loadedWithData') {
+            <app-view-state [state]="estadoResumo" [message]="mensagemResumo"
+                [retryAvailable]="estadoResumo === 'loadError'" (retry)="carregarDadosMesAtual()"></app-view-state>
+        }
+
+        <section class="ym-kpi-grid" [hidden]="estadoResumo !== 'loadedWithData'">
             <article class="ym-card ym-kpi accent-success">
                 <i class="ym-kpi-icon bi bi-arrow-up-right"></i>
                 <h2 class="ym-kpi-label">Receitas</h2>
-                <p class="ym-kpi-value">R$ {{ resumo.receitas | number:'1.2-2' }}</p>
+                <p class="ym-kpi-value">{{ resumo.receitas | financialValue }}</p>
                 <p class="ym-kpi-meta">Entradas do período</p>
                 <button class="ym-button primary" type="button" (click)="adicionarReceita()">Adicionar</button>
             </article>
@@ -17,7 +22,7 @@
             <article class="ym-card ym-kpi accent-danger">
                 <i class="ym-kpi-icon bi bi-arrow-down-right"></i>
                 <h2 class="ym-kpi-label">Despesas</h2>
-                <p class="ym-kpi-value">R$ {{ resumo.despesas | number:'1.2-2' }}</p>
+                <p class="ym-kpi-value">{{ resumo.despesas | financialValue }}</p>
                 <p class="ym-kpi-meta">Saídas do período</p>
                 <button class="ym-button primary" type="button" (click)="adicionarDespesa()">Adicionar</button>
             </article>
@@ -25,7 +30,7 @@
             <article class="ym-card ym-kpi accent-investment">
                 <i class="ym-kpi-icon bi bi-graph-up-arrow"></i>
                 <h2 class="ym-kpi-label">Investimentos</h2>
-                <p class="ym-kpi-value">R$ {{ resumo.investimentos | number:'1.2-2' }}</p>
+                <p class="ym-kpi-value">{{ resumo.investimentos | financialValue }}</p>
                 <p class="ym-kpi-meta">Aplicações do mês</p>
                 <button class="ym-button primary" type="button" (click)="verCarteira()">Ver carteira</button>
             </article>
@@ -33,13 +38,32 @@
             <article class="ym-card ym-kpi accent-primary">
                 <i class="ym-kpi-icon bi bi-wallet2"></i>
                 <h2 class="ym-kpi-label">Saldo do mês</h2>
-                <p class="ym-kpi-value" [class.ym-negative]="resumo.sobrou < 0">R$ {{ resumo.sobrou | number:'1.2-2' }}</p>
+                <p class="ym-kpi-value" [class.ym-negative]="resumo.sobrou < 0">{{ resumo.sobrou | financialValue }}</p>
                 <p class="ym-kpi-meta">Receitas menos despesas</p>
-                <button class="ym-button primary" type="button" (click)="investir()">Investir saldo</button>
+                <button class="ym-button primary" type="button" (click)="investir()" [disabled]="resumo.sobrou <= 0">Investir saldo</button>
             </article>
         </section>
 
         <section class="ym-grid">
+            <article class="ym-card ym-card-pad ym-chart-card ym-history-card">
+                <div class="ym-section-header">
+                    <div>
+                        <h2 class="ym-section-title">Histórico dos últimos seis meses</h2>
+                        <p class="ym-section-subtitle">Receitas, despesas e investimentos por mês</p>
+                    </div>
+                </div>
+
+                <app-view-state *ngIf="estadoHistorico === 'loading'" state="loading" message="Carregando histórico financeiro..."></app-view-state>
+                <app-view-state *ngIf="estadoHistorico === 'emptyPeriod'" state="emptyPeriod" [message]="mensagemHistorico"></app-view-state>
+                <app-view-state *ngIf="estadoHistorico === 'loadError'" state="loadError" [message]="mensagemHistorico"
+                    [retryAvailable]="true" (retry)="carregarDadosMesAtual()"></app-view-state>
+                <div class="ym-history-chart-wrap" [hidden]="estadoHistorico !== 'loadedWithData'">
+                    <canvas #graficoHistoricoCanvas
+                        aria-label="Gráfico de barras verticais comparando receitas, despesas e investimentos nos últimos seis meses"
+                        role="img"></canvas>
+                </div>
+            </article>
+
             <article class="ym-card ym-card-pad ym-chart-card">
                 <div class="ym-section-header">
                     <div>
@@ -47,7 +71,7 @@
                         <p class="ym-section-subtitle">{{ resumoGrafico.periodoReferencia.rotulo }}</p>
                     </div>
                     <span class="ym-chart-total" *ngIf="resumoGrafico.estado === 'pronto'">
-                        {{ formatarMoeda(resumoGrafico.total) }}
+                        {{ formatarMoeda(resumoGrafico.total) | financialValue }}
                     </span>
                 </div>
 
@@ -78,7 +102,7 @@
                         <div *ngFor="let item of resumoGrafico.items" class="ym-chart-legend-row">
                             <span class="ym-chart-legend-color" [style.background]="item.cor"></span>
                             <span class="ym-chart-legend-label">{{ item.rotulo }}</span>
-                            <strong>{{ formatarMoeda(item.valor) }}</strong>
+                            <strong>{{ formatarMoeda(item.valor) | financialValue }}</strong>
                             <small>{{ item.percentual | number:'1.0-1' }}%</small>
                         </div>
                     </div>
@@ -96,7 +120,7 @@
 
                 <div *ngFor="let item of despesasPorTipo" class="ym-metric-row accent-danger">
                     <span>{{ item.descricao }}</span>
-                    <strong class="ym-amount">R$ {{ item.valor | number:'1.2-2' }}</strong>
+                    <strong class="ym-amount">{{ item.valor | financialValue }}</strong>
                 </div>
             </article>
 
@@ -111,7 +135,7 @@
 
                 <div *ngFor="let item of despesasPorNatureza" class="ym-metric-row accent-warning">
                     <span>{{ item.descricao }}</span>
-                    <strong class="ym-amount">R$ {{ item.valor | number:'1.2-2' }}</strong>
+                    <strong class="ym-amount">{{ item.valor | financialValue }}</strong>
                 </div>
             </article>
         </section>

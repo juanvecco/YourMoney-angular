@@ -18,6 +18,8 @@ import { FinancialNavigationContextService } from '../../../services/financial-n
 import { MonthPickerComponent } from '../../shared/month-picker/month-picker';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { ViewStateComponent } from '../../shared/view-state/view-state';
+import { FinancialValuePipe } from '../../../pipes/financial-value.pipe';
+import { FinancialValueInputDirective } from '../../../directives/financial-value-input.directive';
 
 type DespesaLote = {
     descricao: string;
@@ -55,7 +57,7 @@ type SugestaoRecorrenteForm = {
 @Component({
     selector: 'app-despesas-page',
     standalone: true,
-    imports: [CommonModule, FormsModule, MonthPickerComponent, PageHeaderComponent, ViewStateComponent],
+    imports: [CommonModule, FormsModule, FinancialValuePipe, FinancialValueInputDirective, MonthPickerComponent, PageHeaderComponent, ViewStateComponent],
     templateUrl: './despesas-page.html',
     styleUrls: ['./despesas-page.scss']
 })
@@ -185,6 +187,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
                     this.naturezasFiltroDespesa = this.filtrosTransacoes.idTipoDespesa
                         ? categorias.filter(c => c.categoriaPaiId === this.filtrosTransacoes.idTipoDespesa)
                         : [];
+                    if (!this.editando) this.aplicarCategoriaPadraoDespesa();
                 },
                 error: (erro) => console.error('Erro ao carregar categorias', erro)
             });
@@ -278,6 +281,36 @@ export class DespesasComponent implements OnInit, OnDestroy {
                     this.carregandoSugestoesRecorrentes = false;
                 }
             });
+    }
+
+    podeAdicionarComoDespesa(recorrencia: DespesaRecorrenteResponse): boolean {
+        return recorrencia.ativa &&
+            !this.carregandoSugestoesRecorrentes &&
+            !this.salvandoSugestaoRecorrente &&
+            this.obterSugestaoRecorrencia(recorrencia.id)?.status === 'Pendente';
+    }
+
+    obterTituloAdicionarDespesa(recorrencia: DespesaRecorrenteResponse): string {
+        if (this.carregandoSugestoesRecorrentes) return 'Carregando sugestões recorrentes';
+        if (this.salvandoSugestaoRecorrente) return 'Adicionando despesa recorrente';
+        if (!recorrencia.ativa) return 'Ative a recorrência para adicionar uma despesa';
+
+        const sugestao = this.obterSugestaoRecorrencia(recorrencia.id);
+        if (sugestao?.status === 'Pendente') return `Adicionar despesa: ${recorrencia.descricao}`;
+        if (sugestao?.status === 'Confirmada') return 'Despesa deste mês já adicionada';
+        if (sugestao?.status === 'Ignorada') return 'Sugestão deste mês foi ignorada';
+        return 'Nenhuma sugestão pendente para esta recorrência neste mês';
+    }
+
+    adicionarRecorrenciaComoDespesa(recorrencia: DespesaRecorrenteResponse) {
+        if (!this.podeAdicionarComoDespesa(recorrencia)) return;
+
+        const sugestao = this.obterSugestaoRecorrencia(recorrencia.id);
+        if (sugestao) this.confirmarSugestao(sugestao);
+    }
+
+    private obterSugestaoRecorrencia(recorrenciaId: string): SugestaoDespesaRecorrenteResponse | undefined {
+        return this.sugestoesRecorrentes.find(sugestao => sugestao.despesaRecorrenteId === recorrenciaId);
     }
 
     private carregarDespesasPorReferenciaLegada(mes: number, ano: number, revision: number) {
@@ -453,6 +486,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.editando = false;
         this.limparLote();
         this.resetForm();
+        this.aplicarCategoriaPadraoDespesa();
         this.resetParcelamento();
         this.abrirModal();
     }
@@ -489,6 +523,25 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.naturezasDespesa = [];
         this.categoriasEspecificas = [];
         this.resetParcelamento();
+    }
+
+    private aplicarCategoriaPadraoDespesa() {
+        if (this.editando || this.novaDespesa.idTipoDespesa || this.tiposDespesa.length === 0) return;
+
+        const porDescricao = (itens: Categoria[], descricao: string) =>
+            itens.find(item => item.descricao.localeCompare(descricao, 'pt-BR', { sensitivity: 'base' }) === 0);
+        const todas = this.despesaService.todasCategorias;
+        const tipo = porDescricao(this.tiposDespesa, 'Essenciais') ?? this.tiposDespesa[0];
+        this.novaDespesa.idTipoDespesa = tipo.id;
+        this.naturezasDespesa = todas.filter(categoria => categoria.categoriaPaiId === tipo.id);
+
+        const natureza = porDescricao(this.naturezasDespesa, 'Alimentação') ?? this.naturezasDespesa[0];
+        if (!natureza) return;
+        this.novaDespesa.idNaturezaDespesa = natureza.id;
+        this.categoriasEspecificas = todas.filter(categoria => categoria.categoriaPaiId === natureza.id);
+
+        const categoriaPadrao = porDescricao(this.categoriasEspecificas, 'Mercado') ?? this.categoriasEspecificas[0];
+        if (categoriaPadrao) this.novaDespesa.idCategoriaEspecifica = categoriaPadrao.id;
     }
 
     private resetParcelamento() {
@@ -1504,4 +1557,5 @@ export class DespesasComponent implements OnInit, OnDestroy {
     private atualizarMensagemCarregamento(): void {
         this.mensagemCarregamento = financialStateMessage(this.estadoCarregamento, this.mesAtual, 'despesas');
     }
+
 }

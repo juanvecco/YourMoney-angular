@@ -1,0 +1,72 @@
+app-login-page {
+
+.login-container {
+    grid-template-columns: minmax(0, 1.05fr) minmax(430px, .95fr);
+    align-items: stretch;
+    background: var(--ym-bg);
+}
+
+.branding-section {
+    position: relative;
+    align-items: flex-start;
+    overflow: hidden;
+    padding: clamp(32px, 6vw, 88px);
+    background:
+        radial-gradient(ellipse 520px 440px at 8% 18%, color-mix(in srgb, var(--ym-primary) 16%, transparent), transparent 70%),
+        linear-gradient(145deg, var(--ym-surface), var(--ym-bg));
+}
+
+.branding-section::after {
+    content: "";
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    right: -270px;
+    bottom: -310px;
+    border: 1px solid color-mix(in srgb, var(--ym-primary) 16%, transparent);
+    border-radius: 50%;
+    box-shadow: 0 0 0 44px color-mix(in srgb, var(--ym-primary) 3%, transparent), 0 0 0 88px color-mix(in srgb, var(--ym-primary) 2%, transparent);
+    pointer-events: none;
+}
+
+.logo-container { display: flex; align-items: center; gap: 14px; text-align: left; }
+.logo-icon { width: 54px; height: 54px; margin: 0; border-radius: 15px; color: var(--ym-inverse); background: linear-gradient(140deg, var(--ym-primary), #8adcf5); box-shadow: 0 12px 28px color-mix(in srgb, var(--ym-primary) 24%, transparent); }
+.brand-name { font-family: 'Space Grotesk', sans-serif; font-size: clamp(30px, 3vw, 42px); letter-spacing: -.05em; }
+.feature-list { position: relative; z-index: 1; gap: 10px; margin-top: auto; }
+.feature-item { padding: 15px; border-radius: 13px; background: color-mix(in srgb, var(--ym-surface) 84%, transparent); backdrop-filter: blur(12px); }
+.feature-icon { flex: none; color: var(--ym-primary); background: color-mix(in srgb, var(--ym-primary) 12%, transparent); }
+.feature-text { color: var(--ym-muted); }
+
+.form-section { padding: clamp(28px, 5vw, 72px); background: var(--ym-bg); }
+.form-container { width: min(460px, 100%); padding: clamp(25px, 4vw, 42px); border: 1px solid var(--ym-border); border-radius: var(--ym-radius-lg); background: linear-gradient(145deg, color-mix(in srgb, var(--ym-surface) 96%, var(--ym-primary)), var(--ym-surface)); box-shadow: var(--ym-shadow-lg); }
+.form-header { margin-bottom: 32px; text-align: left; }
+.form-title { font-family: 'Space Grotesk', sans-serif; font-size: clamp(26px, 3vw, 34px); letter-spacing: -.04em; }
+.form-subtitle { color: var(--ym-muted); }
+.form-group { margin-bottom: 20px; }
+.form-label { color: var(--ym-muted); font-size: .9rem; font-weight: 600; }
+.form-label i { color: var(--ym-primary); }
+    .form-control { min-height: 50px; border-radius: 10px; }
+    .form-control::placeholder { color: var(--ym-placeholder); opacity: 1; }
+.form-control:focus { border-color: var(--ym-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ym-primary) 16%, transparent); }
+.toggle-password { color: var(--ym-subtle); }
+.btn-login, .btn-register { min-height: 50px; border-radius: 10px; font-weight: 700; transition: transform var(--ym-transition), border-color var(--ym-transition), box-shadow var(--ym-transition); }
+.btn-login { color: #fff; background: var(--ym-gradient-primary); background-size: 180% 180%; box-shadow: 0 10px 24px color-mix(in srgb, var(--ym-primary) 17%, transparent); }
+.btn-login:hover { transform: translateY(-2px); background-position: 100% 50%; box-shadow: 0 15px 30px color-mix(in srgb, var(--ym-primary) 24%, transparent); }
+.form-link { color: var(--ym-primary); }
+.form-link:hover { color: var(--ym-primary-strong); }
+.btn-register { border-color: color-mix(in srgb, var(--ym-primary) 45%, var(--ym-border)); color: var(--ym-primary); background: transparent; }
+.btn-register:hover { transform: translateY(-1px); border-color: var(--ym-primary); background: color-mix(in srgb, var(--ym-primary) 7%, transparent); }
+.alert-error { color: var(--ym-danger); border-color: color-mix(in srgb, var(--ym-danger) 34%, transparent); background: color-mix(in srgb, var(--ym-danger) 9%, transparent); }
+
+@media (max-width: 920px) {
+    .login-container { grid-template-columns: 1fr; }
+    .branding-section { display: none; }
+    .form-section { min-height: calc(100vh - 5rem); padding: 28px 20px; }
+    .form-container { width: min(460px, 100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn-login, .btn-register { transition: none; }
+}
+
+}

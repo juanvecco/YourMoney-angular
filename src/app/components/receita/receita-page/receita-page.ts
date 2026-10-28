@@ -23,6 +23,8 @@ import { FinancialNavigationContextService } from '../../../services/financial-n
 import { MonthPickerComponent } from '../../shared/month-picker/month-picker';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { ViewStateComponent } from '../../shared/view-state/view-state';
+import { FinancialValuePipe } from '../../../pipes/financial-value.pipe';
+import { FinancialValueInputDirective } from '../../../directives/financial-value-input.directive';
 
 type ReceitaRecorrenteForm = {
     descricao: string;
@@ -47,7 +49,7 @@ type ConfirmacaoSugestaoReceitaForm = {
 @Component({
     selector: 'app-receita-page',
     standalone: true,
-    imports: [CommonModule, FormsModule, MonthPickerComponent, PageHeaderComponent, ViewStateComponent],
+    imports: [CommonModule, FormsModule, FinancialValuePipe, FinancialValueInputDirective, MonthPickerComponent, PageHeaderComponent, ViewStateComponent],
     templateUrl: './receita-page.html',
     styleUrls: ['./receita-page.scss']
 })
@@ -782,4 +784,5 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     private atualizarMensagemCarregamento(): void {
         this.mensagemCarregamento = financialStateMessage(this.estadoCarregamento, this.mesAtual, 'receitas');
     }
+
 }

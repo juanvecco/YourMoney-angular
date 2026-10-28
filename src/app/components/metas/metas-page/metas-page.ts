@@ -19,13 +19,20 @@ import { MonthPickerComponent } from '../../shared/month-picker/month-picker';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { ViewStateComponent } from '../../shared/view-state/view-state';
 import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
+import { GrupoObjetivoInvestimento } from '../../../models/investimento-grupo.model';
+import { Investimento } from '../../../models/investimento.model';
+import { InvestimentoGrupoService } from '../../../services/investimento-grupo';
+import { InvestimentoService } from '../../../services/investimento';
+import { ConfirmarAporteDialogComponent } from '../../investimento/confirmar-aporte-dialog/confirmar-aporte-dialog';
+import { FinancialValuePipe } from '../../../pipes/financial-value.pipe';
+import { FinancialValueInputDirective } from '../../../directives/financial-value-input.directive';
 
 type MetasViewState = 'loading' | 'loaded' | 'empty' | 'error';
 
 @Component({
   selector: 'app-metas-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, MonthPickerComponent, PageHeaderComponent, ViewStateComponent],
+  imports: [CommonModule, FormsModule, FinancialValuePipe, FinancialValueInputDirective, MonthPickerComponent, PageHeaderComponent, ViewStateComponent, ConfirmarAporteDialogComponent],
   templateUrl: './metas-page.html',
   styleUrls: ['./metas-page.scss']
 })
@@ -35,6 +42,7 @@ export class MetasPageComponent implements OnInit, OnDestroy {
   private definicaoOriginal: Pick<MetaMensal, 'tipoDefinicao' | 'percentualReceita' | 'valorMeta'> | null = null;
 
   @ViewChild('calendarioInput') calendarioInput!: ElementRef<HTMLInputElement>;
+  @ViewChild(ConfirmarAporteDialogComponent) aporteDialog?: ConfirmarAporteDialogComponent;
 
   resumo: MetasMensaisResumo | null = null;
   metas: MetaMensal[] = [];
@@ -42,6 +50,9 @@ export class MetasPageComponent implements OnInit, OnDestroy {
   mensagemErro = '';
   mesAtual = new Date();
   salvando = false;
+  grupos: GrupoObjetivoInvestimento[] = [];
+  investimentos: Investimento[] = [];
+  novoObjetivo = { nome: '', valorAlvo: null as number | null, dataAlvo: '' };
   editando = false;
   formulario: {
     id: string;
@@ -49,25 +60,30 @@ export class MetasPageComponent implements OnInit, OnDestroy {
     tipoDefinicao: TipoDefinicaoMeta;
     percentualReceita: number | null;
     valorMeta: number | null;
+    grupoObjetivoInvestimentoId?: string | null;
   } = {
     id: '',
     nome: '',
     tipoDefinicao: 'Percentual',
     percentualReceita: null,
-    valorMeta: null
+    valorMeta: null,
+    grupoObjetivoInvestimentoId: null
   };
 
   constructor(
     private metaMensalService: MetaMensalService,
     private authService: AuthService,
     private router: Router,
-    private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService()
+    private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService(),
+    private grupoService: InvestimentoGrupoService = undefined!,
+    private investimentoService: InvestimentoService = undefined!
   ) {
     this.mesAtual = this.financialContext.period().date;
   }
 
   ngOnInit(): void {
     this.carregarResumo();
+    this.carregarApoio();
   }
 
   ngOnDestroy(): void {
@@ -144,6 +160,7 @@ export class MetasPageComponent implements OnInit, OnDestroy {
       tipoDefinicao: meta.tipoDefinicao,
       percentualReceita: meta.tipoDefinicao === 'Percentual' ? meta.percentualReceita : null,
       valorMeta: meta.tipoDefinicao === 'Valor' ? meta.valorMeta : null
+      ,grupoObjetivoInvestimentoId: meta.grupoObjetivoInvestimentoId ?? null
     };
     this.definicaoOriginal = {
       tipoDefinicao: meta.tipoDefinicao,
@@ -273,14 +290,18 @@ export class MetasPageComponent implements OnInit, OnDestroy {
       nome: '',
       tipoDefinicao: 'Percentual',
       percentualReceita: null,
-      valorMeta: null
+      valorMeta: null,
+      grupoObjetivoInvestimentoId: null
     };
   }
 
   private criarRequestCadastro(): CriarMetaMensalRequest {
     const base = {
       nome: this.formulario.nome.trim(),
-      mesReferencia: this.converterMesReferenciaParaApi(this.mesAtual)
+      mesReferencia: this.converterMesReferenciaParaApi(this.mesAtual),
+      ...(this.formulario.grupoObjetivoInvestimentoId
+        ? { grupoObjetivoInvestimentoId: this.formulario.grupoObjetivoInvestimentoId }
+        : {})
     };
 
     return this.formulario.tipoDefinicao === 'Valor'
@@ -291,7 +312,10 @@ export class MetasPageComponent implements OnInit, OnDestroy {
   private criarRequestAtualizacao(): AtualizarMetaMensalRequest {
     const base = {
       id: this.formulario.id,
-      nome: this.formulario.nome.trim()
+      nome: this.formulario.nome.trim(),
+      ...(this.formulario.grupoObjetivoInvestimentoId
+        ? { grupoObjetivoInvestimentoId: this.formulario.grupoObjetivoInvestimentoId }
+        : {})
     };
 
     return this.formulario.tipoDefinicao === 'Valor'
@@ -324,4 +348,25 @@ export class MetasPageComponent implements OnInit, OnDestroy {
     const mes = String(data.getMonth() + 1).padStart(2, '0');
     return `${ano}-${mes}-01`;
   }
+
+  criarObjetivo(): void {
+    const nome = this.novoObjetivo.nome.trim();
+    if (!nome || !this.grupoService) return;
+    this.grupoService.criar({ nome, valorAlvo: this.novoObjetivo.valorAlvo,
+      dataAlvo: this.novoObjetivo.dataAlvo || null }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: grupo => { this.grupos = [...this.grupos, grupo].sort((a, b) => a.nome.localeCompare(b.nome));
+        this.formulario.grupoObjetivoInvestimentoId = grupo.id; this.novoObjetivo = { nome: '', valorAlvo: null, dataAlvo: '' }; },
+      error: erro => this.mensagemErro = this.obterMensagemErro(erro)
+    });
+  }
+
+  confirmarAporte(meta: MetaMensal): void { this.aporteDialog?.abrir(meta); }
+
+  private carregarApoio(): void {
+    if (this.grupoService)
+      this.grupoService.listar().pipe(takeUntil(this.destroy$)).subscribe({ next: grupos => this.grupos = grupos });
+    if (this.investimentoService)
+      this.investimentoService.obterConsolidado().pipe(takeUntil(this.destroy$)).subscribe({ next: carteira => this.investimentos = carteira.itens });
+  }
+
 }

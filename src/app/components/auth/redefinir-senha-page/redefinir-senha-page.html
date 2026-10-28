@@ -1,0 +1,27 @@
+<main class="auth-flow">
+  <section class="auth-card" aria-labelledby="resetTitle">
+    <a class="auth-back" routerLink="/login"><i class="bi bi-arrow-left" aria-hidden="true"></i>Voltar ao login</a>
+    <div class="auth-icon" aria-hidden="true"><i class="bi bi-shield-lock"></i></div>
+    <h1 id="resetTitle">Definir nova senha</h1>
+    @if (concluido) {
+      <p class="auth-success" role="status">Senha redefinida com sucesso. Você já pode entrar com a nova senha.</p>
+      <a class="ym-button primary" routerLink="/login">Ir para o login</a>
+    } @else {
+      <p>Escolha uma senha nova para concluir a recuperação da sua conta.</p>
+      <form [formGroup]="form" (ngSubmit)="redefinir()">
+        <label for="resetEmail">E-mail</label>
+        <input id="resetEmail" type="email" formControlName="email" autocomplete="email">
+        <input type="hidden" formControlName="token">
+        <label for="resetPassword">Nova senha</label>
+        <input id="resetPassword" type="password" formControlName="senha" autocomplete="new-password" aria-describedby="passwordHelp">
+        <small id="passwordHelp">Use pelo menos 6 caracteres e os requisitos indicados no cadastro.</small>
+        <label for="resetConfirmation">Confirmar nova senha</label>
+        <input id="resetConfirmation" type="password" formControlName="senhaConfirmacao" autocomplete="new-password">
+        @if (form.touched && form.hasError('passwordsMismatch')) { <small>As senhas não conferem.</small> }
+        @if (!form.value.token) { <p class="auth-error" role="alert">Este link não possui um token válido. Solicite uma nova recuperação.</p> }
+        <button class="ym-button primary" type="submit" [disabled]="loading || !form.value.token">{{ loading ? 'Redefinindo...' : 'Redefinir senha' }}</button>
+      </form>
+      @if (erro) { <p class="auth-error" role="alert">{{ erro }}</p><a routerLink="/recuperar-senha">Solicitar novo link</a> }
+    }
+  </section>
+</main>

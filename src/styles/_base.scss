@@ -5,10 +5,15 @@ body {
   margin: 0;
   overflow-x: hidden;
   color: var(--ym-text);
-  background: radial-gradient(ellipse 850px 480px at 10% -5%, var(--ym-bg-accent), transparent 68%), var(--ym-bg);
-  font-family: Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background:
+    radial-gradient(ellipse 760px 420px at 12% -8%, var(--ym-bg-accent), transparent 70%),
+    var(--ym-bg);
+  font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+h1, h2, h3, h4, h5, h6 { font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif; }
 button, input, select, textarea { font: inherit; }
 input, select, textarea { color: var(--ym-text); background: var(--ym-input); border-color: var(--ym-border); }
 ::placeholder { color: var(--ym-placeholder); opacity: 1; }

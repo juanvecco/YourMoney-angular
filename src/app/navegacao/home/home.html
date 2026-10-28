@@ -1,80 +1,83 @@
-<!-- Hero Section -->
-<section class="ym-home-hero text-center">
+<section class="ym-home-hero">
+    <div class="ym-home-container ym-home-hero__grid">
+        <div class="ym-home-copy">
+            <p class="ym-home-eyebrow"><span aria-hidden="true"></span>Seu financeiro, com direção</p>
+            <h1 class="ym-home-title">Controle total<br />do seu dinheiro.</h1>
+            <p class="ym-home-lead">Acompanhe receitas, despesas e objetivos com uma visão clara do que acontece com cada real.</p>
+            <div class="ym-home-actions">
+                <button type="button" class="btn btn-lg ym-home-action" (click)="goToLogin()">
+                    Acessar meu painel <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+                </button>
+                <span class="ym-home-note"><i class="bi bi-shield-check" aria-hidden="true"></i> Gratuito para começar</span>
+            </div>
+            <div class="ym-home-topics" aria-label="Recursos do YourMoney">
+                <span><i class="bi bi-journal-text" aria-hidden="true"></i> Receitas e despesas</span>
+                <span><i class="bi bi-graph-up-arrow" aria-hidden="true"></i> Investimentos</span>
+                <span><i class="bi bi-bullseye" aria-hidden="true"></i> Metas</span>
+            </div>
+        </div>
+
+        <div class="ym-home-visual" aria-hidden="true">
+            <div class="ym-home-orbit ym-home-orbit--outer"></div>
+            <div class="ym-home-orbit ym-home-orbit--inner"></div>
+            <div class="ym-home-preview">
+                <div class="ym-home-preview__top">
+                    <div class="ym-home-preview__brand"><span><i class="bi bi-wallet2"></i></span>YourMoney</div>
+                    <span class="ym-home-preview__period">VISÃO GERAL</span>
+                </div>
+                <div class="ym-home-preview__balance">
+                    <small>RESUMO FINANCEIRO</small>
+                    <strong>Seu mês, em equilíbrio.</strong>
+                    <div class="ym-home-preview__trend"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                </div>
+                <div class="ym-home-preview__cards">
+                    <div><i class="bi bi-arrow-down-left-circle"></i><span>Receitas</span><b></b></div>
+                    <div><i class="bi bi-arrow-up-right-circle"></i><span>Despesas</span><b></b></div>
+                    <div><i class="bi bi-graph-up-arrow"></i><span>Investimentos</span><b></b></div>
+                </div>
+                <div class="ym-home-preview__bottom"><span>Clareza para decidir melhor</span><i class="bi bi-stars"></i></div>
+            </div>
+            <div class="ym-home-float ym-home-float--top"><i class="bi bi-check2-circle"></i> Tudo em um só lugar</div>
+            <div class="ym-home-float ym-home-float--bottom"><i class="bi bi-shield-lock"></i> Seus dados protegidos</div>
+        </div>
+    </div>
+</section>
+
+<section class="ym-home-features">
     <div class="ym-home-container">
-        <h1 class="fw-bold mb-3 ym-home-title">
-            Controle total<br />do seu dinheiro.
-        </h1>
-
-        <p class="mx-auto mb-5 ym-home-lead">
-            Acompanhe para onde cada real vai.
-        </p>
-
-        <button type="button" class="btn btn-lg px-5 mb-2 ym-home-action" (click)="goToLogin()">
-            Acessar meu painel
-        </button>
-
-        <div class="mt-2 ym-home-note">
-            Gratuito para começar
+        <div class="ym-home-section-heading">
+            <p class="ym-home-eyebrow"><span aria-hidden="true"></span>Mais clareza no dia a dia</p>
+            <h2>Uma visão melhor das suas finanças.</h2>
         </div>
-    </div>
-</section>
-<!-- Features Section -->
-<section class="py-5 ym-home-features">
-    <div class="container ym-home-container">
-        <div class="row g-4">
-            <!-- Feature 1 -->
-            <div class="col-md-4">
-                <div class="text-center p-4 ym-home-card">
-                    <div class="mb-3 ym-home-icon" aria-hidden="true">📊</div>
-                    <h2 class="fw-semibold mb-3 ym-home-card-title">
-                        Clareza total
-                    </h2>
-                    <p>
-                        Veja exatamente para onde seu dinheiro vai.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Feature 2 -->
-            <div class="col-md-4">
-                <div class="text-center p-4 ym-home-card">
-                    <div class="mb-3 ym-home-icon" aria-hidden="true">🎯</div>
-                    <h2 class="fw-semibold mb-3 ym-home-card-title">
-                        Decida com dados reais
-                    </h2>
-                    <p>
-                        Planeje com dados, não com suposições.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Feature 3 -->
-            <div class="col-md-4">
-                <div class="text-center p-4 ym-home-card">
-                    <div class="mb-3 ym-home-icon" aria-hidden="true">✨</div>
-                    <h2 class="fw-semibold mb-3 ym-home-card-title">
-                        Evite surpresas no fim do mês
-                    </h2>
-                    <p>
-                        Saiba exatamente quanto pode gastar.
-                    </p>
-                </div>
-            </div>
+        <div class="ym-home-feature-grid">
+            <article class="ym-home-card">
+                <div class="ym-home-icon"><i class="bi bi-bar-chart-line" aria-hidden="true"></i></div>
+                <h3 class="ym-home-card-title">Clareza total</h3>
+                <p>Veja para onde seu dinheiro vai e acompanhe o mês com mais tranquilidade.</p>
+            </article>
+            <article class="ym-home-card">
+                <div class="ym-home-icon"><i class="bi bi-compass" aria-hidden="true"></i></div>
+                <h3 class="ym-home-card-title">Decida com confiança</h3>
+                <p>Organize entradas, saídas e investimentos em um só painel fácil de entender.</p>
+            </article>
+            <article class="ym-home-card">
+                <div class="ym-home-icon"><i class="bi bi-bullseye" aria-hidden="true"></i></div>
+                <h3 class="ym-home-card-title">Chegue mais longe</h3>
+                <p>Defina objetivos e acompanhe seu progresso ao longo do tempo.</p>
+            </article>
         </div>
     </div>
 </section>
 
-<!-- CTA Section -->
-<section class="text-center ym-home-cta">
-    <div class="container ym-home-container ym-home-container--narrow">
-        <h2 class="fw-bold mb-4 ym-home-cta-title">
-            Comece hoje mesmo.
-        </h2>
-        <p class="mb-4 ym-home-lead">
-            Simples, rápido e totalmente gratuito.
-        </p>
-        <button type="button" class="btn btn-lg px-5 ym-home-action" (click)="goToLogin()">
-            Acessar meu painel
+<section class="ym-home-cta">
+    <div class="ym-home-container ym-home-container--narrow">
+        <div>
+            <p class="ym-home-eyebrow"><span aria-hidden="true"></span>Seu próximo passo começa aqui</p>
+            <h2 class="ym-home-cta-title">Cuide do seu dinheiro com mais clareza.</h2>
+            <p class="ym-home-lead">Comece hoje. É simples, rápido e gratuito.</p>
+        </div>
+        <button type="button" class="btn btn-lg ym-home-action" (click)="goToLogin()">
+            Acessar meu painel <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
         </button>
     </div>
 </section>

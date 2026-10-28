@@ -2,6 +2,19 @@
     grid-column: 1 / -1;
 }
 
+.ym-history-chart-wrap {
+    height: 320px;
+    min-width: 0;
+    position: relative;
+    width: 100%;
+}
+
+.ym-history-chart-wrap canvas {
+    display: block;
+    height: 100% !important;
+    width: 100% !important;
+}
+
 .ym-section-subtitle {
     color: var(--ym-muted);
     font-size: 0.875rem;
@@ -119,6 +132,10 @@
 }
 
 @media (max-width: 760px) {
+    .ym-history-chart-wrap {
+        height: 260px;
+    }
+
     .ym-chart-content {
         grid-template-columns: 1fr;
         min-height: 0;

@@ -10,32 +10,32 @@
   <section class="metas-summary" *ngIf="resumo">
     <article class="metas-kpi">
       <span>Receita elegível para metas</span>
-      <strong>{{ formatarMoeda(resumo.receitaTotal) }}</strong>
+      <strong>{{ formatarMoeda(resumo.receitaTotal) | financialValue }}</strong>
       <small *ngIf="resumo.receitaExcluidaMetas > 0">
-        Bruta {{ formatarMoeda(resumo.receitaTotalBruta) }} · fora das metas {{ formatarMoeda(resumo.receitaExcluidaMetas) }}
+        Bruta {{ formatarMoeda(resumo.receitaTotalBruta) | financialValue }} · fora das metas {{ formatarMoeda(resumo.receitaExcluidaMetas) | financialValue }}
       </small>
     </article>
     <article class="metas-kpi">
       <span>Reservado em metas</span>
-      <strong>{{ formatarMoeda(resumo.valorTotalReservado) }}</strong>
+      <strong>{{ formatarMoeda(resumo.valorTotalReservado) | financialValue }}</strong>
       <small>{{ formatarPercentual(resumo.percentualTotalComprometido) }} comprometido</small>
     </article>
     <article class="metas-kpi">
       <span>Restante antes das despesas</span>
-      <strong>{{ formatarMoeda(resumo.valorRestanteAntesDespesas) }}</strong>
+      <strong>{{ formatarMoeda(resumo.valorRestanteAntesDespesas) | financialValue }}</strong>
       <small>{{ formatarPercentual(resumo.percentualRestante) }} restante</small>
     </article>
     <article class="metas-kpi">
       <span>Despesas do mês</span>
-      <strong>{{ formatarMoeda(resumo.despesaTotal) }}</strong>
+      <strong>{{ formatarMoeda(resumo.despesaTotal) | financialValue }}</strong>
       <small *ngIf="resumo.despesaTotalReembolsada > 0">
-        Bruta {{ formatarMoeda(resumo.despesaTotalBruta) }} · reembolsada {{ formatarMoeda(resumo.despesaTotalReembolsada) }}
+        Bruta {{ formatarMoeda(resumo.despesaTotalBruta) | financialValue }} · reembolsada {{ formatarMoeda(resumo.despesaTotalReembolsada) | financialValue }}
       </small>
     </article>
     <article class="metas-kpi metas-balance" [class.negative]="resumo.status === 'faltando'">
       <span>{{ obterStatusTexto(resumo.status) }}</span>
-      <strong>{{ formatarMoeda(resumo.saldoFinal) }}</strong>
-      <small *ngIf="resumo.valorFaltante > 0">Faltam {{ formatarMoeda(resumo.valorFaltante) }}</small>
+      <strong>{{ formatarMoeda(resumo.saldoFinal) | financialValue }}</strong>
+      <small *ngIf="resumo.valorFaltante > 0">Faltam {{ formatarMoeda(resumo.valorFaltante) | financialValue }}</small>
     </article>
   </section>
 
@@ -88,12 +88,29 @@
           Valor da meta
           <input
             type="number"
+            financialValueInput
             name="valorMeta"
             min="0.01"
             step="0.01"
             [(ngModel)]="formulario.valorMeta"
             required />
         </label>
+
+        <label>
+          Objetivo financeiro (opcional)
+          <select name="grupoObjetivo" [(ngModel)]="formulario.grupoObjetivoInvestimentoId">
+            <option [ngValue]="null">Sem objetivo</option>
+            <option *ngFor="let grupo of grupos" [ngValue]="grupo.id">{{ grupo.nome }}</option>
+          </select>
+        </label>
+
+        <fieldset class="metas-inline-objective">
+          <legend>Criar objetivo sem sair da meta</legend>
+          <input name="novoObjetivoNome" maxlength="100" placeholder="Ex.: Aluguel para nós mesmos" [(ngModel)]="novoObjetivo.nome" />
+          <input name="novoObjetivoValor" type="number" financialValueInput min="0.01" step="0.01" placeholder="Valor-alvo (opcional)" [(ngModel)]="novoObjetivo.valorAlvo" />
+          <input name="novoObjetivoData" type="date" aria-label="Data-alvo do novo objetivo (opcional)" [(ngModel)]="novoObjetivo.dataAlvo" />
+          <button type="button" class="metas-button" (click)="criarObjetivo()" [disabled]="!novoObjetivo.nome.trim()">Criar e selecionar</button>
+        </fieldset>
 
         <p class="metas-field-hint warning"
            *ngIf="formulario.tipoDefinicao === 'Valor' && !temReceitaElegivelPositiva">
@@ -128,9 +145,15 @@
             <h3>{{ meta.nome }}</h3>
             <span class="metas-mode">{{ meta.tipoDefinicao === 'Valor' ? 'Definida por valor' : 'Definida por percentual' }}</span>
             <p>{{ formatarPercentual(meta.percentualReceita) }} da receita</p>
+            <p *ngIf="meta.objetivoNome"><i class="bi bi-bullseye"></i> {{ meta.objetivoNome }}</p>
+            <p *ngIf="meta.grupoObjetivoInvestimentoId">
+              Confirmado {{ formatarMoeda(meta.valorConfirmado) | financialValue }} · restante {{ formatarMoeda(meta.valorRestante) | financialValue }}
+              <span class="metas-mode">{{ meta.statusPlanejamento === 'PlanejadoAtingido' ? 'Planejado atingido' : meta.statusPlanejamento === 'AcimaPlanejado' ? 'Acima do planejado' : 'Abaixo do planejado' }}</span>
+            </p>
           </div>
-          <strong>{{ formatarMoeda(meta.valorCalculado) }}</strong>
+          <strong>{{ formatarMoeda(meta.valorCalculado) | financialValue }}</strong>
           <div class="metas-row-actions">
+            <button *ngIf="meta.grupoObjetivoInvestimentoId" type="button" class="metas-button primary" (click)="confirmarAporte(meta)">Confirmar valor guardado</button>
             <button type="button" class="metas-icon-button" (click)="editarMeta(meta)" aria-label="Editar meta">
               <i class="bi bi-pencil"></i>
             </button>
@@ -142,5 +165,6 @@
       </div>
     </article>
   </section>
+  <app-confirmar-aporte-dialog [investimentos]="investimentos" (confirmado)="carregarResumo()"></app-confirmar-aporte-dialog>
   </div>
 </div>

@@ -1,24 +1,33 @@
 <div class="ym-shell">
-    <div class="ym-container">
-        <app-page-header eyebrow="Saldo operacional" heading="Disponível"
-            description="Veja quanto restou depois das receitas e despesas do mês.">
-            <app-month-picker pageHeaderActions [period]="mesAtual" (periodChange)="selecionarMes($event)"></app-month-picker>
-        </app-page-header>
+  <div class="ym-container">
+    <app-page-header eyebrow="Saldo operacional" heading="Disponível"
+      description="Entenda o que entrou, saiu e restou no mês selecionado.">
+      <app-month-picker pageHeaderActions [period]="mesAtual" (periodChange)="selecionarMes($event)"></app-month-picker>
+    </app-page-header>
 
-        <section class="ym-card ym-card-pad">
-            <app-view-state [state]="estadoDaPagina" [message]="mensagemCarregamento"
-                [retryAvailable]="estadoDaPagina === 'loadError'" (retry)="carregarDados()"></app-view-state>
-            <article class="ym-kpi" [class.accent-success]="calcularDisponivel() >= 0"
-                [class.accent-danger]="calcularDisponivel() < 0">
-                <i class="ym-kpi-icon" [class]="obterIconeDisponivel()"></i>
-                <h2 class="ym-kpi-label">{{ obterTextoDisponivel() }}</h2>
-                <p class="ym-kpi-value">{{ formatarValor(calcularDisponivel()) }}</p>
-                <p class="ym-kpi-meta">Baseado no mês selecionado</p>
-                <button class="ym-button primary mt-3" type="button" (click)="abrirModalInvestimento()"
-                    [disabled]="calcularDisponivel() <= 0">
-                    <i class="bi bi-graph-up-arrow"></i>Investir agora
-                </button>
-            </article>
-        </section>
-    </div>
+    @if (estadoDaPagina !== 'loadedWithData') {
+      <app-view-state [state]="estadoDaPagina" [message]="mensagemCarregamento"
+        [retryAvailable]="estadoDaPagina === 'loadError'" (retry)="carregarDados()"></app-view-state>
+    }
+
+    @if (estadoDaPagina === 'loadedWithData') {
+      <section class="available-grid" aria-label="Resumo do saldo disponível">
+        <article class="ym-card ym-kpi accent-success"><i class="ym-kpi-icon bi bi-arrow-down-left" aria-hidden="true"></i><h2 class="ym-kpi-label">Receitas</h2><p class="ym-kpi-value">{{ formatarValor(resumo.receitas) | financialValue }}</p><p class="ym-kpi-meta">Entradas do mês</p></article>
+        <article class="ym-card ym-kpi accent-danger"><i class="ym-kpi-icon bi bi-arrow-up-right" aria-hidden="true"></i><h2 class="ym-kpi-label">Despesas</h2><p class="ym-kpi-value">{{ formatarValor(resumo.despesas) | financialValue }}</p><p class="ym-kpi-meta">Saídas do mês</p></article>
+        <article class="ym-card ym-kpi" [class.accent-success]="resumo.saldo >= 0" [class.accent-danger]="resumo.saldo < 0">
+          <i class="ym-kpi-icon bi" [class.bi-arrow-up-circle]="resumo.saldo >= 0" [class.bi-arrow-down-circle]="resumo.saldo < 0" aria-hidden="true"></i>
+          <h2 class="ym-kpi-label">{{ resumo.saldo >= 0 ? 'Disponível' : 'Saldo negativo' }}</h2>
+          <p class="ym-kpi-value" [class.ym-negative]="resumo.saldo < 0">{{ formatarValor(resumo.saldo) | financialValue }}</p>
+          <p class="ym-kpi-meta">Receitas menos despesas</p>
+        </article>
+      </section>
+      <section class="ym-card ym-card-pad available-actions">
+        <div>
+          <h2>Próxima decisão</h2>
+          <p>Confira os lançamentos que formam este saldo ou direcione o valor positivo aos seus objetivos.</p>
+          <a class="ym-button primary" routerLink="/investimento" [attr.aria-disabled]="resumo.saldo <= 0" [class.disabled]="resumo.saldo <= 0">Planejar investimento</a>
+        </div>
+      </section>
+    }
+  </div>
 </div>

@@ -45,17 +45,23 @@
           },
           "configurations": {
             "production": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ],
               "serviceWorker": "ngsw-config.json",
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "1.4MB",
-                  "maximumError": "1.5MB"
+                  "maximumWarning": "1.5MB",
+                  "maximumError": "1.6MB"
                 },
                 {
                   "type": "anyComponentStyle",
                   "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumError": "12kB"
                 }
               ],
               "outputHashing": "all"

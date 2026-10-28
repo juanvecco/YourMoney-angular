@@ -1,6 +1,7 @@
 @if (isVisible) {
   <section class="ym-view-state" [class.ym-view-state--error]="isError"
-    [attr.role]="isError ? 'alert' : 'status'" [attr.aria-live]="isProgress ? 'polite' : null">
+    [attr.role]="isError ? 'alert' : 'status'" [attr.aria-live]="isError ? 'assertive' : 'polite'"
+    [attr.aria-label]="statusLabel" [attr.aria-busy]="isProgress">
     @if (isProgress) {
       <span class="ym-view-state__spinner" aria-hidden="true"></span>
     } @else {
@@ -9,6 +10,9 @@
     <p>{{ message }}</p>
     @if (retryAvailable && (state === 'loadError' || state === 'stale')) {
       <button type="button" class="btn btn-primary" (click)="retry.emit()">Tentar novamente</button>
+    }
+    @if (actionLabel) {
+      <button type="button" class="btn btn-outline-primary" (click)="action.emit()">{{ actionLabel }}</button>
     }
   </section>
 }

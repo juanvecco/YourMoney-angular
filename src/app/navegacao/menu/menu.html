@@ -1,9 +1,19 @@
-<header class="ym-topbar">
+<header class="ym-topbar" [class.ym-topbar--app]="isLoggedIn()" [class.ym-topbar--collapsed]="isLoggedIn() && sidebarCollapsed">
   <nav class="ym-nav" aria-label="Navegação principal">
     <a class="ym-brand" routerLink="/" (click)="closeMenu()" aria-label="YourMoney — início">
       <span class="ym-brand-icon" aria-hidden="true"><i class="bi bi-wallet2"></i></span>
       <span>YourMoney</span>
     </a>
+
+    @if (isLoggedIn()) {
+      <button type="button" class="ym-sidebar-toggle"
+        [attr.aria-label]="sidebarCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'"
+        [attr.title]="sidebarCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'"
+        [attr.aria-expanded]="!sidebarCollapsed" aria-controls="main-menu" (click)="toggleSidebar()">
+        <i class="bi" [class.bi-chevron-left]="!sidebarCollapsed" [class.bi-chevron-right]="sidebarCollapsed" aria-hidden="true"></i>
+        <span>{{ sidebarCollapsed ? 'Expandir menu' : 'Recolher menu' }}</span>
+      </button>
+    }
 
     <button #menuTrigger type="button" class="ym-menu-trigger" [attr.aria-label]="menuOpen ? 'Fechar menu' : 'Abrir menu'" [attr.aria-expanded]="menuOpen"
       aria-controls="main-menu" (click)="toggleMenu()">
@@ -12,17 +22,19 @@
 
     <ul id="main-menu" class="ym-menu" [class.ym-menu--open]="menuOpen" (keydown)="onMenuKeydown($event)">
       @if (isLoggedIn()) {
-        <li><a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Dashboard</a></li>
-        <li><a routerLink="/receitas" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Receitas</a></li>
-        <li><a routerLink="/despesas" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Despesas</a></li>
-        <li><a routerLink="/disponivel" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Disponível</a></li>
-        <li><a routerLink="/investimento" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Investimentos</a></li>
-        <li><a routerLink="/metas" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Metas</a></li>
-        <li><a routerLink="/configuracao" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()" aria-label="Configurações"><i class="bi bi-gear" aria-hidden="true"></i><span class="ym-menu__settings">Configurações</span></a></li>
-        <li><button type="button" data-testid="logout" (click)="logout()"><i class="bi bi-box-arrow-right" aria-hidden="true"></i>Sair</button></li>
+        <li><a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page" aria-label="Dashboard" title="Dashboard" (click)="closeMenu()"><i class="bi bi-grid-1x2" aria-hidden="true"></i><span>Dashboard</span></a></li>
+        <li><a routerLink="/receitas" routerLinkActive="active" ariaCurrentWhenActive="page" aria-label="Receitas" title="Receitas" (click)="closeMenu()"><i class="bi bi-arrow-down-left-circle" aria-hidden="true"></i><span>Receitas</span></a></li>
+        <li><a routerLink="/despesas" routerLinkActive="active" ariaCurrentWhenActive="page" aria-label="Despesas" title="Despesas" (click)="closeMenu()"><i class="bi bi-arrow-up-right-circle" aria-hidden="true"></i><span>Despesas</span></a></li>
+        <li><a routerLink="/investimento" routerLinkActive="active" ariaCurrentWhenActive="page" aria-label="Investimentos" title="Investimentos" (click)="closeMenu()"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i><span>Investimentos</span></a></li>
+        <li><a routerLink="/metas" routerLinkActive="active" ariaCurrentWhenActive="page" aria-label="Metas" title="Metas" (click)="closeMenu()"><i class="bi bi-bullseye" aria-hidden="true"></i><span>Metas</span></a></li>
+        <li><a routerLink="/openfinance" routerLinkActive="active" ariaCurrentWhenActive="page" aria-label="Conexões" title="Conexões" (click)="closeMenu()"><i class="bi bi-bank" aria-hidden="true"></i><span>Conexões</span></a></li>
+        <li><a routerLink="/configuracao" routerLinkActive="active" ariaCurrentWhenActive="page" aria-label="Configurações" title="Configurações" (click)="closeMenu()"><i class="bi bi-gear" aria-hidden="true"></i><span>Configurações</span></a></li>
+        <li><button type="button" class="ym-values-toggle" [attr.aria-label]="financialVisibility.valuesHidden() ? 'Mostrar valores' : 'Ocultar valores'" [attr.title]="financialVisibility.valuesHidden() ? 'Mostrar valores' : 'Ocultar valores'" [attr.aria-pressed]="financialVisibility.valuesHidden()" (click)="toggleFinancialValues()"><i class="bi" [class.bi-eye-slash]="financialVisibility.valuesHidden()" [class.bi-eye]="!financialVisibility.valuesHidden()" aria-hidden="true"></i><span>{{ financialVisibility.valuesHidden() ? 'Mostrar valores' : 'Ocultar valores' }}</span></button></li>
+        <li class="ym-menu__spacer" aria-hidden="true"></li>
+        <li><button type="button" class="ym-menu__logout" aria-label="Sair" title="Sair" data-testid="logout" (click)="logout()"><i class="bi bi-box-arrow-right" aria-hidden="true"></i><span>Sair</span></button></li>
       } @else {
-        <li><a routerLink="/login" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Entrar</a></li>
-        <li><a class="ym-menu__primary" routerLink="/cadastro" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">Criar conta</a></li>
+        <li><a routerLink="/login" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()"><i class="bi bi-box-arrow-in-right" aria-hidden="true"></i><span>Entrar</span></a></li>
+        <li><a class="ym-menu__primary" routerLink="/cadastro" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()"><i class="bi bi-person-plus" aria-hidden="true"></i><span>Criar conta</span></a></li>
       }
       <li><app-theme-toggle></app-theme-toggle></li>
     </ul>
@@ -47,7 +59,7 @@
       <i class="bi bi-graph-up-arrow" aria-hidden="true"></i>
       <span>Investir</span>
     </a>
-    <button type="button" [class.active]="moreOpen" [attr.aria-expanded]="moreOpen" aria-controls="mobile-more-menu" (click)="toggleMore()">
+    <button #moreTrigger type="button" [class.active]="moreOpen" [attr.aria-expanded]="moreOpen" aria-controls="mobile-more-menu" (click)="toggleMore()">
       <i class="bi bi-three-dots" aria-hidden="true"></i>
       <span>Mais</span>
     </button>
@@ -64,9 +76,10 @@
         </button>
       </div>
       <div class="ym-mobile-sheet__links">
-        <a routerLink="/disponivel" routerLinkActive="active" (click)="closeMenu()"><i class="bi bi-wallet2" aria-hidden="true"></i>Disponível</a>
         <a routerLink="/metas" routerLinkActive="active" (click)="closeMenu()"><i class="bi bi-bullseye" aria-hidden="true"></i>Metas</a>
+        <a routerLink="/openfinance" routerLinkActive="active" (click)="closeMenu()"><i class="bi bi-bank" aria-hidden="true"></i>Conexões</a>
         <a routerLink="/configuracao" routerLinkActive="active" (click)="closeMenu()"><i class="bi bi-gear" aria-hidden="true"></i>Configurações</a>
+        <button type="button" class="ym-values-toggle" [attr.aria-label]="financialVisibility.valuesHidden() ? 'Mostrar valores' : 'Ocultar valores'" [attr.title]="financialVisibility.valuesHidden() ? 'Mostrar valores' : 'Ocultar valores'" [attr.aria-pressed]="financialVisibility.valuesHidden()" (click)="toggleFinancialValues()"><i class="bi" [class.bi-eye-slash]="financialVisibility.valuesHidden()" [class.bi-eye]="!financialVisibility.valuesHidden()" aria-hidden="true"></i>{{ financialVisibility.valuesHidden() ? 'Mostrar valores' : 'Ocultar valores' }}</button>
         <div class="ym-mobile-sheet__theme"><span><i class="bi bi-circle-half" aria-hidden="true"></i>Tema</span><app-theme-toggle></app-theme-toggle></div>
         <button type="button" data-testid="mobile-logout" class="ym-mobile-sheet__logout" (click)="logout()"><i class="bi bi-box-arrow-right" aria-hidden="true"></i>Sair</button>
       </div>

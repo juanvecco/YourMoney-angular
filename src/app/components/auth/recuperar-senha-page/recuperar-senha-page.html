@@ -1,0 +1,18 @@
+<main class="auth-flow">
+  <section class="auth-card" aria-labelledby="recoverTitle">
+    <a class="auth-back" routerLink="/login"><i class="bi bi-arrow-left" aria-hidden="true"></i>Voltar ao login</a>
+    <div class="auth-icon" aria-hidden="true"><i class="bi bi-envelope-check"></i></div>
+    <h1 id="recoverTitle">Recuperar acesso</h1>
+    <p>Informe seu e-mail. Se houver uma conta, enviaremos um link seguro para redefinir a senha.</p>
+    <form [formGroup]="form" (ngSubmit)="enviar()">
+      <label for="recoverEmail">E-mail</label>
+      <input id="recoverEmail" type="email" formControlName="email" autocomplete="email" aria-describedby="recoverEmailError" placeholder="seu@email.com">
+      @if (form.get('email')?.touched && form.get('email')?.invalid) { <small id="recoverEmailError">Informe um e-mail válido.</small> }
+      <button class="ym-button primary" type="submit" [disabled]="loading">{{ loading ? 'Enviando...' : 'Enviar link de recuperação' }}</button>
+    </form>
+    <div aria-live="polite">
+      @if (mensagem) { <p class="auth-success" role="status">{{ mensagem }}</p> }
+      @if (erro) { <p class="auth-error" role="alert">{{ erro }}</p> }
+    </div>
+  </section>
+</main>

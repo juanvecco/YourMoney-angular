@@ -1,5 +1,12 @@
 export type MetaMensalStatus = 'disponivel' | 'zerado' | 'faltando';
 export type TipoDefinicaoMeta = 'Percentual' | 'Valor';
+export type StatusPlanejamento = 'AbaixoPlanejado' | 'PlanejadoAtingido' | 'AcimaPlanejado';
+
+export interface AporteObjetivo {
+  id: string; metaMensalId: string; grupoObjetivoInvestimentoId: string;
+  investimentoId: string | null; investimentoNome: string | null; valor: number;
+  mesReferencia: string; dataConfirmacao: string; aguardandoAlocacao: boolean;
+}
 
 export interface MetaMensal {
   id: string;
@@ -9,6 +16,14 @@ export interface MetaMensal {
   valorMeta: number | null;
   valorCalculado: number;
   mesReferencia: string;
+  grupoObjetivoInvestimentoId?: string | null;
+  objetivoNome?: string | null;
+  valorConfirmado?: number;
+  valorRestante?: number;
+  diferenca?: number;
+  statusPlanejamento?: StatusPlanejamento;
+  valorAguardandoAlocacao?: number;
+  aportes?: AporteObjetivo[];
 }
 
 export interface MetasMensaisResumo {
@@ -34,6 +49,7 @@ export interface MetasMensaisResumo {
 interface CriarMetaMensalRequestBase {
   nome: string;
   mesReferencia?: string;
+  grupoObjetivoInvestimentoId?: string | null;
 }
 
 export type CriarMetaMensalRequest =
@@ -51,6 +67,7 @@ export type CriarMetaMensalRequest =
 interface AtualizarMetaMensalRequestBase {
   id: string;
   nome: string;
+  grupoObjetivoInvestimentoId?: string | null;
 }
 
 export type AtualizarMetaMensalRequest =
