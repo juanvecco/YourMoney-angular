@@ -56,12 +56,12 @@
     <section class="of-section ym-card" aria-labelledby="pluggyConnectionsTitle">
       <div class="of-section-header">
         <div><p class="of-eyebrow">Até cinco conexões · uso pessoal</p><h2 id="pluggyConnectionsTitle">Conexões Meu Pluggy</h2>
-          <p>Conecte os bancos primeiro em <a href="https://meu.pluggy.ai/" target="_blank" rel="noopener noreferrer">meu.pluggy.ai</a>. Depois autorize o Meu Pluggy aqui. Esta opção gratuita é para uso pessoal e não permite conectar diretamente outros bancos neste fluxo.</p>
+          <p>Conecte os bancos primeiro em <a href="https://meu.pluggy.ai/" target="_blank" rel="noopener noreferrer">meu.pluggy.ai</a>. Depois autorize cada banco aqui, um por vez. Cada autorização adiciona uma conexão e mantém as anteriores. Na visão geral, escolha “Todas as instituições” para reunir os dados dos bancos conectados. Esta opção gratuita é para uso pessoal e não permite conectar diretamente outros bancos neste fluxo.</p>
           <p>As transações ficam como prévia até você confirmar cada cadastro. O Meu Pluggy atualiza os bancos aproximadamente a cada 24 horas; recarregar esta tela busca os dados mais recentes já recebidos.</p>
         </div>
         <div class="of-connect-actions">
           <button type="button" class="ym-button primary" (click)="conectarBanco()" [disabled]="conectandoBanco || salvandoConexao || limiteConexoesAtingido">
-            {{ salvandoConexao ? 'Salvando conexão...' : conectandoBanco ? 'Abrindo autorização...' : limiteConexoesAtingido ? 'Limite de 5 conexões atingido' : 'Conectar Meu Pluggy' }}
+            {{ salvandoConexao ? 'Salvando conexão...' : conectandoBanco ? 'Abrindo autorização...' : limiteConexoesAtingido ? 'Limite de 5 bancos atingido' : conexoesPluggy.length > 0 ? 'Adicionar outro banco (' + conexoesPluggy.length + '/5)' : 'Conectar Meu Pluggy' }}
           </button>
           <button type="button" class="ym-button secondary" (click)="carregarDadosPluggy()">Recarregar dados</button>
         </div>
