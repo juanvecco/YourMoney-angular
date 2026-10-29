@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Optional } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -11,7 +11,7 @@ import {
     SugestaoDespesaRecorrenteResponse
 } from '../../../models/despesa-recorrente.model';
 import Swal from 'sweetalert2';
-import { forkJoin, Subject, takeUntil } from 'rxjs';
+import { forkJoin, Observable, Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
 import { FinancialNavigationContextService } from '../../../services/financial-navigation-context.service';
@@ -20,6 +20,12 @@ import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { ViewStateComponent } from '../../shared/view-state/view-state';
 import { FinancialValuePipe } from '../../../pipes/financial-value.pipe';
 import { FinancialValueInputDirective } from '../../../directives/financial-value-input.directive';
+import { OpenFinanceService } from '../../../services/openfinance';
+import {
+    PluggyDuplicateCandidate,
+    PluggyExpenseReconciliationRequest,
+    PluggyTransactionPreview
+} from '../../../models/pluggy.model';
 
 type DespesaLote = {
     descricao: string;
@@ -64,6 +70,7 @@ type SugestaoRecorrenteForm = {
 export class DespesasComponent implements OnInit, OnDestroy {
     private destroy$ = new Subject<void>();
     private loadRevision = 0;
+    private openFinanceRevision = 0;
 
     // === FORMULÁRIO ===
     novaDespesa = {
@@ -110,6 +117,15 @@ export class DespesasComponent implements OnInit, OnDestroy {
     estadoCarregamento: FinancialViewState = 'loading';
     mensagemCarregamento = '';
 
+    mostrarOpenFinance = false;
+    transacoesOpenFinance: PluggyTransactionPreview[] = [];
+    contasOpenFinanceDisponiveis: number | null = null;
+    carregandoOpenFinance = false;
+    erroOpenFinance = '';
+    openFinanceConfiguracaoPendente = false;
+    transacaoOpenFinanceEmRevisao: PluggyTransactionPreview | null = null;
+    confirmouPossivelDuplicidadeOpenFinance = false;
+
     recorrencias: DespesaRecorrenteResponse[] = [];
     sugestoesRecorrentes: SugestaoDespesaRecorrenteResponse[] = [];
     carregandoRecorrencias = false;
@@ -139,7 +155,8 @@ export class DespesasComponent implements OnInit, OnDestroy {
         private despesaRecorrenteService: DespesaRecorrenteService,
         private authService: AuthService,
         private router: Router,
-        private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService()
+        private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService(),
+        @Optional() private openFinanceService: OpenFinanceService | null = null
     ) {
         this.mesAtual = this.financialContext.period().date;
     }
@@ -150,6 +167,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy() {
+        this.openFinanceRevision++;
         this.destroy$.next();
         this.destroy$.complete();
     }
@@ -242,6 +260,291 @@ export class DespesasComponent implements OnInit, OnDestroy {
                     this.aplicarErroCarregamento();
                 }
             });
+    }
+
+    alternarOpenFinance(ativo: boolean): void {
+        this.mostrarOpenFinance = ativo;
+        if (ativo) {
+            this.carregarTransacoesOpenFinance();
+            return;
+        }
+
+        this.openFinanceRevision++;
+        this.transacoesOpenFinance = [];
+        this.contasOpenFinanceDisponiveis = null;
+        this.carregandoOpenFinance = false;
+        this.erroOpenFinance = '';
+        this.openFinanceConfiguracaoPendente = false;
+    }
+
+    carregarTransacoesOpenFinance(): void {
+        if (!this.mostrarOpenFinance || !this.openFinanceService) return;
+
+        const revision = ++this.openFinanceRevision;
+        const inicio = this.obterDataMesInput(this.mesAtual);
+        const fim = this.obterDataMesInput(new Date(
+            this.mesAtual.getFullYear(),
+            this.mesAtual.getMonth() + 1,
+            0
+        ));
+        this.carregandoOpenFinance = true;
+        this.erroOpenFinance = '';
+        this.openFinanceConfiguracaoPendente = false;
+
+        this.openFinanceService.obterVisaoGeralPluggy({ from: inicio, to: fim })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (overview) => {
+                    if (revision !== this.openFinanceRevision || !this.mostrarOpenFinance) return;
+                    this.contasOpenFinanceDisponiveis = overview.accounts?.length ?? 0;
+                    this.transacoesOpenFinance = (overview.transactions ?? [])
+                        .filter(transaction => transaction.direction === 'DEBIT');
+                    this.carregandoOpenFinance = false;
+                },
+                error: (error) => {
+                    if (revision !== this.openFinanceRevision || !this.mostrarOpenFinance) return;
+                    this.carregandoOpenFinance = false;
+                    this.openFinanceConfiguracaoPendente = error?.status === 503;
+                    this.erroOpenFinance = this.mensagemErroOpenFinance(error);
+                }
+            });
+    }
+
+    candidatosDespesa(transaction: PluggyTransactionPreview): PluggyDuplicateCandidate[] {
+        const candidates = transaction.possibleDuplicateCandidates ??
+            (transaction.duplicateCandidate ? [transaction.duplicateCandidate] : []);
+        return candidates.filter(candidate => candidate.recordType === 'expense');
+    }
+
+    podeCadastrarOpenFinance(transaction: PluggyTransactionPreview): boolean {
+        return transaction.registrationStatus !== 'REGISTERED'
+            && transaction.importable
+            && this.valorEmReaisOpenFinance(transaction) > 0;
+    }
+
+    abrirCadastroOpenFinance(
+        transaction: PluggyTransactionPreview,
+        confirmouPossivelDuplicidade = false
+    ): void {
+        if (!this.podeCadastrarOpenFinance(transaction)) return;
+
+        this.editando = false;
+        this.limparLote();
+        this.resetForm();
+        this.novaDespesa = {
+            ...this.novaDespesa,
+            descricao: transaction.description,
+            valor: this.valorEmReaisOpenFinance(transaction),
+            data: this.obterDataCivil(transaction.date),
+            mesReferencia: this.obterMesReferenciaInput(this.obterDataCivil(transaction.date))
+        };
+        this.transacaoOpenFinanceEmRevisao = transaction;
+        this.confirmouPossivelDuplicidadeOpenFinance = confirmouPossivelDuplicidade;
+        this.aplicarCategoriaPadraoDespesa();
+        this.abrirModal();
+    }
+
+    async confirmarCadastroSeparadoOpenFinance(transaction: PluggyTransactionPreview): Promise<void> {
+        if (!this.podeCadastrarOpenFinance(transaction)) return;
+
+        const candidates = this.candidatosDespesa(transaction);
+        if (candidates.length > 0) {
+            const confirmation = await Swal.fire({
+                title: 'Possível despesa já cadastrada',
+                text: 'Uma ou mais despesas parecem corresponder a esta transação. Confira a lista antes de criar outra para evitar duplicidade.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Criar outra despesa',
+                cancelButtonText: 'Revisar correspondências',
+                confirmButtonColor: '#dc3545'
+            });
+            if (!confirmation.isConfirmed) return;
+        }
+
+        this.abrirCadastroOpenFinance(transaction, candidates.length > 0);
+    }
+
+    async vincularDespesaOpenFinance(
+        transaction: PluggyTransactionPreview,
+        candidate: PluggyDuplicateCandidate
+    ): Promise<void> {
+        if (transaction.registrationStatus === 'REGISTERED' || candidate.canLink === false) return;
+        const confirmation = await Swal.fire({
+            title: 'Manter e vincular?',
+            text: `A despesa “${candidate.description}” será mantida sem alterações e vinculada à transação bancária.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Manter e vincular',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#198754'
+        });
+        if (!confirmation.isConfirmed) return;
+
+        this.executarReconciliacao({
+            transactionId: transaction.transactionId,
+            action: 'link',
+            targetExpenseId: candidate.recordId,
+            expectedDescription: candidate.description,
+            expectedDate: candidate.date,
+            expectedAmount: candidate.amount
+        }, false);
+    }
+
+    async substituirDespesaOpenFinance(
+        transaction: PluggyTransactionPreview,
+        candidate: PluggyDuplicateCandidate
+    ): Promise<void> {
+        if (transaction.registrationStatus === 'REGISTERED' || candidate.canReplace === false
+            || !this.podeCadastrarOpenFinance(transaction)) return;
+
+        const novaData = this.obterDataCivil(transaction.date);
+        const novoValor = this.valorEmReaisOpenFinance(transaction);
+        const confirmation = await Swal.fire({
+            title: 'Revisar substituição',
+            html: `<div class="ym-openfinance-diff">
+                <div><strong>Campo</strong><strong>Atual</strong><strong>Open Finance</strong></div>
+                <div><span>Descrição</span><span>${this.escaparHtml(candidate.description)}</span><span>${this.escaparHtml(transaction.description)}</span></div>
+                <div><span>Data</span><span>${this.formatarData(candidate.date)}</span><span>${this.formatarData(novaData)}</span></div>
+                <div><span>Valor</span><span>${this.formatarValor(candidate.amount)}</span><span>${this.formatarValor(novoValor)}</span></div>
+                <p>Conta e classificação da despesa serão preservadas.</p>
+            </div>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Confirmar substituição',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545'
+        });
+        if (!confirmation.isConfirmed) return;
+
+        this.executarReconciliacao({
+            transactionId: transaction.transactionId,
+            action: 'replace',
+            targetExpenseId: candidate.recordId,
+            expectedDescription: candidate.description,
+            expectedDate: candidate.date,
+            expectedAmount: candidate.amount,
+            description: transaction.description,
+            date: novaData,
+            amount: novoValor
+        }, true);
+    }
+
+    isTransacaoImportavel(transaction: PluggyTransactionPreview): boolean {
+        if (!this.podeCadastrarOpenFinance(transaction)) return false;
+        if (transaction.status?.toUpperCase() === 'PENDING') return false;
+        const operation = (transaction.operationType ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+        return !['TRANSFER', 'REVERSAL', 'REFUND', 'ESTORNO'].some(part => operation.includes(part));
+    }
+
+    textoStatusOpenFinance(transaction: PluggyTransactionPreview): string {
+        if (transaction.registrationStatus === 'REGISTERED') {
+            return transaction.registeredRecordType === 'revenue'
+                ? 'Já cadastrada como receita'
+                : 'Já cadastrada como despesa';
+        }
+        if (!this.isTransacaoImportavel(transaction)) return transaction.importUnavailableReason
+            || 'A transação está pendente ou não pode ser classificada como despesa.';
+        const count = this.candidatosDespesa(transaction).length;
+        return count > 0 ? `${count} possível(is) correspondência(s) manual(is)` : 'Ainda não cadastrada';
+    }
+
+    private executarReconciliacao(
+        request: PluggyExpenseReconciliationRequest,
+        recarregarDespesas: boolean
+    ): void {
+        if (!this.openFinanceService) return;
+        this.openFinanceService.reconciliarDespesaPluggy(request)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    this.carregarTransacoesOpenFinance();
+                    if (recarregarDespesas) this.carregarDespesas();
+                    void Swal.fire({
+                        title: 'Reconciliação concluída',
+                        text: request.action === 'link'
+                            ? 'A despesa existente foi mantida e vinculada.'
+                            : 'A despesa foi atualizada com os dados revisados.',
+                        icon: 'success',
+                        confirmButtonText: 'Continuar'
+                    });
+                },
+                error: (error) => {
+                    void Swal.fire({
+                        title: 'Não foi possível concluir',
+                        text: this.mensagemErroOpenFinance(error),
+                        icon: 'error',
+                        confirmButtonText: 'Entendi'
+                    });
+                    this.carregarTransacoesOpenFinance();
+                }
+            });
+    }
+
+    valorEmReaisOpenFinance(transaction: PluggyTransactionPreview): number {
+        const currency = transaction.currencyCode?.toUpperCase();
+        const amount = currency === 'BRL'
+            ? transaction.amount
+            : transaction.accountCurrencyCode?.toUpperCase() === 'BRL'
+                ? transaction.amountInAccountCurrency
+                : null;
+        return amount === null || amount === undefined ? 0 : Math.round(Math.abs(amount) * 100) / 100;
+    }
+
+    formatarDataOpenFinance(value: string): string {
+        return this.formatarData(this.obterDataCivil(value));
+    }
+
+    formatarValorOrigemOpenFinance(transaction: PluggyTransactionPreview): string {
+        const amount = Math.abs(transaction.amount);
+        try {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: transaction.currencyCode || transaction.accountCurrencyCode || 'BRL'
+            }).format(amount);
+        } catch {
+            return `${new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(amount)} ${transaction.currencyCode}`;
+        }
+    }
+
+    private obterDataCivil(value: string): string {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+        const timestamp = Date.parse(value);
+        if (!Number.isFinite(timestamp)) return value.substring(0, 10);
+        return new Date(timestamp - 3 * 60 * 60 * 1000).toISOString().substring(0, 10);
+    }
+
+    private obterDataMesInput(date: Date): string {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    formatarValor(value: number): string {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    }
+
+    private escaparHtml(value: string): string {
+        return value.replace(/[&<>"']/g, character => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[character] ?? character);
+    }
+
+    private mensagemErroOpenFinance(error: any): string {
+        const code = error?.error?.code;
+        if (code === 'consent_expired') return 'A autorização do Open Finance expirou. Reconecte a instituição e tente novamente.';
+        if (code === 'candidate_changed') return 'A despesa mudou desde a comparação. Atualize a lista e revise a correspondência novamente.';
+        if (code === 'already_registered') return 'Esta transação já foi cadastrada. A lista será atualizada.';
+        if (code === 'duplicate_confirmation_required') return 'Há uma possível despesa correspondente. Revise a candidata ou confirme a criação separada.';
+        if (error?.status === 409) return 'Esta transação ou despesa já foi vinculada. Atualize a lista antes de tentar novamente.';
+        if (error?.status === 403) return 'Sua sessão não tem acesso a esta integração.';
+        if (error?.status === 503) return 'O Meu Pluggy ainda não está configurado no servidor. Acesse Open Finance para conferir a configuração antes de consultar as transações.';
+        if (error?.status === 502 || error?.status === 0) return 'A instituição está indisponível no momento. Tente novamente em alguns instantes.';
+        return error?.error?.message || 'Não foi possível carregar ou salvar as transações Open Finance. Tente novamente.';
+    }
+
+    abrirOpenFinance(): void {
+        void this.router.navigate(['/openfinance']);
     }
 
     carregarRecorrencias() {
@@ -443,6 +746,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.mesAtual = this.financialContext.period().date;
         this.paginaAtual = 1;
         this.carregarDespesas();
+        this.carregarTransacoesOpenFinance();
         this.carregarSugestoesRecorrentes();
     }
 
@@ -462,6 +766,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.mesAtual = this.financialContext.period().date;
         this.paginaAtual = 1;
         this.carregarDespesas();
+        this.carregarTransacoesOpenFinance();
         this.carregarSugestoesRecorrentes();
     }
 
@@ -470,6 +775,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.mesAtual = this.financialContext.period().date;
         this.paginaAtual = 1;
         this.carregarDespesas();
+        this.carregarTransacoesOpenFinance();
         this.carregarSugestoesRecorrentes();
     }
 
@@ -484,6 +790,8 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
     abrirModalDespesa() {
         this.editando = false;
+        this.transacaoOpenFinanceEmRevisao = null;
+        this.confirmouPossivelDuplicidadeOpenFinance = false;
         this.limparLote();
         this.resetForm();
         this.aplicarCategoriaPadraoDespesa();
@@ -493,6 +801,8 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
     abrirModalEditar(despesa: Despesa) {
         this.editando = true;
+        this.transacaoOpenFinanceEmRevisao = null;
+        this.confirmouPossivelDuplicidadeOpenFinance = false;
         this.resetParcelamento();
         this.novaDespesa = {
             id: despesa.id,
@@ -1072,9 +1382,27 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
         const payload = this.montarPayloadDespesa();
 
-        const request$ = this.editando
-            ? this.despesaService.atualizarDespesa(payload)
-            : this.despesaService.criarDespesa({
+        if (this.transacaoOpenFinanceEmRevisao && !this.openFinanceService) {
+            this.mostrarErro(new Error('O serviço Open Finance não está disponível.'));
+            return;
+        }
+
+        let request$: Observable<unknown>;
+        if (this.transacaoOpenFinanceEmRevisao) {
+            request$ = this.openFinanceService!.reconciliarDespesaPluggy({
+                transactionId: this.transacaoOpenFinanceEmRevisao.transactionId,
+                action: 'create',
+                description: payload.descricao,
+                amount: payload.valor,
+                date: payload.data,
+                idContaFinanceira: payload.idContaFinanceira,
+                idCategoria: payload.idCategoria,
+                confirmPossibleDuplicate: this.confirmouPossivelDuplicidadeOpenFinance
+            });
+        } else if (this.editando) {
+            request$ = this.despesaService.atualizarDespesa(payload);
+        } else {
+            request$ = this.despesaService.criarDespesa({
                 descricao: payload.descricao,
                 valor: payload.valor,
                 data: payload.data,
@@ -1082,6 +1410,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
                 idContaFinanceira: payload.idContaFinanceira,
                 idCategoria: payload.idCategoria
             });
+        }
 
         this.salvandoDespesa = true;
 
@@ -1090,12 +1419,31 @@ export class DespesasComponent implements OnInit, OnDestroy {
                 this.salvandoDespesa = false;
                 this.fecharModal();
                 this.carregarDespesas();
+                if (this.mostrarOpenFinance) this.carregarTransacoesOpenFinance();
                 this.mostrarSucesso();
                 this.verificarBadgeOrganizador();
             },
             error: (erro) => {
                 this.salvandoDespesa = false;
+                if (this.transacaoOpenFinanceEmRevisao
+                    && erro?.error?.code === 'duplicate_confirmation_required') {
+                    void Swal.fire({
+                        title: 'Possível duplicidade encontrada',
+                        text: 'Uma despesa correspondente apareceu durante a revisão. Confirme se deseja criar outra ou volte para comparar os registros.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Criar outra despesa',
+                        cancelButtonText: 'Voltar e revisar',
+                        confirmButtonColor: '#dc3545'
+                    }).then(confirmation => {
+                        if (!confirmation.isConfirmed) return;
+                        this.confirmouPossivelDuplicidadeOpenFinance = true;
+                        this.salvarDespesa();
+                    });
+                    return;
+                }
                 this.mostrarErro(erro);
+                if (this.mostrarOpenFinance) this.carregarTransacoesOpenFinance();
             }
         });
     }
@@ -1454,6 +1802,8 @@ export class DespesasComponent implements OnInit, OnDestroy {
     private fecharModal() {
         const modal = (window as any).bootstrap.Modal.getInstance(document.getElementById('modalDespesa'));
         modal?.hide();
+        this.transacaoOpenFinanceEmRevisao = null;
+        this.confirmouPossivelDuplicidadeOpenFinance = false;
     }
 
     private fecharModalPorId(id: string) {

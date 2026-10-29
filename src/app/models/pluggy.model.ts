@@ -10,6 +10,7 @@ export interface PluggyCredentialStatus {
   clientIdHint: string | null;
   updatedAt: string | null;
   canSave: boolean;
+  message?: string | null;
 }
 
 export interface PluggyConnection {
@@ -63,6 +64,12 @@ export interface PluggyDuplicateCandidate {
   date: string;
   amount: number;
   reason: string;
+  accountName?: string | null;
+  categoryName?: string | null;
+  canLink?: boolean;
+  canReplace?: boolean;
+  cannotReplaceReason?: string | null;
+  matchReasons?: string[];
 }
 
 export interface PluggyTransactionPreview {
@@ -86,8 +93,34 @@ export interface PluggyTransactionPreview {
   registeredRecordId: string | null;
   possibleDuplicate: boolean;
   duplicateCandidate: PluggyDuplicateCandidate | null;
+  possibleDuplicateCandidates?: PluggyDuplicateCandidate[];
   importable: boolean;
   importUnavailableReason: string | null;
+}
+
+export type PluggyExpenseReconciliationAction = 'create' | 'link' | 'replace';
+
+export interface PluggyExpenseReconciliationRequest {
+  transactionId: string;
+  action: PluggyExpenseReconciliationAction;
+  targetExpenseId?: string | null;
+  expectedDescription?: string | null;
+  expectedAmount?: number | null;
+  expectedDate?: string | null;
+  description?: string | null;
+  amount?: number | null;
+  date?: string | null;
+  idContaFinanceira?: string | null;
+  idCategoria?: string | null;
+  confirmPossibleDuplicate?: boolean;
+}
+
+export interface PluggyExpenseReconciliationResult {
+  transactionId: string;
+  action: PluggyExpenseReconciliationAction;
+  recordType: 'expense';
+  recordId: string;
+  registeredAt: string;
 }
 
 export interface PluggyTransactionImportRequest {

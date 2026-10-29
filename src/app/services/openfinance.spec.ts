@@ -60,4 +60,28 @@ describe('OpenFinanceService', () => {
     expect(request.request.params.has('sourceId')).toBeFalse();
     request.flush({ sourceId: 'mock-transactions', mode: 'preview-only', items: [] });
   });
+
+  it('posts a reviewed expense reconciliation to the typed endpoint', () => {
+    const payload = {
+      transactionId: 'source-transaction-1',
+      action: 'link' as const,
+      targetExpenseId: 'expense-1'
+    };
+
+    service.reconciliarDespesaPluggy(payload).subscribe(result => {
+      expect(result.action).toBe('link');
+      expect(result.recordId).toBe('expense-1');
+    });
+
+    const request = httpTesting.expectOne(`${environment.apiUrl}/OpenFinance/real-transactions/reconcile`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(payload);
+    request.flush({
+      transactionId: 'source-transaction-1',
+      action: 'link',
+      recordType: 'expense',
+      recordId: 'expense-1',
+      registeredAt: '2026-05-12T12:00:00Z'
+    });
+  });
 });

@@ -45,6 +45,9 @@ export class OpenFinancePageComponent implements OnInit {
   saldosPluggy: PluggyOverview['balancesByCurrencyAndType'] = [];
   visaoGeralPluggy: PluggyOverview | null = null;
   carregandoConexoesPluggy = false;
+  conexoesPluggyCarregadas = false;
+  erroCarregamentoConexoesPluggy = '';
+  configuracaoServidorPluggyPendente = false;
   carregandoContasPluggy = false;
   carregandoTransacoesPluggy = false;
   conectandoBanco = false;
@@ -117,8 +120,11 @@ export class OpenFinancePageComponent implements OnInit {
           this.configuracaoPluggyVisivel = false;
           return;
         }
+        const mensagemServidor = typeof error?.error?.message === 'string'
+          ? error.error.message.trim()
+          : '';
         this.mensagemConfiguracaoPluggy = error?.status === 503
-          ? 'O titular desta integração ainda não foi configurado no servidor.'
+          ? mensagemServidor || 'O servidor ainda não está configurado para a integração Pluggy.'
           : 'Não foi possível consultar a configuração das credenciais Pluggy.';
       },
     });
@@ -138,6 +144,7 @@ export class OpenFinancePageComponent implements OnInit {
         this.clientSecretPluggy = '';
         this.salvandoCredenciaisPluggy = false;
         this.mensagemConfiguracaoPluggy = 'Credenciais validadas e salvas com proteção no servidor.';
+        this.carregarDadosPluggy();
       },
       error: error => {
         this.salvandoCredenciaisPluggy = false;
@@ -207,6 +214,13 @@ export class OpenFinancePageComponent implements OnInit {
 
   conectarBanco(conexao?: PluggyConnection): void {
     if (this.conectandoBanco || this.salvandoConexao) return;
+    if (!this.podeConectarBanco) {
+      this.mensagemProvedor = this.configuracaoPluggyAusente
+        ? 'Configure as credenciais da aplicação Pluggy antes de conectar um banco.'
+        : this.erroCarregamentoConexoesPluggy || 'Carregue as conexões Meu Pluggy antes de iniciar uma nova autorização.';
+      return;
+    }
+    if (!conexao && this.limiteConexoesAtingido) return;
     this.conectandoBanco = true;
     this.mensagemProvedor = '';
     this.openFinanceService.obterConnectToken(conexao?.id).subscribe({
@@ -217,7 +231,7 @@ export class OpenFinancePageComponent implements OnInit {
         const status = error?.status as number | undefined;
         const apiMessage = typeof error?.error?.message === 'string' ? error.error.message.trim() : '';
         this.mensagemProvedor = status === 503
-          ? 'O Meu Pluggy ainda não está configurado no servidor.'
+          ? apiMessage || 'O Meu Pluggy ainda não está configurado no servidor.'
           : status === 409
             ? 'O limite gratuito de cinco conexões foi atingido.'
             : status === 403
@@ -305,15 +319,24 @@ export class OpenFinancePageComponent implements OnInit {
 
   private carregarConexoesPluggy(): void {
     this.carregandoConexoesPluggy = true;
+    this.erroCarregamentoConexoesPluggy = '';
     this.openFinanceService.obterConexoes().subscribe({
       next: conexoes => {
         this.conexoesPluggy = conexoes;
+        this.conexoesPluggyCarregadas = true;
+        this.configuracaoServidorPluggyPendente = false;
         this.carregandoConexoesPluggy = false;
       },
       error: error => {
         this.carregandoConexoesPluggy = false;
         this.conexoesPluggy = [];
-        this.mensagemProvedor = this.mensagemErroPluggy(error?.status, 'Não foi possível carregar as conexões Meu Pluggy.');
+        this.conexoesPluggyCarregadas = false;
+        this.configuracaoServidorPluggyPendente = error?.status === 503;
+        this.erroCarregamentoConexoesPluggy = this.mensagemErroPluggy(
+          error?.status,
+          'Não foi possível carregar as conexões Meu Pluggy.',
+          error?.error?.message,
+        );
       },
     });
   }
@@ -348,7 +371,11 @@ export class OpenFinancePageComponent implements OnInit {
         this.contasPluggy = [];
         this.saldosPluggy = [];
         this.transacoesPluggy = [];
-        const mensagem = this.mensagemErroPluggy(error?.status, 'Não foi possível carregar o resumo do Meu Pluggy.');
+        const mensagem = this.mensagemErroPluggy(
+          error?.status,
+          'Não foi possível carregar o resumo do Meu Pluggy.',
+          error?.error?.message,
+        );
         this.mensagemContasPluggy = mensagem;
         this.mensagemTransacoesPluggy = mensagem;
       },
@@ -608,6 +635,56 @@ export class OpenFinancePageComponent implements OnInit {
     return this.conexoesPluggy.length >= 5;
   }
 
+  get configuracaoPluggyAusente(): boolean {
+    return this.configuracaoServidorPluggyPendente
+      || this.configuracaoCredenciaisPluggy?.configured === false;
+  }
+
+  get podeConectarBanco(): boolean {
+    return this.conexoesPluggyCarregadas
+      && !this.carregandoConexoesPluggy
+      && !this.carregandoConfiguracaoPluggy
+      && !this.erroCarregamentoConexoesPluggy
+      && !this.configuracaoPluggyAusente
+      && !this.conectandoBanco
+      && !this.salvandoConexao;
+  }
+
+  get podeAdicionarConexao(): boolean {
+    return this.podeConectarBanco && !this.limiteConexoesAtingido;
+  }
+
+  get mostrarSemConexoesPluggy(): boolean {
+    return this.conexoesPluggyCarregadas
+      && !this.carregandoConexoesPluggy
+      && !this.carregandoConfiguracaoPluggy
+      && !this.erroCarregamentoConexoesPluggy
+      && !this.configuracaoPluggyAusente
+      && this.conexoesPluggy.length === 0;
+  }
+
+  get podeMostrarVisaoGeralPluggy(): boolean {
+    return this.conexoesPluggyCarregadas
+      && !this.carregandoConexoesPluggy
+      && !this.carregandoConfiguracaoPluggy
+      && !this.erroCarregamentoConexoesPluggy
+      && !this.configuracaoPluggyAusente
+      && this.conexoesPluggy.length > 0;
+  }
+
+  get textoBotaoConexaoPluggy(): string {
+    if (this.salvandoConexao) return 'Salvando conexão...';
+    if (this.conectandoBanco) return 'Abrindo autorização...';
+    if (this.carregandoConfiguracaoPluggy) return 'Verificando credenciais Pluggy...';
+    if (this.carregandoConexoesPluggy || !this.conexoesPluggyCarregadas) return 'Carregando conexões...';
+    if (this.configuracaoPluggyAusente) return 'Configure as credenciais Pluggy';
+    if (this.erroCarregamentoConexoesPluggy) return 'Recarregue as conexões';
+    if (this.limiteConexoesAtingido) return 'Limite de 5 bancos atingido';
+    return this.conexoesPluggy.length > 0
+      ? `Adicionar outro banco (${this.conexoesPluggy.length}/5)`
+      : 'Conectar Meu Pluggy';
+  }
+
   autorizacaoExpirada(conexao: PluggyConnection): boolean {
     return conexao.status === 'USER_AUTHORIZATION_EXPIRED'
       || (!!conexao.consentExpiresAt && new Date(conexao.consentExpiresAt).getTime() <= Date.now());
@@ -619,11 +696,11 @@ export class OpenFinancePageComponent implements OnInit {
     return prazo <= 30 * 24 * 60 * 60 * 1000;
   }
 
-  private mensagemErroPluggy(status: number | undefined, fallback: string): string {
+  private mensagemErroPluggy(status: number | undefined, fallback: string, mensagemServidor?: string): string {
     if (status === 403) return 'Esta integração pessoal está disponível somente para o titular configurado.';
     if (status === 409) return 'A autorização Meu Pluggy expirou. Renove a autorização para consultar os dados novamente.';
-    if (status === 503) return 'O Meu Pluggy ainda não está configurado no servidor.';
-    if (status === 502) return 'O Meu Pluggy está indisponível no momento. Tente novamente mais tarde.';
+    if (status === 503) return mensagemServidor?.trim() || 'O Meu Pluggy ainda não está configurado no servidor.';
+    if (status === 502) return mensagemServidor?.trim() || 'O Meu Pluggy está indisponível no momento. Tente novamente mais tarde.';
     if (status === 401) return 'Sua sessão não foi aceita pela API. Entre novamente no YourMoney e tente de novo.';
     if (status === 0) return 'Não foi possível conectar à API do YourMoney. Verifique se o servidor local está ativo e tente novamente.';
     if (status === 500) return 'A API do YourMoney encontrou um erro interno (HTTP 500) ao consultar o Meu Pluggy.';

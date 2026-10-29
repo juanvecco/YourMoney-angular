@@ -11,6 +11,8 @@ import {
   PluggyConnection,
   PluggyConnectToken,
   PluggyCredentialStatus,
+  PluggyExpenseReconciliationRequest,
+  PluggyExpenseReconciliationResult,
   PluggyOverview,
   PluggyOverviewFilter,
   PluggyTransactionImportRequest,
@@ -25,6 +27,15 @@ export class OpenFinanceService {
   private baseUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) { }
+
+  reconciliarDespesaPluggy(
+    request: PluggyExpenseReconciliationRequest
+  ): Observable<PluggyExpenseReconciliationResult> {
+    return this.http.post<PluggyExpenseReconciliationResult>(
+      this.baseUrl + '/OpenFinance/real-transactions/reconcile',
+      request
+    );
+  }
 
   obterConfiguracaoCredenciaisPluggy(): Observable<PluggyCredentialStatus> {
     return this.http.get<PluggyCredentialStatus>(`${this.baseUrl}/OpenFinance/pluggy-configuration`);

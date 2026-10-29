@@ -25,6 +25,8 @@
               @if (credenciais.clientIdHint) { <span>Client ID: {{ credenciais.clientIdHint }}</span> }
               @if (credenciais.updatedAt) { <span>Atualizada em {{ credenciais.updatedAt | date:'dd/MM/yyyy HH:mm' }}</span> }
             </div>
+          } @else if (credenciais.message) {
+            <p class="of-warning" role="alert">{{ credenciais.message }}</p>
           } @else if (credenciais.source === 'server') {
             <p class="of-warning">A configuração padrão do servidor está incompleta. Informe abaixo o Client ID e o Client Secret da sua aplicação Pluggy para validar e habilitar o acesso.</p>
           } @else {
@@ -42,7 +44,7 @@
                 <input type="password" name="pluggyClientSecret" [(ngModel)]="clientSecretPluggy" autocomplete="off" maxlength="1000" placeholder="Cole o Client Secret do Dashboard">
               </label>
               <button type="button" class="ym-button primary" (click)="salvarCredenciaisPluggy()" [disabled]="salvandoCredenciaisPluggy || !clientIdPluggy.trim() || !clientSecretPluggy">
-                {{ salvandoCredenciaisPluggy ? 'Validando e salvando...' : credenciais.configured ? 'Validar e substituir credenciais' : 'Validar e salvar credenciais' }}
+                {{ salvandoCredenciaisPluggy ? 'Validando e salvando...' : credenciais.configured ? 'Validar e substituir credenciais' : credenciais.source === 'database' ? 'Validar e atualizar credenciais' : 'Validar e salvar credenciais' }}
               </button>
             </div>
           } @else {
@@ -60,15 +62,21 @@
           <p>As transações ficam como prévia até você confirmar cada cadastro. O Meu Pluggy atualiza os bancos aproximadamente a cada 24 horas; recarregar esta tela busca os dados mais recentes já recebidos.</p>
         </div>
         <div class="of-connect-actions">
-          <button type="button" class="ym-button primary" (click)="conectarBanco()" [disabled]="conectandoBanco || salvandoConexao || limiteConexoesAtingido">
-            {{ salvandoConexao ? 'Salvando conexão...' : conectandoBanco ? 'Abrindo autorização...' : limiteConexoesAtingido ? 'Limite de 5 bancos atingido' : conexoesPluggy.length > 0 ? 'Adicionar outro banco (' + conexoesPluggy.length + '/5)' : 'Conectar Meu Pluggy' }}
+          <button type="button" class="ym-button primary" (click)="conectarBanco()" [disabled]="!podeAdicionarConexao">
+            {{ textoBotaoConexaoPluggy }}
           </button>
-          <button type="button" class="ym-button secondary" (click)="carregarDadosPluggy()">Recarregar dados</button>
+          <button type="button" class="ym-button secondary" (click)="carregarDadosPluggy()" [disabled]="carregandoConexoesPluggy || carregandoContasPluggy || carregandoTransacoesPluggy">Recarregar dados</button>
         </div>
       </div>
       @if (mensagemProvedor) { <p class="of-provider-message" [class.available]="provedorDisponivel" role="status">{{ mensagemProvedor }}</p> }
       @if (carregandoConexoesPluggy) { <app-view-state state="loading" message="Carregando conexões Pluggy..."></app-view-state> }
-      @if (!carregandoConexoesPluggy && conexoesPluggy.length === 0) {
+      @if (!carregandoConexoesPluggy && erroCarregamentoConexoesPluggy) {
+        <app-view-state state="loadError" [message]="erroCarregamentoConexoesPluggy" [retryAvailable]="!configuracaoPluggyAusente" (retry)="carregarDadosPluggy()"></app-view-state>
+      }
+      @if (!carregandoConexoesPluggy && !erroCarregamentoConexoesPluggy && configuracaoPluggyAusente) {
+        <app-view-state state="emptyPeriod" message="Configure as credenciais da aplicação Pluggy antes de carregar ou autorizar conexões bancárias."></app-view-state>
+      }
+      @if (mostrarSemConexoesPluggy) {
         <app-view-state state="emptyPeriod" message="Nenhuma conexão Meu Pluggy. Conecte seus bancos primeiro em meu.pluggy.ai e depois autorize o acesso por aqui."></app-view-state>
       }
       @if (conexoesPluggy.length > 0) {
@@ -86,7 +94,7 @@
               @if (autorizacaoExpirada(conexao)) { <p class="of-warning">Autorize o Meu Pluggy novamente para voltar a consultar os dados.</p> }
               @else if (autorizacaoExpiraEmBreve(conexao)) { <p class="of-warning">A autorização vence em breve. Renove para manter o acesso.</p> }
               <div class="of-connection-actions">
-                <button type="button" class="ym-button secondary" (click)="conectarBanco(conexao)" [disabled]="conectandoBanco || salvandoConexao">Renovar autorização</button>
+                <button type="button" class="ym-button secondary" (click)="conectarBanco(conexao)" [disabled]="!podeConectarBanco">Renovar autorização</button>
                 <button type="button" class="ym-button secondary" (click)="desconectarBanco(conexao)" [disabled]="conexaoSendoRemovida === conexao.id">
                   {{ conexaoSendoRemovida === conexao.id ? 'Removendo...' : 'Remover do YourMoney' }}
                 </button>
@@ -97,6 +105,7 @@
       }
     </section>
 
+    @if (podeMostrarVisaoGeralPluggy) {
     <section class="of-section ym-card" aria-labelledby="pluggyAccountsTitle">
       <div class="of-overview-heading">
         <div><p class="of-eyebrow">Resumo pessoal · últimos 30 dias</p><h2 id="pluggyAccountsTitle">Visão geral</h2>
@@ -208,6 +217,7 @@
         </div>
       }
     </section>
+    }
 
     @if (transacaoEmRevisao; as transacao) {
       <div class="of-dialog-backdrop" (click)="fecharRevisaoTransacao()">

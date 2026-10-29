@@ -83,6 +83,122 @@
                     </div>
                 </div>
 
+                <section class="ym-openfinance-panel" aria-labelledby="openfinance-title">
+                    <div class="ym-openfinance-toggle-row">
+                        <label class="ym-openfinance-toggle" for="mostrarOpenFinance">
+                            <input id="mostrarOpenFinance" type="checkbox" role="switch"
+                                [ngModel]="mostrarOpenFinance" (ngModelChange)="alternarOpenFinance($event)"
+                                name="mostrarOpenFinance" aria-controls="listaOpenFinance"
+                                [attr.aria-expanded]="mostrarOpenFinance" />
+                            <span class="ym-openfinance-toggle-track" aria-hidden="true"></span>
+                            <span>
+                                <strong id="openfinance-title">Mostrar transações Open Finance</strong>
+                                <small>Compare os dados bancários antes de cadastrar. A consulta segue a janela recente da integração.</small>
+                            </span>
+                        </label>
+                        <span class="ym-chip ym-openfinance-origin">Dados para conferência</span>
+                    </div>
+
+                    <div id="listaOpenFinance" [hidden]="!mostrarOpenFinance" class="ym-openfinance-list"
+                        aria-live="polite" [attr.aria-busy]="carregandoOpenFinance">
+                        <div class="ym-openfinance-state" *ngIf="carregandoOpenFinance">
+                            <i class="bi bi-arrow-repeat" aria-hidden="true"></i> Carregando transações da instituição...
+                        </div>
+                        <div class="ym-openfinance-state error" role="alert" *ngIf="!carregandoOpenFinance && erroOpenFinance">
+                            <div>
+                                <span>{{ erroOpenFinance }}</span>
+                                <p *ngIf="openFinanceConfiguracaoPendente">A integração precisa ser configurada no servidor antes que os dados bancários possam ser consultados.</p>
+                            </div>
+                            <button class="ym-button secondary" type="button" *ngIf="openFinanceConfiguracaoPendente" (click)="abrirOpenFinance()">
+                                Abrir Open Finance
+                            </button>
+                            <button class="ym-button" type="button" *ngIf="!openFinanceConfiguracaoPendente" (click)="carregarTransacoesOpenFinance()">
+                                Tentar novamente
+                            </button>
+                        </div>
+                        <div class="ym-openfinance-state" *ngIf="!carregandoOpenFinance && !erroOpenFinance && contasOpenFinanceDisponiveis === 0">
+                            <div>
+                                Nenhuma conexão Meu Pluggy. Conecte seus bancos primeiro em
+                                <a href="https://meu.pluggy.ai/" target="_blank" rel="noopener noreferrer">meu.pluggy.ai</a>
+                                e depois autorize o acesso por aqui.
+                            </div>
+                            <button class="ym-button secondary" type="button" (click)="abrirOpenFinance()">
+                                Autorizar no Open Finance
+                            </button>
+                        </div>
+                        <div class="ym-openfinance-state" *ngIf="!carregandoOpenFinance && !erroOpenFinance && (contasOpenFinanceDisponiveis ?? 0) > 0 && transacoesOpenFinance.length === 0">
+                            Nenhuma transação de saída disponível neste mês. Confira a conexão na área Open Finance; a integração mantém apenas o período recente disponível.
+                        </div>
+
+                        <article class="ym-openfinance-transaction" *ngFor="let transacao of transacoesOpenFinance">
+                            <div class="ym-openfinance-transaction-header">
+                                <div>
+                                    <span class="ym-openfinance-source-label"><i class="bi bi-bank" aria-hidden="true"></i> Open Finance</span>
+                                    <h3 class="ym-list-title">{{ transacao.description }}</h3>
+                                    <div class="ym-list-meta">
+                                        <span>{{ transacao.institutionName }}</span>
+                                        <span>{{ transacao.accountName }}</span>
+                                        <span>{{ formatarDataOpenFinance(transacao.date) }}</span>
+                                        <span>{{ transacao.currencyCode }}</span>
+                                    </div>
+                                </div>
+                                <div class="ym-openfinance-amount">
+                                    <strong>{{ formatarValorOrigemOpenFinance(transacao) }}</strong>
+                                    <small *ngIf="transacao.currencyCode?.toUpperCase() !== 'BRL' && valorEmReaisOpenFinance(transacao) > 0">
+                                        Equivalente em BRL informado pela instituição: {{ valorEmReaisOpenFinance(transacao) | financialValue }}
+                                    </small>
+                                    <span class="ym-chip" [class.ym-openfinance-linked]="transacao.registrationStatus === 'REGISTERED'">
+                                        {{ textoStatusOpenFinance(transacao) }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <p class="ym-openfinance-notice" *ngIf="!isTransacaoImportavel(transacao) && transacao.registrationStatus !== 'REGISTERED'">
+                                {{ transacao.importUnavailableReason || 'Esta transação está pendente ou não pode ser classificada como despesa.' }}
+                            </p>
+
+                            <div class="ym-openfinance-candidates" *ngIf="candidatosDespesa(transacao).length > 0">
+                                <h4>Possíveis despesas já cadastradas</h4>
+                                <article class="ym-openfinance-candidate" *ngFor="let candidata of candidatosDespesa(transacao)">
+                                    <div>
+                                        <strong>{{ candidata.description }}</strong>
+                                        <div class="ym-list-meta">
+                                            <span>{{ formatarData(candidata.date) }}</span>
+                                            <span>{{ candidata.amount | financialValue }}</span>
+                                            <span>{{ candidata.accountName || 'Conta local' }}</span>
+                                            <span>{{ candidata.categoryName || 'Sem categoria' }}</span>
+                                        </div>
+                                        <small>{{ candidata.reason }}</small>
+                                    </div>
+                                    <div class="ym-openfinance-actions" *ngIf="isTransacaoImportavel(transacao)">
+                                        <button class="ym-button" type="button"
+                                            (click)="vincularDespesaOpenFinance(transacao, candidata)"
+                                            [disabled]="transacao.registrationStatus === 'REGISTERED' || candidata.canLink === false">
+                                            Manter e vincular
+                                        </button>
+                                        <button class="ym-button" type="button"
+                                            (click)="substituirDespesaOpenFinance(transacao, candidata)"
+                                            [disabled]="transacao.registrationStatus === 'REGISTERED' || candidata.canReplace === false"
+                                            [title]="candidata.cannotReplaceReason || 'Revisar e substituir descrição, data e valor'">
+                                            {{ candidata.canReplace === false ? 'Substituição indisponível' : 'Revisar substituição' }}
+                                        </button>
+                                        <small *ngIf="candidata.canReplace === false">{{ candidata.cannotReplaceReason }}</small>
+                                    </div>
+                                </article>
+                            </div>
+
+                            <div class="ym-openfinance-footer" *ngIf="isTransacaoImportavel(transacao) && transacao.registrationStatus !== 'REGISTERED'">
+                                <button class="ym-button primary accent-danger" type="button"
+                                    (click)="confirmarCadastroSeparadoOpenFinance(transacao)">
+                                    <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                                    {{ candidatosDespesa(transacao).length > 0 ? 'Cadastrar como nova despesa' : 'Cadastrar despesa' }}
+                                </button>
+                                <small>Descrição, data e valor serão preenchidos e poderão ser revisados.</small>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
                 <div *ngIf="estadoCarregamento !== 'loadedWithData'" class="ym-empty ym-state-message"
                     [class.ym-state-error]="estadoCarregamento === 'loadError'">
                     <i class="bi bi-inbox"></i>
