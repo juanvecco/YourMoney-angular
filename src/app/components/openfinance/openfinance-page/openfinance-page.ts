@@ -612,7 +612,10 @@ export class OpenFinancePageComponent implements OnInit {
     if (status === 409) return 'A autorização Meu Pluggy expirou. Renove a autorização para consultar os dados novamente.';
     if (status === 503) return 'O Meu Pluggy ainda não está configurado no servidor.';
     if (status === 502) return 'O Meu Pluggy está indisponível no momento. Tente novamente mais tarde.';
-    return fallback;
+    if (status === 401) return 'Sua sessão não foi aceita pela API. Entre novamente no YourMoney e tente de novo.';
+    if (status === 0) return 'Não foi possível conectar à API do YourMoney. Verifique se o servidor local está ativo e tente novamente.';
+    if (status === 500) return 'A API do YourMoney encontrou um erro interno (HTTP 500) ao consultar o Meu Pluggy.';
+    return status ? `${fallback} (HTTP ${status}).` : fallback;
   }
 
   obterRotuloDirecao(direction: OpenFinanceTransactionPreview['direction']): string {
