@@ -214,13 +214,25 @@ export class OpenFinancePageComponent implements OnInit {
       error: error => {
         this.conectandoBanco = false;
         this.provedorDisponivel = false;
-        this.mensagemProvedor = error?.status === 503
+        const status = error?.status as number | undefined;
+        const apiMessage = typeof error?.error?.message === 'string' ? error.error.message.trim() : '';
+        this.mensagemProvedor = status === 503
           ? 'O Meu Pluggy ainda não está configurado no servidor.'
-          : error?.status === 409
+          : status === 409
             ? 'O limite gratuito de cinco conexões foi atingido.'
-            : error?.status === 403
+            : status === 403
               ? 'Esta integração pessoal está disponível somente para o titular configurado.'
-              : 'Não foi possível iniciar a conexão agora. Tente novamente.';
+              : status === 401
+                ? 'Sua sessão não foi aceita pela API. Entre novamente no YourMoney e tente de novo.'
+                : status === 0
+                  ? 'Não foi possível conectar à API do YourMoney. Verifique se o servidor local está ativo.'
+                  : status === 502
+                    ? `${apiMessage || 'Não foi possível comunicar com a Pluggy agora.'} (HTTP 502). Confira as credenciais Pluggy salvas e tente novamente.`
+                    : status === 500
+                      ? 'A API do YourMoney encontrou um erro interno (HTTP 500) ao iniciar a conexão.'
+                      : status
+                        ? `Não foi possível iniciar a conexão. A API respondeu com HTTP ${status}.`
+                        : 'Não foi possível iniciar a conexão agora. Tente novamente.';
       },
     });
   }
