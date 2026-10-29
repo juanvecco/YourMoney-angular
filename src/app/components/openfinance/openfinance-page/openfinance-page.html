@@ -21,16 +21,19 @@
         @if (configuracaoCredenciaisPluggy; as credenciais) {
           @if (credenciais.configured) {
             <div class="of-credential-status" role="status">
-              <span class="of-status available">{{ credenciais.source === 'server' ? 'Configurada no servidor' : 'Configurada e protegida' }}</span>
+              <span class="of-status available">{{ credenciais.source === 'server' ? 'Credenciais padrão do servidor' : 'Configurada e protegida' }}</span>
               @if (credenciais.clientIdHint) { <span>Client ID: {{ credenciais.clientIdHint }}</span> }
               @if (credenciais.updatedAt) { <span>Atualizada em {{ credenciais.updatedAt | date:'dd/MM/yyyy HH:mm' }}</span> }
             </div>
           } @else if (credenciais.source === 'server') {
-            <p class="of-warning">A configuração do servidor contém apenas parte das credenciais. Ela precisa ser corrigida no ambiente do servidor.</p>
+            <p class="of-warning">A configuração padrão do servidor está incompleta. Informe abaixo o Client ID e o Client Secret da sua aplicação Pluggy para validar e habilitar o acesso.</p>
           } @else {
             <p class="of-warning">As credenciais ainda não foram configuradas.</p>
           }
           @if (credenciais.canSave) {
+            @if (credenciais.source === 'server' && credenciais.configured) {
+              <p>Você também pode informar as credenciais da sua aplicação abaixo. Depois de validadas, elas serão guardadas com proteção e usadas nesta integração pessoal, no lugar das credenciais padrão.</p>
+            }
             <div class="of-credential-form">
               <label>Client ID
                 <input type="text" name="pluggyClientId" [(ngModel)]="clientIdPluggy" autocomplete="off" maxlength="200" placeholder="Cole o Client ID do Dashboard">
@@ -43,7 +46,7 @@
               </button>
             </div>
           } @else {
-            <p>As credenciais são administradas fora da tela por configuração do servidor.</p>
+            <p>Não é possível editar as credenciais nesta conta.</p>
           }
         }
         @if (mensagemConfiguracaoPluggy) { <p class="of-provider-message" role="status">{{ mensagemConfiguracaoPluggy }}</p> }
