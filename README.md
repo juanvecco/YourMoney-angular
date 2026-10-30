@@ -1,64 +1,104 @@
-# YourmoneyApp
+# YourMoney Web
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.4.
+Interface web do **YourMoney**, uma aplicação de gestão financeira pessoal que ajuda a acompanhar receitas, despesas, investimentos e metas em um único painel.
 
-## Development server
+Este repositório contém o frontend em Angular. A API está em [YourMoney](https://github.com/juanvecco/YourMoney).
 
-To start a local development server, run:
+## Principais recursos
 
-```bash
-ng serve
+- cadastro, login e rotas protegidas por autenticação;
+- dashboard mensal com resumo e gráfico financeiro;
+- gestão de receitas e despesas;
+- parcelamento de despesas com prévia das parcelas;
+- receitas e despesas recorrentes;
+- classificação de receitas e acompanhamento de reembolsos;
+- carteira de investimentos;
+- criação e acompanhamento de metas mensais;
+- organização por contas e categorias;
+- interface responsiva com estados de carregamento, vazio e erro.
+
+## Fluxo da aplicação
+
+```mermaid
+flowchart LR
+    User[Usuário] --> Pages[Páginas Angular]
+    Pages --> Services[Serviços tipados]
+    Services --> Interceptor[Interceptor JWT]
+    Interceptor --> API[YourMoney API]
+    API --> Database[(SQL Server)]
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Tecnologias
 
-For the repository startup shortcut, the primary local frontend is served by the
-API at `https://localhost:5001/dashboard`. The Angular dev server at
-`http://localhost:4200/` or `http://127.0.0.1:4200/` is a development origin and
-may require its own login because browser `localStorage` is isolated per origin.
+- Angular 20 com componentes standalone
+- TypeScript 5.8
+- RxJS
+- Angular Router, Forms e HttpClient
+- Chart.js
+- Angular Material e Bootstrap Icons
+- SweetAlert2
+- SCSS
+- Jasmine e Karma
+- Docker
 
-## Code scaffolding
+## Estrutura do projeto
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+```text
+src/app/
+├── components/      # páginas e funcionalidades por domínio
+├── guards/          # proteção de rotas autenticadas
+├── interceptors/    # envio do token JWT
+├── models/          # contratos tipados
+├── navegacao/       # home, menu e rodapé
+└── services/        # comunicação com a API
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Executando localmente
+
+### Pré-requisitos
+
+- [Node.js 22](https://nodejs.org/)
+- API [YourMoney](https://github.com/juanvecco/YourMoney) disponível em `https://localhost:5001`
+
+### 1. Clone e instale as dependências
 
 ```bash
-ng generate --help
+git clone https://github.com/juanvecco/YourMoney-angular.git
+cd YourMoney-angular
+npm ci
 ```
 
-## Building
-
-To build the project run:
+### 2. Inicie o servidor de desenvolvimento
 
 ```bash
-ng build
+npm start
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Acesse `http://localhost:4200`. O endereço da API é definido em `src/environments/environment.ts`.
 
-## Running unit tests
+> O frontend servido pela API em `https://localhost:5001` e o servidor Angular em `http://localhost:4200` usam origens diferentes. Por isso, cada origem mantém seu próprio `localStorage` e pode exigir um novo login.
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## Build e testes
 
 ```bash
-ng test
+npm run build
+npm test -- --watch=false --browsers=ChromeHeadless
 ```
 
-## Running end-to-end tests
+Os testes cobrem componentes, guards, interceptor, serviços e regras de apresentação financeira.
 
-For end-to-end (e2e) testing, run:
+## Docker
 
 ```bash
-ng e2e
+docker compose up --build
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+A aplicação ficará disponível em `http://localhost:4200`.
 
-## Additional Resources
+## Backend
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+A API REST, autenticação, persistência e regras de negócio estão no repositório [juanvecco/YourMoney](https://github.com/juanvecco/YourMoney).
+
+## Status
+
+Projeto em evolução contínua, usado para desenvolver e demonstrar uma solução full stack de finanças pessoais.
