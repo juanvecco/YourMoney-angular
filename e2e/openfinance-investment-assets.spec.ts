@@ -82,7 +82,7 @@ test('requires explicit confirmation to link, replace or create an investment po
     },
   ];
   const candidate = (investmentId: string, name: string, value: number) => ({
-    investmentId, name, type: 'CDB', code: null, isin: null, reason: 'Nome e tipo compatíveis',
+    investmentId, name, type: 'Renda fixa', code: null, isin: null, reason: 'Descrição semelhante; confirme o ativo',
     canReplace: true, cannotReplaceReason: null, descricao: 'Cadastro manual', quantidade: 2,
     precoMedio: 20, valorAtual: value, dataInvestimento: '2026-02-01T00:00:00',
     mesReferencia: '2026-02-01T00:00:00', receitaRecorrenteId: null,
@@ -91,8 +91,8 @@ test('requires explicit confirmation to link, replace or create an investment po
   const positions = [
     {
       investmentId: 'external-link', name: 'CDB correspondente', type: 'CDB', subtype: null,
-      balance: 90, quantity: 10, currentUnitQuote: 9, originalAmount: 80,
-      candidates: [candidate('investment-link', 'CDB já cadastrado', 90)],
+      balance: 95, quantity: 10, currentUnitQuote: 9.5, originalAmount: 80,
+      candidates: [{ ...candidate('investment-link', 'CDB já cadastrado', 90), valueDifference: 5, valueDifferencePercent: 5.56 }],
     },
     {
       investmentId: 'external-create', name: 'Tesouro novo', type: 'Tesouro', subtype: 'Selic',
@@ -101,7 +101,7 @@ test('requires explicit confirmation to link, replace or create an investment po
     {
       investmentId: 'external-replace', name: 'Fundo atualizado', type: 'Fundo', subtype: null,
       balance: 60, quantity: 3, currentUnitQuote: 20, originalAmount: 54,
-      candidates: [candidate('investment-replace', 'Fundo já cadastrado', 40)],
+      candidates: [{ ...candidate('investment-replace', 'Fundo já cadastrado', 40), valueDifference: 20, valueDifferencePercent: 50 }],
     },
   ];
   const links = new Map<string, string>();
@@ -161,11 +161,18 @@ test('requires explicit confirmation to link, replace or create an investment po
   await page.getByRole('checkbox', { name: 'Mostrar ativos Open Finance' }).check();
 
   const linkCard = page.locator('.ym-openfinance-asset').filter({ hasText: 'CDB correspondente' });
+  const comparison = linkCard.locator('.ym-openfinance-candidate__comparison');
+  await expect(comparison).toContainText('Valor cadastrado');
+  await expect(comparison).toContainText('R$ 90,00');
+  await expect(comparison).toContainText('Saldo Open Finance');
+  await expect(comparison).toContainText('R$ 95,00');
+  await expect(comparison).toContainText('+R$ 5,00 (+5,56%)');
   await linkCard.getByRole('button', { name: 'Manter e vincular' }).click();
   await page.getByRole('button', { name: 'Manter e vincular', exact: true }).click();
   await page.getByRole('button', { name: 'Entendi' }).click();
   await expect(linkCard.getByText(/Já vinculada/)).toBeVisible();
   expect(localInvestments[0]['valorAtual']).toBe(90);
+  expect(requests[0]).toMatchObject({ expectedLocalName: 'CDB já cadastrado', expectedLocalValue: 90 });
 
   const createCard = page.locator('.ym-openfinance-asset').filter({ hasText: 'Tesouro novo' });
   await createCard.getByRole('button', { name: 'Cadastrar ativo preenchido' }).click();
@@ -183,6 +190,8 @@ test('requires explicit confirmation to link, replace or create an investment po
   const replaceCard = page.locator('.ym-openfinance-asset').filter({ hasText: 'Fundo atualizado' });
   await replaceCard.getByRole('button', { name: 'Revisar e atualizar' }).click();
   await expect(page.getByText('Revisar atualização da posição')).toBeVisible();
+  await expect(page.getByLabel('Nome', { exact: true })).toHaveValue('Fundo já cadastrado');
+  await expect(page.getByLabel('Preço médio (R$)')).toHaveValue('20');
   await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
   expect(requests).toHaveLength(2);
   await replaceCard.getByRole('button', { name: 'Revisar e atualizar' }).click();

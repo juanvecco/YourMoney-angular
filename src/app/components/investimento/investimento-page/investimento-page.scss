@@ -96,8 +96,14 @@
 .ym-openfinance-candidate span { color: var(--ym-text-muted); font-size: .82rem; }
 .ym-openfinance-candidates { display: grid; gap: .55rem; padding-top: .65rem; border-top: 1px solid var(--ym-border); }
 .ym-openfinance-candidates h3 { margin: 0; font-size: .9rem; }
+.ym-openfinance-candidates > p { margin: 0; color: var(--ym-text-muted); font-size: .82rem; }
 .ym-openfinance-candidate { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem; border: 1px solid var(--ym-border); border-radius: .65rem; background: var(--ym-surface-interactive); }
 .ym-openfinance-candidate > div:first-child { display: grid; gap: .2rem; }
+.ym-openfinance-candidate__details { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ym-openfinance-candidate__comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem 1rem; margin: .35rem 0 0; }
+.ym-openfinance-candidate__comparison dt { color: var(--ym-text-muted); font-size: .75rem; font-weight: 400; }
+.ym-openfinance-candidate__comparison dd { margin: .15rem 0 0; font-weight: 700; }
+.ym-openfinance-candidate__difference { grid-column: 1 / -1; }
 .ym-openfinance-candidate__actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 .ym-openfinance-candidate__note { color: var(--ym-warning); }
 .ym-openfinance-review-note { display: grid; gap: .25rem; margin-bottom: 1rem; padding: .85rem; border: 1px solid var(--ym-investment, #8b6d30); border-radius: .7rem; background: var(--ym-surface-interactive); }

@@ -121,9 +121,9 @@
             <article class="ym-openfinance-asset" *ngFor="let ativo of overview.assets">
               <header><div><strong>{{ ativo.name }}</strong><span>{{ ativo.institutionName }} · {{ ativo.type }}<span *ngIf="ativo.subtype"> / {{ ativo.subtype }}</span></span></div><span class="ym-openfinance-asset__status" [class.warning]="ativo.isStale">{{ ativo.isStale ? 'Dados desatualizados' : rotuloSituacaoAtivo(ativo.status) }}</span></header>
               <div class="ym-openfinance-asset__facts">
-                <span><small>Saldo atual</small><strong>{{ formatarValorAtivo(ativo.balance, ativo.currencyCode) }}</strong></span>
+                <span><small>Saldo atual</small><strong>{{ formatarValorAtivo(ativo.balance, ativo.currencyCode) | financialValue }}</strong></span>
                 <span *ngIf="ativo.quantity !== null"><small>Quantidade</small><strong>{{ ativo.quantity | number:'1.0-8' }}</strong></span>
-                <span *ngIf="ativo.currentUnitQuote !== null"><small>Cotação unitária</small><strong>{{ formatarValorAtivo(ativo.currentUnitQuote, ativo.currencyCode) }}</strong></span>
+                <span *ngIf="ativo.currentUnitQuote !== null"><small>Cotação unitária</small><strong>{{ formatarValorAtivo(ativo.currentUnitQuote, ativo.currencyCode) | financialValue }}</strong></span>
                 <span><small>Data da posição</small><strong>{{ formatarDataCivil(dataCivilOpenFinance(ativo.positionDate)) }}</strong></span>
               </div>
               <p class="ym-openfinance-asset__identifiers" *ngIf="ativo.code || ativo.isin || ativo.issuer"><span *ngIf="ativo.code">Código: {{ ativo.code }}</span><span *ngIf="ativo.isin">ISIN: {{ ativo.isin }}</span><span *ngIf="ativo.issuer">Emissor: {{ ativo.issuer }}</span></p>
@@ -131,15 +131,26 @@
               <p *ngIf="!ativo.canReconcile && !ativo.linkedInvestmentId" class="ym-openfinance-state unavailable">{{ ativo.reconcileUnavailableReason || 'Esta posição pode ser consultada, mas não pode ser cadastrada neste momento.' }}</p>
               <div *ngIf="!ativo.linkedInvestmentId && ativo.candidates.length" class="ym-openfinance-candidates">
                 <h3>Possíveis correspondências na carteira</h3>
+                <p>Comparamos nome e descrição, mesmo sem código ou ISIN. O valor manual pode estar desatualizado; valores próximos ajudam a ordenar as sugestões. Confirme qual cadastro representa este ativo.</p>
                 <article class="ym-openfinance-candidate" *ngFor="let candidata of ativo.candidates">
-                  <div><strong>{{ candidata.name }}</strong><span>{{ candidata.type }} · {{ candidata.reason }}</span><span>Valor cadastrado: {{ formatarMoeda(candidata.valorAtual ?? 0) | financialValue }}</span></div>
+                  <div class="ym-openfinance-candidate__details">
+                    <strong>{{ candidata.name }}</strong>
+                    <span *ngIf="candidata.descricao && candidata.descricao !== candidata.name">{{ candidata.descricao }}</span>
+                    <span>{{ candidata.type }} · {{ candidata.reason }}</span>
+                    <dl class="ym-openfinance-candidate__comparison">
+                      <div><dt>Valor cadastrado</dt><dd>{{ formatarMoeda(candidata.valorAtual ?? 0) | financialValue }}</dd></div>
+                      <div><dt>Saldo Open Finance</dt><dd>{{ formatarValorAtivo(ativo.balance, ativo.currencyCode) | financialValue }}</dd></div>
+                      <div *ngIf="candidata.valueDifference !== null && candidata.valueDifference !== undefined" class="ym-openfinance-candidate__difference"><dt>Diferença em relação ao cadastro</dt><dd>{{ formatarDiferencaAtivo(candidata) | financialValue }}</dd></div>
+                    </dl>
+                    <small *ngIf="!candidata.canReplace" class="ym-openfinance-candidate__note">{{ candidata.cannotReplaceReason }}</small>
+                  </div>
                   <div class="ym-openfinance-candidate__actions">
                     <button type="button" class="ym-button secondary" [disabled]="salvandoOpenFinance" (click)="vincularAtivoOpenFinance(ativo, candidata)">Manter e vincular</button>
                     <button type="button" class="ym-button secondary" [disabled]="salvandoOpenFinance || !ativo.canReconcile || !candidata.canReplace" [attr.title]="candidata.cannotReplaceReason || null" (click)="abrirSubstituicaoAtivoOpenFinance(ativo, candidata)">Revisar e atualizar</button>
                   </div>
-                  <small *ngIf="!candidata.canReplace" class="ym-openfinance-candidate__note">{{ candidata.cannotReplaceReason }}</small>
                 </article>
               </div>
+              <p *ngIf="!ativo.linkedInvestmentId && !ativo.candidates.length" class="ym-openfinance-state">Nenhuma correspondência sugerida. Confira sua carteira antes de cadastrar outro investimento.</p>
               <div class="ym-openfinance-asset__actions" *ngIf="!ativo.linkedInvestmentId">
                 <button type="button" class="ym-button primary accent-investment" [disabled]="salvandoOpenFinance || !ativo.canReconcile" (click)="abrirCadastroAtivoOpenFinance(ativo)">Cadastrar ativo preenchido</button>
               </div>
@@ -253,8 +264,8 @@
       <div class="modal-body">
         <div *ngIf="ativoOpenFinanceContext as contexto" class="ym-openfinance-review-note">
           <strong>{{ contexto.action === 'replace' ? 'Revisar atualização da posição' : 'Dados recebidos do Open Finance' }}</strong>
-          <span>{{ contexto.ativo.institutionName }} · {{ contexto.ativo.name }} · {{ formatarValorAtivo(contexto.ativo.balance, contexto.ativo.currencyCode) }}</span>
-          <p *ngIf="contexto.action === 'replace' && contexto.candidata as candidata">Antes: {{ candidata.name }} · {{ formatarMoeda(candidata.valorAtual ?? 0) | financialValue }}. Confira os campos editáveis; a cotação da posição não será gravada como preço médio.</p>
+          <span>{{ contexto.ativo.institutionName }} · {{ contexto.ativo.name }} · {{ formatarValorAtivo(contexto.ativo.balance, contexto.ativo.currencyCode) | financialValue }}</span>
+          <p *ngIf="contexto.action === 'replace' && contexto.candidata as candidata">Antes: {{ candidata.name }} · {{ formatarMoeda(candidata.valorAtual ?? 0) | financialValue }}. O nome, a descrição, a data de aquisição e o preço médio cadastrados foram mantidos para revisão. Confira o saldo, a quantidade e a cotação recebidos do banco.</p>
           <p *ngIf="contexto.action === 'create'">Os dados disponíveis foram preenchidos para revisão. Complete os campos ausentes. A cotação unitária não representa o preço médio de aquisição.</p>
         </div>
         <p *ngIf="(ativoOpenFinanceContext || transacaoOpenFinanceParaCadastro) && erroReconciliacaoOpenFinance" class="ym-openfinance-alert error" role="alert">{{ erroReconciliacaoOpenFinance }}</p>

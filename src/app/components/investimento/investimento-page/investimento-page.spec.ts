@@ -808,7 +808,7 @@ describe('InvestimentoPageComponent Open Finance review', () => {
 
     expect(openFinanceService.reconciliarAtivoInvestimentoPluggy).toHaveBeenCalledWith(jasmine.objectContaining({
       connectionId: 'connection-1', externalInvestmentId: 'asset-1', action: 'link',
-      targetInvestmentId: 'investment-manual'
+      targetInvestmentId: 'investment-manual', expectedLocalName: 'CDB cadastrado', expectedLocalValue: 115
     }));
     expect(investimentoService.atualizarInvestimento).not.toHaveBeenCalled();
     expect(investimentoService.criarInvestimento).not.toHaveBeenCalled();
@@ -838,5 +838,49 @@ describe('InvestimentoPageComponent Open Finance review', () => {
     }));
     expect(investimentoService.criarInvestimento).not.toHaveBeenCalled();
     expect(investimentoService.atualizarInvestimento).not.toHaveBeenCalled();
+  });
+
+  it('preserves manual labels and acquisition cost while reviewing a different current balance and completing identity', () => {
+    component.alternarAtivosOpenFinance(true);
+    const asset = { ...component.ativosOpenFinanceOverview!.assets[0], code: 'CDB-A', isin: 'BR0000000001', purchaseDate: '2026-09-01' };
+    const candidate = {
+      investmentId: 'legacy', name: 'Minha reserva', descricao: 'CDB Banco Exemplo', type: 'Renda fixa',
+      code: null, isin: null, reason: 'Descrição igual', canReplace: true, cannotReplaceReason: null,
+      quantidade: 10, precoMedio: 9.5, valorAtual: 95, dataInvestimento: '2026-05-01',
+      mesReferencia: '2026-05-01', grupoObjetivoId: 'grupo-reserva', receitaRecorrenteId: null, tipoAtivo: 'RendaFixa'
+    };
+
+    component.abrirSubstituicaoAtivoOpenFinance(asset, candidate);
+    expect(component.novoInvestimento).toEqual(jasmine.objectContaining({
+      id: 'legacy', nome: 'Minha reserva', descricao: 'CDB Banco Exemplo', tipo: 'Renda fixa',
+      precoMedio: 9.5, valorAtual: 120, dataInvestimento: '2026-05-01', mesReferencia: '2026-05',
+      codigoAtivo: 'CDB-A', isin: 'BR0000000001', grupoObjetivoId: 'grupo-reserva'
+    }));
+    expect(openFinanceService.reconciliarAtivoInvestimentoPluggy).not.toHaveBeenCalled();
+    component.salvarInvestimento();
+    expect(openFinanceService.reconciliarAtivoInvestimentoPluggy).toHaveBeenCalledWith(jasmine.objectContaining({
+      action: 'replace', targetInvestmentId: 'legacy', expectedLocalValue: 95,
+      investment: jasmine.objectContaining({ nome: 'Minha reserva', valorAtual: 120, precoMedio: 9.5, codigoAtivo: 'CDB-A', isin: 'BR0000000001' })
+    }));
+  });
+
+  it('requires explicit acknowledgement before creating another position when a manual match is suggested', async () => {
+    component.alternarAtivosOpenFinance(true);
+    const asset = { ...component.ativosOpenFinanceOverview!.assets[0], candidates: [{
+      investmentId: 'legacy', name: 'Minha reserva', type: 'Renda fixa', code: null, isin: null,
+      reason: 'Descrição semelhante', canReplace: true, cannotReplaceReason: null, valorAtual: 95
+    }] };
+    feedbackService.confirm.and.returnValue(Promise.resolve(false));
+    await component.abrirCadastroAtivoOpenFinance(asset);
+    expect(component.ativoOpenFinanceContext).toBeNull();
+    expect(openFinanceService.reconciliarAtivoInvestimentoPluggy).not.toHaveBeenCalled();
+
+    feedbackService.confirm.and.returnValue(Promise.resolve(true));
+    await component.abrirCadastroAtivoOpenFinance(asset);
+    component.novoInvestimento.dataInvestimento = '2026-10-30';
+    component.salvarInvestimento();
+    expect(openFinanceService.reconciliarAtivoInvestimentoPluggy).toHaveBeenCalledWith(jasmine.objectContaining({
+      action: 'create', confirmPossibleDuplicate: true
+    }));
   });
 });

@@ -187,6 +187,8 @@ export interface PluggyInvestmentAssetCandidate {
   code: string | null;
   isin: string | null;
   reason: string;
+  valueDifference?: number | null;
+  valueDifferencePercent?: number | null;
   canReplace: boolean;
   cannotReplaceReason: string | null;
   descricao?: string;
@@ -247,6 +249,7 @@ export interface PluggyInvestmentAssetReconciliationRequest {
   targetInvestmentId?: string | null;
   expectedLocalName?: string | null;
   expectedLocalValue?: number | null;
+  confirmPossibleDuplicate?: boolean;
   investment?: {
     nome: string;
     descricao: string;

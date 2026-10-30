@@ -113,6 +113,7 @@ export class InvestimentoPageComponent implements OnDestroy {
     ativo: PluggyInvestmentAsset;
     action: 'create' | 'replace';
     candidata?: PluggyInvestmentAssetCandidate;
+    confirmPossibleDuplicate: boolean;
   } | null = null;
 
   get estadoCompartilhado(): FinancialViewState { return this.estadoCarregamento; }
@@ -242,7 +243,7 @@ export class InvestimentoPageComponent implements OnDestroy {
     const confirmado = await this.feedbackService.confirm({
       kind: 'confirmation',
       title: 'Manter investimento e vincular?',
-      message: `“${candidata.name}” será mantido como está e associado à posição de ${ativo.name}.`,
+      message: `Os dados financeiros de “${candidata.name}” serão mantidos e associados à posição de ${ativo.name}. Código e ISIN ausentes serão preenchidos se o banco os informar.`,
       confirmLabel: 'Manter e vincular'
     });
     if (!confirmado) return;
@@ -251,12 +252,15 @@ export class InvestimentoPageComponent implements OnDestroy {
       externalInvestmentId: ativo.investmentId,
       snapshotToken: ativo.snapshotToken,
       action: 'link',
-      targetInvestmentId: candidata.investmentId
+      targetInvestmentId: candidata.investmentId,
+      expectedLocalName: candidata.name,
+      expectedLocalValue: candidata.valorAtual
     });
   }
 
   async abrirCadastroAtivoOpenFinance(ativo: PluggyInvestmentAsset): Promise<void> {
     if (!ativo.canReconcile || ativo.linkedInvestmentId) return;
+    let confirmPossibleDuplicate = false;
     if (ativo.candidates.length) {
       const confirmado = await this.feedbackService.confirm({
         kind: 'confirmation',
@@ -265,8 +269,9 @@ export class InvestimentoPageComponent implements OnDestroy {
         confirmLabel: 'Revisar e cadastrar'
       });
       if (!confirmado) return;
+      confirmPossibleDuplicate = true;
     }
-    this.abrirFormularioAtivoOpenFinance(ativo, 'create');
+    this.abrirFormularioAtivoOpenFinance(ativo, 'create', undefined, confirmPossibleDuplicate);
   }
 
   abrirSubstituicaoAtivoOpenFinance(ativo: PluggyInvestmentAsset, candidata: PluggyInvestmentAssetCandidate): void {
@@ -284,31 +289,31 @@ export class InvestimentoPageComponent implements OnDestroy {
   private abrirFormularioAtivoOpenFinance(
     ativo: PluggyInvestmentAsset,
     action: 'create' | 'replace',
-    candidata?: PluggyInvestmentAssetCandidate
+    candidata?: PluggyInvestmentAssetCandidate,
+    confirmPossibleDuplicate = false
   ): void {
     this.erroReconciliacaoOpenFinance = null;
-    this.ativoOpenFinanceContext = { ativo, action, candidata };
+    this.ativoOpenFinanceContext = { ativo, action, candidata, confirmPossibleDuplicate };
     this.transacaoOpenFinanceParaCadastro = null;
     this.editando = false;
     const dataCompra = ativo.purchaseDate ? this.dataCivilOpenFinance(ativo.purchaseDate) : '';
     const mesAtual = new Date().toISOString().substring(0, 7);
     const quantidade = ativo.quantity ?? candidata?.quantidade ?? 0;
-    const precoMedioSugerido = ativo.originalAmount && ativo.quantity
-      ? ativo.originalAmount / ativo.quantity
-      : candidata?.precoMedio ?? 0;
+    const precoMedioSugerido = candidata?.precoMedio
+      ?? (ativo.originalAmount && ativo.quantity ? ativo.originalAmount / ativo.quantity : 0);
     this.novoInvestimento = {
       ...this.criarFormularioVazio(),
       id: action === 'replace' ? candidata?.investmentId ?? '' : '',
-      nome: ativo.name,
-      descricao: action === 'replace' ? ativo.name : ativo.name,
-      tipo: ativo.subtype || ativo.type || candidata?.type || '',
+      nome: candidata?.name || ativo.name,
+      descricao: candidata?.descricao || ativo.name,
+      tipo: candidata?.type || ativo.subtype || ativo.type || '',
       quantidade,
       precoMedio: precoMedioSugerido,
       valorAtual: ativo.balance,
-      codigoAtivo: ativo.code ?? candidata?.code ?? '',
-      isin: ativo.isin ?? candidata?.isin ?? '',
-      precoUnitarioAtual: ativo.currentUnitQuote,
-      dataInvestimento: action === 'replace' && !dataCompra && candidata?.dataInvestimento
+      codigoAtivo: candidata?.code || ativo.code || '',
+      isin: candidata?.isin || ativo.isin || '',
+      precoUnitarioAtual: ativo.currentUnitQuote ?? candidata?.precoUnitarioAtual ?? null,
+      dataInvestimento: action === 'replace' && candidata?.dataInvestimento
         ? candidata.dataInvestimento.substring(0, 10) : dataCompra,
       mesReferencia: action === 'replace' && candidata?.mesReferencia
         ? candidata.mesReferencia.substring(0, 7) : dataCompra ? dataCompra.substring(0, 7) : mesAtual,
@@ -331,13 +336,13 @@ export class InvestimentoPageComponent implements OnDestroy {
           this.cancelarCadastroOpenFinance();
           if (request.action !== 'link') {
             this.fecharModal();
-            this.carregarInvestimentos();
           }
+          this.carregarInvestimentos();
           this.carregarAtivosOpenFinance();
           void this.feedbackService.success(
             request.action === 'link' ? 'Ativo vinculado'
               : request.action === 'replace' ? 'Investimento atualizado' : 'Investimento cadastrado',
-            request.action === 'link' ? 'O investimento local foi preservado.'
+            request.action === 'link' ? 'Dados financeiros mantidos. Identificadores ausentes foram completados quando disponíveis no banco.'
               : 'A posição revisada foi associada à carteira.'
           );
         },
@@ -631,6 +636,7 @@ export class InvestimentoPageComponent implements OnDestroy {
         targetInvestmentId: contexto.candidata?.investmentId,
         expectedLocalName: contexto.candidata?.name,
         expectedLocalValue: contexto.candidata?.valorAtual,
+        confirmPossibleDuplicate: contexto.confirmPossibleDuplicate,
         investment: this.montarPayloadCriacao()
       };
       this.enviarReconciliacaoAtivoOpenFinance(request);
@@ -699,6 +705,15 @@ export class InvestimentoPageComponent implements OnDestroy {
     } catch {
       return `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 8 }).format(valor)} ${moeda || ''}`.trim();
     }
+  }
+
+  formatarDiferencaAtivo(candidata: PluggyInvestmentAssetCandidate): string {
+    const diferenca = candidata.valueDifference;
+    if (diferenca === null || diferenca === undefined) return 'Não comparável em moedas diferentes';
+    const valor = `${diferenca > 0 ? '+' : ''}${this.formatarMoeda(diferenca)}`;
+    const percentual = candidata.valueDifferencePercent;
+    return percentual === null || percentual === undefined ? valor
+      : `${valor} (${percentual > 0 ? '+' : ''}${this.formatarPercentual(percentual)})`;
   }
 
   rotuloEstadoAtivos(status: string): string {
