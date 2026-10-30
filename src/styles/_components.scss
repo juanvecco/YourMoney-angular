@@ -37,6 +37,8 @@
 .ym-button.secondary { color: var(--ym-text); background: var(--ym-surface-strong); border-color: var(--ym-border); }
 .ym-button:disabled { cursor: not-allowed; opacity: .56; transform: none; }
 .text-muted { color: var(--ym-muted) !important; }
+.ym-required { display: inline; color: var(--ym-danger); font-weight: 700; }
+.ym-form-hint { grid-column: 1 / -1; margin: 0 0 .9rem; color: var(--ym-muted); font-size: .82rem; line-height: 1.5; }
 .ym-topbar { background: var(--ym-header); border-bottom-color: var(--ym-border); }
 app-footer.ym-footer--app { display: block; }
 app-footer.ym-footer--app .ym-footer { width: min(1280px, calc(100% - 4rem)); text-align: right; }

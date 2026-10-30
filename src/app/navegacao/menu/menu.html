@@ -9,7 +9,7 @@
       <i class="bi" [class.bi-list]="!menuOpen" [class.bi-x-lg]="menuOpen" aria-hidden="true"></i>
     </button>
 
-    <a class="ym-brand" routerLink="/" (click)="closeMenu()" aria-label="YourMoney — início">
+    <a class="ym-brand" routerLink="/" (click)="onNavigate()" aria-label="YourMoney — início">
       <span class="ym-brand-icon" aria-hidden="true"><i class="bi bi-wallet2"></i></span>
       <span>YourMoney</span>
     </a>
@@ -25,7 +25,7 @@
         </button>
         <app-theme-toggle [iconOnly]="true"></app-theme-toggle>
         <a class="ym-topbar__text-action" routerLink="/configuracao" routerLinkActive="active"
-          ariaCurrentWhenActive="page" (click)="closeMenu()">
+          ariaCurrentWhenActive="page" (click)="onNavigate()">
           <i class="bi bi-gear" aria-hidden="true"></i><span class="ym-topbar__label">Configurações</span>
         </a>
         <button type="button" class="ym-topbar__text-action ym-topbar__logout" data-testid="logout" (click)="logout()">
@@ -54,22 +54,22 @@
       </div>
 
       <nav class="ym-app-drawer__nav" aria-label="Telas do aplicativo">
-        <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">
+        <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="onNavigate()">
           <i class="bi bi-grid-1x2" aria-hidden="true"></i><span>Dashboard</span>
         </a>
-        <a routerLink="/receitas" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">
+        <a routerLink="/receitas" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="onNavigate()">
           <i class="bi bi-arrow-down-left-circle" aria-hidden="true"></i><span>Receitas</span>
         </a>
-        <a routerLink="/despesas" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">
+        <a routerLink="/despesas" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="onNavigate()">
           <i class="bi bi-arrow-up-right-circle" aria-hidden="true"></i><span>Despesas</span>
         </a>
-        <a routerLink="/investimento" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">
+        <a routerLink="/investimento" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="onNavigate()">
           <i class="bi bi-graph-up-arrow" aria-hidden="true"></i><span>Investimentos</span>
         </a>
-        <a routerLink="/metas" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">
+        <a routerLink="/metas" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="onNavigate()">
           <i class="bi bi-bullseye" aria-hidden="true"></i><span>Metas</span>
         </a>
-        <a routerLink="/openfinance" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="closeMenu()">
+        <a routerLink="/openfinance" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="onNavigate()">
           <i class="bi bi-bank" aria-hidden="true"></i><span>Conexões</span>
         </a>
       </nav>

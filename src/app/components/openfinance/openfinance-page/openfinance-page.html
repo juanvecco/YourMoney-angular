@@ -37,11 +37,12 @@
               <p>Você também pode informar as credenciais da sua aplicação abaixo. Depois de validadas, elas serão guardadas com proteção e usadas nesta integração pessoal, no lugar das credenciais padrão.</p>
             }
             <div class="of-credential-form">
-              <label>Client ID
-                <input type="text" name="pluggyClientId" [(ngModel)]="clientIdPluggy" autocomplete="off" maxlength="200" placeholder="Cole o Client ID do Dashboard">
+              <p class="ym-form-hint">Campos com * são obrigatórios.</p>
+              <label><span>Client ID <span class="ym-required" aria-hidden="true">*</span></span>
+                <input type="text" name="pluggyClientId" [(ngModel)]="clientIdPluggy" autocomplete="off" maxlength="200" placeholder="Cole o Client ID do Dashboard" required>
               </label>
-              <label>Client Secret
-                <input type="password" name="pluggyClientSecret" [(ngModel)]="clientSecretPluggy" autocomplete="off" maxlength="1000" placeholder="Cole o Client Secret do Dashboard">
+              <label><span>Client Secret <span class="ym-required" aria-hidden="true">*</span></span>
+                <input type="password" name="pluggyClientSecret" [(ngModel)]="clientSecretPluggy" autocomplete="off" maxlength="1000" placeholder="Cole o Client Secret do Dashboard" required>
               </label>
               <button type="button" class="ym-button primary" (click)="salvarCredenciaisPluggy()" [disabled]="salvandoCredenciaisPluggy || !clientIdPluggy.trim() || !clientSecretPluggy">
                 {{ salvandoCredenciaisPluggy ? 'Validando e salvando...' : credenciais.configured ? 'Validar e substituir credenciais' : credenciais.source === 'database' ? 'Validar e atualizar credenciais' : 'Validar e salvar credenciais' }}
@@ -242,23 +243,24 @@
           @if (erroImportacao) { <p class="of-import-error" role="alert">{{ erroImportacao }}</p> }
           @if (!carregandoCadastrosImportacao) {
             <div class="of-import-form">
-              <label>Tipo de lançamento
-                <select name="importRecordType" [(ngModel)]="formImportacao.recordType">
+              <p class="ym-form-hint">Campos com * são obrigatórios.</p>
+              <label><span>Tipo de lançamento <span class="ym-required" aria-hidden="true">*</span></span>
+                <select name="importRecordType" [(ngModel)]="formImportacao.recordType" required>
                   <option value="">Selecione a classificação</option><option value="expense">Despesa</option><option value="revenue">Receita</option>
                 </select>
               </label>
-              <label>Descrição
+              <label><span>Descrição <span class="ym-required" aria-hidden="true">*</span></span>
                 <input type="text" name="importDescription" maxlength="255" [(ngModel)]="formImportacao.descricao" required>
               </label>
               <div class="of-import-pair">
-                <label>Valor (R$)
+                <label><span>Valor (R$) <span class="ym-required" aria-hidden="true">*</span></span>
                   <input type="number" name="importAmount" min="0.01" step="0.01" [(ngModel)]="formImportacao.valor" required>
                 </label>
-                <label>Data
+                <label><span>Data <span class="ym-required" aria-hidden="true">*</span></span>
                   <input type="date" name="importDate" [(ngModel)]="formImportacao.data" (change)="onDataImportacaoChange()" required>
                 </label>
               </div>
-              <label>Conta do YourMoney
+              <label><span>Conta do YourMoney <span class="ym-required" aria-hidden="true">*</span></span>
                 <select name="importAccount" [(ngModel)]="formImportacao.idContaFinanceira" required>
                   <option value="">Selecione uma conta</option>
                   @for (conta of contasFinanceirasImportacao; track conta.id) { <option [value]="conta.id">{{ conta.descricao }}</option> }
@@ -266,13 +268,13 @@
               </label>
               @if (formImportacao.recordType === 'expense') {
                 <div class="of-import-pair">
-                  <label>Tipo de despesa
+                  <label><span>Tipo de despesa <span class="ym-required" aria-hidden="true">*</span></span>
                     <select name="importExpenseType" [(ngModel)]="formImportacao.idTipoDespesa" (ngModelChange)="onTipoDespesaImportacaoChange()" required>
                       <option value="">Selecione</option>
                       @for (tipo of tiposDespesaImportacao; track tipo.id) { <option [value]="tipo.id">{{ tipo.descricao }}</option> }
                     </select>
                   </label>
-                  <label>Natureza
+                  <label>Natureza (opcional)
                     <select name="importExpenseNature" [(ngModel)]="formImportacao.idNaturezaDespesa" (ngModelChange)="onNaturezaDespesaImportacaoChange()" [disabled]="!naturezasDespesaImportacao.length">
                       <option value="">Selecione</option>
                       @for (natureza of naturezasDespesaImportacao; track natureza.id) { <option [value]="natureza.id">{{ natureza.descricao }}</option> }
@@ -280,7 +282,7 @@
                   </label>
                 </div>
                 @if (categoriasEspecificasImportacao.length) {
-                  <label>Categoria específica
+                  <label>Categoria específica (opcional)
                     <select name="importExpenseCategory" [(ngModel)]="formImportacao.idCategoriaEspecifica">
                       <option value="">Use a natureza selecionada</option>
                       @for (categoria of categoriasEspecificasImportacao; track categoria.id) { <option [value]="categoria.id">{{ categoria.descricao }}</option> }
@@ -288,16 +290,16 @@
                   </label>
                 }
               } @else if (formImportacao.recordType === 'revenue') {
-                <label>Natureza da receita
-                  <select name="importRevenueNature" [(ngModel)]="formImportacao.naturezaReceita" (ngModelChange)="onNaturezaReceitaImportacaoChange()">
+                <label><span>Natureza da receita <span class="ym-required" aria-hidden="true">*</span></span>
+                  <select name="importRevenueNature" [(ngModel)]="formImportacao.naturezaReceita" (ngModelChange)="onNaturezaReceitaImportacaoChange()" required>
                     <option value="RendaDisponivel">Renda disponível</option>
                     <option value="EntradaVinculadaDespesa">Destinada a despesa</option>
                     <option value="Reembolso">Reembolso</option>
                   </select>
                 </label>
                 @if (formImportacao.naturezaReceita === 'Reembolso') {
-                  <label>Despesa vinculada
-                    <select name="importRefundExpense" [(ngModel)]="formImportacao.despesaVinculadaId">
+                  <label><span>Despesa vinculada <span class="ym-required" aria-hidden="true">*</span></span>
+                    <select name="importRefundExpense" [(ngModel)]="formImportacao.despesaVinculadaId" required>
                       <option value="">Selecione uma despesa</option>
                       @for (despesa of despesasVinculaveisImportacao; track despesa.id) { <option [value]="despesa.id">{{ despesa.descricao }} · {{ despesa.valor | financialValue }}</option> }
                     </select>

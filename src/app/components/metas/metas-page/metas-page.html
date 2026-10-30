@@ -51,8 +51,8 @@
     <article class="metas-panel">
       <h2>{{ editando ? 'Editar meta' : 'Nova meta' }}</h2>
       <form (ngSubmit)="salvarMeta()">
-        <label>
-          Nome
+        <p class="ym-form-hint">Campos com * são obrigatórios.</p>
+        <label><span>Nome <span class="ym-required" aria-hidden="true">*</span></span>
           <input
             type="text"
             name="nome"
@@ -62,19 +62,17 @@
             required />
         </label>
 
-        <label>
-          Definir meta por
+        <label><span>Definir meta por <span class="ym-required" aria-hidden="true">*</span></span>
           <select
             name="tipoDefinicao"
             [ngModel]="formulario.tipoDefinicao"
-            (ngModelChange)="alterarTipoDefinicao($event)">
+            (ngModelChange)="alterarTipoDefinicao($event)" required>
             <option value="Valor">Valor</option>
             <option value="Percentual">Percentual</option>
           </select>
         </label>
 
-        <label *ngIf="formulario.tipoDefinicao === 'Percentual'">
-          Percentual da receita
+        <label *ngIf="formulario.tipoDefinicao === 'Percentual'"><span>Percentual da receita <span class="ym-required" aria-hidden="true">*</span></span>
           <input
             type="number"
             name="percentualReceita"
@@ -84,8 +82,7 @@
             required />
         </label>
 
-        <label *ngIf="formulario.tipoDefinicao === 'Valor'">
-          Valor da meta
+        <label *ngIf="formulario.tipoDefinicao === 'Valor'"><span>Valor da meta <span class="ym-required" aria-hidden="true">*</span></span>
           <input
             type="number"
             financialValueInput
@@ -106,7 +103,8 @@
 
         <fieldset class="metas-inline-objective">
           <legend>Criar objetivo sem sair da meta</legend>
-          <input name="novoObjetivoNome" maxlength="100" placeholder="Ex.: Aluguel para nós mesmos" [(ngModel)]="novoObjetivo.nome" />
+          <label for="novoObjetivoNome">Nome do novo objetivo (obrigatório para criar)</label>
+            <input id="novoObjetivoNome" name="novoObjetivoNome" maxlength="100" placeholder="Ex.: Aluguel para nós mesmos" [(ngModel)]="novoObjetivo.nome" />
           <input name="novoObjetivoValor" type="number" financialValueInput min="0.01" step="0.01" placeholder="Valor-alvo (opcional)" [(ngModel)]="novoObjetivo.valorAlvo" />
           <input name="novoObjetivoData" type="date" aria-label="Data-alvo do novo objetivo (opcional)" [(ngModel)]="novoObjetivo.dataAlvo" />
           <button type="button" class="metas-button" (click)="criarObjetivo()" [disabled]="!novoObjetivo.nome.trim()">Criar e selecionar</button>

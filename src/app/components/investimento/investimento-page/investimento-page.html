@@ -270,66 +270,67 @@
         </div>
         <p *ngIf="(ativoOpenFinanceContext || transacaoOpenFinanceParaCadastro) && erroReconciliacaoOpenFinance" class="ym-openfinance-alert error" role="alert">{{ erroReconciliacaoOpenFinance }}</p>
         <form>
+          <p class="ym-form-hint">Campos com * são obrigatórios.</p>
           <div class="row g-3">
             <div class="col-12">
-              <label class="form-label" for="nomeInvestimento">Nome</label>
-              <input id="nomeInvestimento" type="text" class="form-control" [(ngModel)]="novoInvestimento.nome" name="nome"
+              <label class="form-label" for="nomeInvestimento">Nome <span class="ym-required" aria-hidden="true">*</span></label>
+                <input id="nomeInvestimento" type="text" class="form-control" [(ngModel)]="novoInvestimento.nome" name="nome"
                 maxlength="100" required aria-required="true" />
             </div>
             <div class="col-12">
-              <label class="form-label" for="descricaoInvestimento">Descrição</label>
-              <input id="descricaoInvestimento" type="text" class="form-control" [(ngModel)]="novoInvestimento.descricao" name="descricao"
+              <label class="form-label" for="descricaoInvestimento">Descrição <span class="ym-required" aria-hidden="true">*</span></label>
+                <input id="descricaoInvestimento" type="text" class="form-control" [(ngModel)]="novoInvestimento.descricao" name="descricao"
                 maxlength="500" required aria-required="true" />
             </div>
             <div class="col-12">
-              <label class="form-label" for="modalidadeInvestimento">Produto ou modalidade</label>
-              <input id="modalidadeInvestimento" type="text" class="form-control" [(ngModel)]="novoInvestimento.tipo" name="tipo"
+              <label class="form-label" for="modalidadeInvestimento">Produto ou modalidade <span class="ym-required" aria-hidden="true">*</span></label>
+                <input id="modalidadeInvestimento" type="text" class="form-control" [(ngModel)]="novoInvestimento.tipo" name="tipo"
                 maxlength="100" required aria-required="true" />
               <div class="form-text">Ex.: Tesouro Selic 2029, CDB Banco X ou ETF IVVB11.</div>
             </div>
             <div class="col-md-6"><label class="form-label" for="objetivoInvestimento">Objetivo financeiro (opcional)</label><select id="objetivoInvestimento" class="form-select" [(ngModel)]="novoInvestimento.grupoObjetivoId" name="grupoObjetivoId"><option [ngValue]="null">Sem grupo</option><option *ngFor="let grupo of gruposAtivos" [ngValue]="grupo.id">{{ nomeGrupoObjetivo(grupo) }}</option></select></div>
             <div class="col-md-6"><label class="form-label" for="tipoAtivoInvestimento">Tipo de ativo (opcional)</label><select id="tipoAtivoInvestimento" class="form-select" [(ngModel)]="novoInvestimento.tipoAtivo" name="tipoAtivo"><option [ngValue]="null">Não classificado</option><option *ngFor="let tipo of tiposAtivo" [ngValue]="tipo.codigo">{{ tipo.nome }}</option></select></div>
             <div class="col-md-6">
-              <label class="form-label" for="quantidadeInvestimento">Quantidade</label>
-              <input id="quantidadeInvestimento" type="number" step="0.00000001" min="0.00000001" class="form-control"
+              <label class="form-label" for="quantidadeInvestimento">Quantidade <span class="ym-required" aria-hidden="true">*</span></label>
+                <input id="quantidadeInvestimento" type="number" step="0.00000001" min="0.00000001" class="form-control"
                 [(ngModel)]="novoInvestimento.quantidade" name="quantidade" required aria-required="true" />
             </div>
             <div class="col-md-6">
-              <label class="form-label" for="precoMedioInvestimento">Preço médio (R$)</label>
-              <input id="precoMedioInvestimento" type="number" financialValueInput step="0.00000001" min="0.00000001" class="form-control"
+              <label class="form-label" for="precoMedioInvestimento">Preço médio (R$) <span class="ym-required" aria-hidden="true">*</span></label>
+                <input id="precoMedioInvestimento" type="number" financialValueInput step="0.00000001" min="0.00000001" class="form-control"
                 [(ngModel)]="novoInvestimento.precoMedio" name="precoMedio" required aria-required="true" />
             </div>
             <div class="col-md-6">
               <label class="form-label" for="codigoAtivoInvestimento">Código / ticker (opcional)</label>
-              <input id="codigoAtivoInvestimento" type="text" class="form-control" maxlength="100" [(ngModel)]="novoInvestimento.codigoAtivo" name="codigoAtivo" />
+                <input id="codigoAtivoInvestimento" type="text" class="form-control" maxlength="100" [(ngModel)]="novoInvestimento.codigoAtivo" name="codigoAtivo" />
             </div>
             <div class="col-md-6">
               <label class="form-label" for="isinInvestimento">ISIN (opcional)</label>
-              <input id="isinInvestimento" type="text" class="form-control" maxlength="20" [(ngModel)]="novoInvestimento.isin" name="isin" />
+                <input id="isinInvestimento" type="text" class="form-control" maxlength="20" [(ngModel)]="novoInvestimento.isin" name="isin" />
             </div>
             <div class="col-md-6">
               <label class="form-label" for="cotacaoUnitarioInvestimento">Cotação unitária atual (R$)</label>
-              <input id="cotacaoUnitarioInvestimento" type="number" step="0.00000001" min="0.00000001" class="form-control" [(ngModel)]="novoInvestimento.precoUnitarioAtual" name="precoUnitarioAtual" />
+                <input id="cotacaoUnitarioInvestimento" type="number" step="0.00000001" min="0.00000001" class="form-control" [(ngModel)]="novoInvestimento.precoUnitarioAtual" name="precoUnitarioAtual" />
               <div class="form-text">Campo separado do preço médio de aquisição.</div>
             </div>
             <div class="col-md-6">
-              <label class="form-label" for="valorAtualInvestimento">Valor (R$)</label>
-              <input id="valorAtualInvestimento" type="number" financialValueInput step="0.01" min="0.01" class="form-control"
+              <label class="form-label" for="valorAtualInvestimento">Valor (R$) <span class="ym-required" aria-hidden="true">*</span></label>
+                <input id="valorAtualInvestimento" type="number" financialValueInput step="0.01" min="0.01" class="form-control"
                 [(ngModel)]="novoInvestimento.valorAtual" name="valor" required aria-required="true" />
             </div>
             <div class="col-md-6">
-              <label class="form-label" for="dataInvestimento">Data do investimento</label>
-              <input id="dataInvestimento" type="date" class="form-control" [(ngModel)]="novoInvestimento.dataInvestimento" name="data"
+              <label class="form-label" for="dataInvestimento">Data do investimento <span class="ym-required" aria-hidden="true">*</span></label>
+                <input id="dataInvestimento" type="date" class="form-control" [(ngModel)]="novoInvestimento.dataInvestimento" name="data"
                 required aria-required="true" />
             </div>
             <div class="col-md-6">
-              <label class="form-label" for="mesReferenciaInvestimento">Mês de referência</label>
-              <input id="mesReferenciaInvestimento" type="month" class="form-control" [(ngModel)]="novoInvestimento.mesReferencia"
+              <label class="form-label" for="mesReferenciaInvestimento">Mês de referência <span class="ym-required" aria-hidden="true">*</span></label>
+                <input id="mesReferenciaInvestimento" type="month" class="form-control" [(ngModel)]="novoInvestimento.mesReferencia"
                 name="mesReferencia" required aria-required="true" />
             </div>
             <div class="col-12">
               <label class="form-label" for="reservaSalarialInvestimento">Reserva salarial (opcional)</label>
-              <select id="reservaSalarialInvestimento" class="form-select" [(ngModel)]="novoInvestimento.receitaRecorrenteId" name="receitaRecorrenteId" [disabled]="carregandoSalarios">
+                <select id="reservaSalarialInvestimento" class="form-select" [(ngModel)]="novoInvestimento.receitaRecorrenteId" name="receitaRecorrenteId" [disabled]="carregandoSalarios">
                 <option [ngValue]="null">Sem vínculo com uma renda</option>
                 <option *ngFor="let salario of salariosElegiveis" [ngValue]="salario.id">
                   {{ salario.descricao }} · {{ salario.contaDescricao }}{{ salario.historica ? ' (indisponível — vínculo atual)' : '' }}

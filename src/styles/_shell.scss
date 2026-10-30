@@ -181,6 +181,13 @@
   background: color-mix(in srgb, var(--ym-primary) 11%, var(--ym-surface));
 }
 
+@media (min-width: 981px) {
+  .ym-app-drawer { width: var(--ym-sidebar-width); box-shadow: none; }
+  .ym-app-drawer-backdrop { display: none; }
+  .ym-route-content--with-sidebar,
+  app-footer.ym-footer--with-sidebar { margin-left: var(--ym-sidebar-width); }
+}
+
 @media (max-width: 980px) {
   .ym-topbar:not(.ym-topbar--app) .ym-nav { position: relative; }
   .ym-topbar:not(.ym-topbar--app) .ym-menu-trigger { display: inline-flex; order: 2; margin-left: auto; }

@@ -176,7 +176,7 @@ test('requires explicit confirmation to link, replace or create an investment po
 
   const createCard = page.locator('.ym-openfinance-asset').filter({ hasText: 'Tesouro novo' });
   await createCard.getByRole('button', { name: 'Cadastrar ativo preenchido' }).click();
-  await expect(page.getByLabel('Nome', { exact: true })).toHaveValue('Tesouro novo');
+  await expect(page.getByRole('textbox', { name: 'Nome', exact: true })).toHaveValue('Tesouro novo');
   await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
   expect(requests).toHaveLength(1);
   await createCard.getByRole('button', { name: 'Cadastrar ativo preenchido' }).click();
@@ -190,7 +190,7 @@ test('requires explicit confirmation to link, replace or create an investment po
   const replaceCard = page.locator('.ym-openfinance-asset').filter({ hasText: 'Fundo atualizado' });
   await replaceCard.getByRole('button', { name: 'Revisar e atualizar' }).click();
   await expect(page.getByText('Revisar atualização da posição')).toBeVisible();
-  await expect(page.getByLabel('Nome', { exact: true })).toHaveValue('Fundo já cadastrado');
+  await expect(page.getByRole('textbox', { name: 'Nome', exact: true })).toHaveValue('Fundo já cadastrado');
   await expect(page.getByLabel('Preço médio (R$)')).toHaveValue('20');
   await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
   expect(requests).toHaveLength(2);

@@ -278,30 +278,31 @@
             </div>
             <div class="modal-body pt-4">
                 <form>
+                  <p class="ym-form-hint">Campos com * são obrigatórios.</p>
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label">Descrição</label>
-                            <input type="text" class="form-control" [(ngModel)]="novaReceita.descricao"
+                            <label class="form-label" for="receita-descricao">Descrição <span class="ym-required" aria-hidden="true">*</span></label>
+                              <input id="receita-descricao" type="text" class="form-control" [(ngModel)]="novaReceita.descricao"
                                 name="descricao" required />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Valor (R$)</label>
-                            <input type="number" financialValueInput step="0.01" class="form-control" [(ngModel)]="novaReceita.valor"
+                            <label class="form-label" for="receita-valor">Valor (R$) <span class="ym-required" aria-hidden="true">*</span></label>
+                              <input id="receita-valor" type="number" financialValueInput step="0.01" class="form-control" [(ngModel)]="novaReceita.valor"
                                 name="valor" required />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Data</label>
-                            <input type="date" class="form-control" [(ngModel)]="novaReceita.data" name="data"
+                            <label class="form-label" for="receita-data">Data <span class="ym-required" aria-hidden="true">*</span></label>
+                              <input id="receita-data" type="date" class="form-control" [(ngModel)]="novaReceita.data" name="data"
                                 required />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Mês de Referência</label>
-                            <input type="month" class="form-control" [(ngModel)]="novaReceita.mesReferencia"
+                            <label class="form-label" for="receita-mesReferencia">Mês de Referência <span class="ym-required" aria-hidden="true">*</span></label>
+                              <input id="receita-mesReferencia" type="month" class="form-control" [(ngModel)]="novaReceita.mesReferencia"
                                 name="mesReferencia" required />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Natureza da entrada</label>
-                            <select class="form-select" [(ngModel)]="novaReceita.natureza"
+                            <label class="form-label" for="receita-naturezaReceita">Natureza da entrada <span class="ym-required" aria-hidden="true">*</span></label>
+                              <select id="receita-naturezaReceita" class="form-select" [(ngModel)]="novaReceita.natureza"
                                 name="naturezaReceita" (change)="onNaturezaReceitaChange()" required>
                                 <option value="RendaDisponivel">Renda disponível</option>
                                 <option value="EntradaVinculadaDespesa">Destinada a despesa</option>
@@ -309,8 +310,8 @@
                             </select>
                         </div>
                         <div class="col-md-6" *ngIf="novaReceita.natureza === 'Reembolso'">
-                            <label class="form-label">Despesa vinculada</label>
-                            <select class="form-select" [(ngModel)]="novaReceita.despesaVinculadaId"
+                            <label class="form-label" for="receita-despesaVinculada">Despesa vinculada <span class="ym-required" aria-hidden="true">*</span></label>
+                              <select id="receita-despesaVinculada" class="form-select" [(ngModel)]="novaReceita.despesaVinculadaId"
                                 name="despesaVinculada" required>
                                 <option value="" disabled>Selecione a despesa</option>
                                 <option *ngFor="let despesa of despesasVinculaveis" [value]="despesa.id">
@@ -352,58 +353,59 @@
             </div>
             <div class="modal-body pt-4">
                 <form>
+                  <p class="ym-form-hint">Campos com * são obrigatórios.</p>
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label" for="recorrenciaDescricao">Descrição</label>
-                            <input id="recorrenciaDescricao" type="text" maxlength="255" class="form-control"
+                            <label class="form-label" for="recorrenciaDescricao">Descrição <span class="ym-required" aria-hidden="true">*</span></label>
+                              <input id="recorrenciaDescricao" type="text" maxlength="255" class="form-control"
                                 [(ngModel)]="novaRecorrencia.descricao" name="recorrenciaDescricao" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label" for="recorrenciaValor">Valor mensal (R$)</label>
-                            <input id="recorrenciaValor" type="number" financialValueInput min="0.01" step="0.01" class="form-control"
+                            <label class="form-label" for="recorrenciaValor">Valor mensal (R$) <span class="ym-required" aria-hidden="true">*</span></label>
+                              <input id="recorrenciaValor" type="number" financialValueInput min="0.01" step="0.01" class="form-control"
                                 [(ngModel)]="novaRecorrencia.valorPrevisto" name="recorrenciaValor" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label" for="recorrenciaConta">Conta</label>
-                            <select id="recorrenciaConta" class="form-select" [(ngModel)]="novaRecorrencia.idContaFinanceira"
+                            <label class="form-label" for="recorrenciaConta">Conta <span class="ym-required" aria-hidden="true">*</span></label>
+                              <select id="recorrenciaConta" class="form-select" [(ngModel)]="novaRecorrencia.idContaFinanceira"
                                 name="recorrenciaConta" required>
                                 <option value="" disabled>Selecione uma conta</option>
                                 <option *ngFor="let conta of contas" [value]="conta.id">{{ conta.descricao }}</option>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label" for="recorrenciaNatureza">Natureza</label>
-                            <select id="recorrenciaNatureza" class="form-select" [(ngModel)]="novaRecorrencia.natureza"
+                            <label class="form-label" for="recorrenciaNatureza">Natureza <span class="ym-required" aria-hidden="true">*</span></label>
+                              <select id="recorrenciaNatureza" class="form-select" [(ngModel)]="novaRecorrencia.natureza"
                                 name="recorrenciaNatureza" required>
                                 <option value="RendaDisponivel">Renda disponível</option>
                                 <option value="EntradaVinculadaDespesa">Destinada a despesa</option>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label" for="recorrenciaRecebimento">Data-base de recebimento</label>
-                            <input id="recorrenciaRecebimento" type="date" class="form-control"
+                            <label class="form-label" for="recorrenciaRecebimento">Data-base de recebimento <span class="ym-required" aria-hidden="true">*</span></label>
+                              <input id="recorrenciaRecebimento" type="date" class="form-control"
                                 [(ngModel)]="novaRecorrencia.dataRecebimento" name="recorrenciaRecebimento" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label" for="recorrenciaInicio">Início</label>
-                            <input id="recorrenciaInicio" type="date" class="form-control"
+                            <label class="form-label" for="recorrenciaInicio">Início <span class="ym-required" aria-hidden="true">*</span></label>
+                              <input id="recorrenciaInicio" type="date" class="form-control"
                                 [(ngModel)]="novaRecorrencia.dataInicio" name="recorrenciaInicio" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label" for="recorrenciaTermino">Término</label>
-                            <input id="recorrenciaTermino" type="date" class="form-control"
+                            <label class="form-label" for="recorrenciaTermino">Término (opcional)</label>
+                              <input id="recorrenciaTermino" type="date" class="form-control"
                                 [(ngModel)]="novaRecorrencia.dataTermino" name="recorrenciaTermino">
                         </div>
                         <div class="col-md-6">
                             <label class="ym-check-row accent-success" for="recorrenciaSalario">
-                                <input id="recorrenciaSalario" type="checkbox" [(ngModel)]="novaRecorrencia.ehSalario"
+                              <input id="recorrenciaSalario" type="checkbox" [(ngModel)]="novaRecorrencia.ehSalario"
                                     name="recorrenciaSalario">
                                 <span>Identificar como salário</span>
                             </label>
                         </div>
                         <div class="col-md-6">
                             <label class="ym-check-row accent-success" for="recorrenciaReserva">
-                                <input id="recorrenciaReserva" type="checkbox"
+                              <input id="recorrenciaReserva" type="checkbox"
                                     [(ngModel)]="novaRecorrencia.consideraReservaEmergencia" name="recorrenciaReserva">
                                 <span>Usar como base da reserva</span>
                             </label>

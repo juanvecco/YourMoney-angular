@@ -11,7 +11,6 @@ import { LoginPageComponent } from './components/login/login-page/login-page';
 import { CadastroPageComponent } from './components/cadastro/cadastro-page/cadastro-page';
 import { MetasPageComponent } from './components/metas/metas-page/metas-page';
 import { MovimentacoesPageComponent } from './components/movimentacoes/movimentacoes-page/movimentacoes-page';
-import { OpenFinancePageComponent } from './components/openfinance/openfinance-page/openfinance-page';
 import { RecuperarSenhaPageComponent } from './components/auth/recuperar-senha-page/recuperar-senha-page';
 import { RedefinirSenhaPageComponent } from './components/auth/redefinir-senha-page/redefinir-senha-page';
 
@@ -60,7 +59,8 @@ export const routes: Routes = [
     },
     {
         path: 'openfinance',
-        component: OpenFinancePageComponent,
+        loadComponent: () => import('./components/openfinance/openfinance-page/openfinance-page')
+            .then(module => module.OpenFinancePageComponent),
         canActivate: [AuthGuard]
     },
     {

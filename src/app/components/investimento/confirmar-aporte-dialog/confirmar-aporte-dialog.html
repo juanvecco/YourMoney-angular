@@ -1,10 +1,13 @@
 <dialog #dialog class="aporte-dialog" aria-labelledby="tituloAporte" (cancel)="fechar()">
   <form (ngSubmit)="salvar()">
+    <p class="ym-form-hint">Campos com * são obrigatórios.</p>
     <h2 id="tituloAporte">Confirmar valor guardado</h2>
     <p *ngIf="meta"><strong>{{ meta.nome }}</strong> · planejado {{ meta.valorCalculado | financialValue }}</p>
-    <label>Valor confirmado<input name="valorAporte" type="number" financialValueInput min="0.01" step="0.01" [(ngModel)]="valor" required /></label>
-    <label>Data<input name="dataAporte" type="date" [(ngModel)]="dataConfirmacao" required /></label>
-    <label>Onde o dinheiro ficou alocado
+    <label><span>Valor confirmado <span class="ym-required" aria-hidden="true">*</span></span>
+      <input name="valorAporte" type="number" financialValueInput min="0.01" step="0.01" [(ngModel)]="valor" required /></label>
+    <label><span>Data <span class="ym-required" aria-hidden="true">*</span></span>
+      <input name="dataAporte" type="date" [(ngModel)]="dataConfirmacao" required /></label>
+    <label>Onde o dinheiro ficou alocado (opcional)
       <select name="investimentoAporte" [(ngModel)]="investimentoId"><option value="">Informar depois</option><option *ngFor="let item of destinos" [value]="item.id">{{ item.nome }}</option></select>
     </label>
     <small>A confirmação acompanha o plano, mas não altera o saldo do investimento.</small>

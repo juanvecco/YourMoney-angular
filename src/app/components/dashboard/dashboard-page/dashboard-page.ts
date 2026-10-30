@@ -395,8 +395,11 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
                     },
                     tooltip: {
                         backgroundColor: this.tokenCss('--ym-chart-tooltip', '#0f172a'),
-                        titleColor: this.tokenCss('--ym-inverse', '#ffffff'),
-                        bodyColor: this.tokenCss('--ym-inverse', '#ffffff'),
+                        titleColor: this.tokenCss('--ym-chart-tooltip-text', '#ffffff'),
+                        bodyColor: this.tokenCss('--ym-chart-tooltip-text', '#ffffff'),
+                        borderColor: this.tokenCss('--ym-chart-tooltip-border', '#6b7f8b'),
+                        borderWidth: 1,
+                        padding: 12,
                         callbacks: {
                             label: (context) => {
                                 const label = context.label || 'Valor';
@@ -508,8 +511,11 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
                     },
                     tooltip: {
                         backgroundColor: this.tokenCss('--ym-chart-tooltip', '#0f172a'),
-                        titleColor: this.tokenCss('--ym-inverse', '#ffffff'),
-                        bodyColor: this.tokenCss('--ym-inverse', '#ffffff'),
+                        titleColor: this.tokenCss('--ym-chart-tooltip-text', '#ffffff'),
+                        bodyColor: this.tokenCss('--ym-chart-tooltip-text', '#ffffff'),
+                        borderColor: this.tokenCss('--ym-chart-tooltip-border', '#6b7f8b'),
+                        borderWidth: 1,
+                        padding: 12,
                         callbacks: {
                             label: context => `${context.dataset.label}: ${this.formatarMoeda(Number(context.parsed.y))}`
                         }

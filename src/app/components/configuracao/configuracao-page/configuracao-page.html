@@ -39,10 +39,11 @@
     @if (secao === 'contas') {
       <section class="settings-grid">
         <form class="ym-card ym-card-pad account-form" (ngSubmit)="salvarConta()">
+          <p class="ym-form-hint">Campos com * são obrigatórios.</p>
           <h2>{{ contaEditando ? 'Renomear conta' : 'Nova conta' }}</h2>
           <p>Use nomes fáceis de reconhecer nos lançamentos, como “Nubank” ou “Carteira”.</p>
-          <label for="accountDescription">Nome da conta</label>
-          <input id="accountDescription" name="accountDescription" [(ngModel)]="contaDescricao" maxlength="255" required placeholder="Digite ou selecione um banco" list="instituicoesFinanceiras">
+          <label for="accountDescription">Nome da conta <span class="ym-required" aria-hidden="true">*</span></label>
+            <input id="accountDescription" name="accountDescription" [(ngModel)]="contaDescricao" maxlength="255" required placeholder="Digite ou selecione um banco" list="instituicoesFinanceiras">
           <datalist id="instituicoesFinanceiras">
             @for (instituicao of instituicoesBancarias; track instituicao) {
               <option [value]="instituicao"></option>

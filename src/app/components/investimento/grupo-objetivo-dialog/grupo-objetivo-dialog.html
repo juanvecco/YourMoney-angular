@@ -4,29 +4,30 @@
     <div class="modal-body">
       <p class="ym-dialog-help">Objetivo indica para que o dinheiro será usado. Cada investimento pode ter um objetivo.</p>
       <form class="ym-group-form" (ngSubmit)="salvar()">
+        <p class="ym-form-hint">Campos com * são obrigatórios.</p>
         <button *ngIf="!editando" class="ym-objective-suggestion" type="button" (click)="aplicarSugestaoCarro()">
           <img src="/assets/objectives/city-lx-sedan.jpg" alt="" />
           <span><small>Sugestão pronta</small><strong>Carro / Família</strong><span>City LX Sedan · {{ 117700 | financialValue }}</span></span>
           <i class="bi bi-arrow-right" aria-hidden="true"></i>
         </button>
         <div class="ym-field">
-          <label for="nomeObjetivo">Nome do objetivo</label>
-          <input #nomeInput id="nomeObjetivo" name="nomeObjetivo" class="form-control" maxlength="100" [(ngModel)]="nome" placeholder="Ex.: Carro / Família" required />
+          <label for="nomeObjetivo">Nome do objetivo <span class="ym-required" aria-hidden="true">*</span></label>
+            <input #nomeInput id="nomeObjetivo" name="nomeObjetivo" class="form-control" maxlength="100" [(ngModel)]="nome" placeholder="Ex.: Carro / Família" required />
         </div>
         <div class="ym-field">
-          <label for="descricaoObjetivo">Descrição</label>
-          <input id="descricaoObjetivo" name="descricaoObjetivo" class="form-control" maxlength="160" [(ngModel)]="descricao" placeholder="Ex.: City LX Sedan" />
+          <label for="descricaoObjetivo">Descrição (opcional)</label>
+            <input id="descricaoObjetivo" name="descricaoObjetivo" class="form-control" maxlength="160" [(ngModel)]="descricao" placeholder="Ex.: City LX Sedan" />
         </div>
         <div class="ym-field">
           <label for="grupoPaiObjetivo">Subobjetivo de (opcional)</label>
-          <select id="grupoPaiObjetivo" name="grupoPaiObjetivo" class="form-select" [(ngModel)]="grupoPaiId">
+            <select id="grupoPaiObjetivo" name="grupoPaiObjetivo" class="form-select" [(ngModel)]="grupoPaiId">
             <option [ngValue]="null">Objetivo principal</option>
             <option *ngFor="let pai of objetivosPrincipaisDisponiveis()" [ngValue]="pai.id">{{ pai.nome }}</option>
           </select>
           <small>Ex.: Carro / Família pode ficar dentro de Longo Prazo.</small>
         </div>
         <div class="ym-group-form__row ym-group-form__row--fields">
-          <div class="ym-field"><label for="valorAlvoObjetivo">Valor-alvo</label><input id="valorAlvoObjetivo" name="valorAlvoObjetivo" class="form-control" type="number" financialValueInput min="0.01" step="0.01" [(ngModel)]="valorAlvo" placeholder="0,00" /></div>
+          <div class="ym-field"><label for="valorAlvoObjetivo">Valor-alvo (opcional)</label><input id="valorAlvoObjetivo" name="valorAlvoObjetivo" class="form-control" type="number" financialValueInput min="0.01" step="0.01" [(ngModel)]="valorAlvo" placeholder="0,00" /></div>
           <div class="ym-field"><label for="dataAlvoObjetivo">Data-alvo (opcional)</label><input id="dataAlvoObjetivo" name="dataAlvoObjetivo" class="form-control" type="date" [(ngModel)]="dataAlvo" /></div>
         </div>
         <div class="ym-image-field">

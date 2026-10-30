@@ -58,7 +58,7 @@ test('creates objectives, associates organization and filters authoritative tota
   await expect(page.getByLabel('Objetivo financeiro').locator('option[value="g2"]')).toHaveText('Viver de renda');
 
   await page.getByRole('button', { name: 'Novo investimento' }).first().click();
-  await page.getByLabel('Nome', { exact: true }).fill('ETF internacional');
+  await page.getByRole('textbox', { name: 'Nome', exact: true }).fill('ETF internacional');
   await page.getByLabel('Descrição').fill('Longo prazo');
   await page.getByLabel('Produto ou modalidade').fill('IVVB11');
   await page.getByLabel('Objetivo financeiro (opcional)').selectOption({ label: 'Viver de renda' });

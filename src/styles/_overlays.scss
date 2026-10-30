@@ -1,6 +1,10 @@
 .modal-content, .dropdown-menu, .swal2-popup {
   color: var(--ym-text) !important; background: var(--ym-surface) !important; border: 1px solid var(--ym-border) !important;
 }
+// Dialogs and their backdrop must cover the fixed application header and sidebar.
+.modal-backdrop { z-index: 1500; }
+.modal { z-index: 1600; }
+.swal2-container { z-index: 1700; }
 .modal[aria-hidden='true']:not(.show) { display: none !important; }
 .modal-backdrop, .swal2-container.swal2-backdrop-show { background: var(--ym-overlay) !important; }
 .swal2-title, .swal2-html-container { color: var(--ym-text) !important; }

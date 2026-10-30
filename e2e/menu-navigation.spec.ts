@@ -11,6 +11,7 @@ const destinations = [
 
 const viewports = [
   { width: 1366, height: 768 },
+  { width: 1024, height: 768 },
   { width: 360, height: 640 },
   { width: 320, height: 568 },
   { width: 320, height: 400 },
@@ -23,10 +24,17 @@ for (const viewport of viewports) {
     await authenticateAs(userA);
     await page.goto('/dashboard');
 
-    await page.getByRole('button', { name: 'Abrir menu de navegação' }).click();
+    if (viewport.width <= 980) await page.getByRole('button', { name: 'Abrir menu de navegação' }).click();
     const drawer = page.locator('#main-menu');
     const navigation = drawer.getByRole('navigation', { name: 'Telas do aplicativo' });
     await expect(drawer).toHaveAttribute('aria-hidden', 'false');
+    if (viewport.width > 980) {
+      const bounds = await drawer.boundingBox();
+      const content = await page.locator('#main-content').boundingBox();
+      expect(content!.x).toBeGreaterThanOrEqual(bounds!.x + bounds!.width);
+      await expect(page.locator('.ym-app-drawer-backdrop')).not.toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
+    }
 
     const hrefs: string[] = [];
     for (const destination of destinations) {
@@ -96,11 +104,24 @@ for (const viewport of [
   });
 }
 
-test('navigates to each primary destination and closes the drawer', async ({ page, mockApi, authenticateAs, userA }) => {
+test('keeps desktop destinations expanded while navigating between pages', async ({ page, mockApi, authenticateAs, userA }) => {
   await mockApi();
   await authenticateAs(userA);
   await page.goto('/dashboard');
 
+  for (const destination of destinations) {
+    const drawer = page.locator('#main-menu');
+    await drawer.getByRole('link', { name: destination.label, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${destination.path.replaceAll('/', '\\/')}$`));
+    await expect(drawer).toHaveAttribute('aria-hidden', 'false');
+  }
+});
+
+test('keeps mobile navigation compact and closes the drawer after choosing a page', async ({ page, mockApi, authenticateAs, userA }) => {
+  await page.setViewportSize({ width: 360, height: 640 });
+  await mockApi();
+  await authenticateAs(userA);
+  await page.goto('/dashboard');
   for (const destination of destinations) {
     await page.getByRole('button', { name: 'Abrir menu de navegação' }).click();
     const drawer = page.locator('#main-menu');

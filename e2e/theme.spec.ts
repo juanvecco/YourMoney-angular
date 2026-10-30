@@ -13,18 +13,21 @@ test('ignores invalid storage and falls back to the operating-system preference'
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 });
 
-test('alternates and persists theme without losing route or form content', async ({ page }) => {
-  await page.goto('/login', { waitUntil: 'domcontentloaded' });
-  const email = page.getByLabel('E-mail');
-  await email.fill('pessoa@example.com');
+test('alternates and persists theme without losing route or form content', async ({ page, mockApi, authenticateAs, userA }) => {
+  await mockApi();
+  await authenticateAs(userA);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/metas', { waitUntil: 'domcontentloaded' });
+  const name = page.getByRole('textbox', { name: 'Nome', exact: true });
+  await name.fill('Minha meta');
   const toggle = page.getByRole('button', { name: /modo escuro/i });
   await toggle.click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(email).toHaveValue('pessoa@example.com');
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(name).toHaveValue('Minha meta');
+  await expect(page).toHaveURL(/\/metas$/);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(page).toHaveURL(/\/metas$/);
 });
 
 test('keeps a manual theme after logout', async ({ page, mockApi, authenticateAs, userA }) => {
