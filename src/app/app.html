@@ -1,10 +1,8 @@
 <a class="ym-skip-link" href="#main-content">Ir para o conteúdo principal</a>
 <app-menu #appMenu [class.ym-auth-shell-hidden]="isAuthPage()" [attr.aria-hidden]="isAuthPage()"></app-menu>
 <main id="main-content" class="ym-route-content" [class.ym-route-content--auth]="isAuthPage()"
-  [class.ym-route-content--app]="!isAuthPage() && appMenu.isLoggedIn()"
-  [class.ym-route-content--app-collapsed]="!isAuthPage() && appMenu.isLoggedIn() && appMenu.sidebarCollapsed" tabindex="-1">
+  [class.ym-route-content--app]="!isAuthPage() && appMenu.isLoggedIn()" tabindex="-1">
   <router-outlet></router-outlet>
 </main>
 <app-footer [class.ym-auth-shell-hidden]="isAuthPage()"
-  [class.ym-footer--app]="!isAuthPage() && appMenu.isLoggedIn()"
-  [class.ym-footer--app-collapsed]="!isAuthPage() && appMenu.isLoggedIn() && appMenu.sidebarCollapsed"></app-footer>
+  [class.ym-footer--app]="!isAuthPage() && appMenu.isLoggedIn()"></app-footer>

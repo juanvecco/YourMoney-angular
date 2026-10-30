@@ -55,10 +55,11 @@ export interface PluggyOverviewFilter {
   accountId?: string;
   from?: string;
   to?: string;
+  targetType?: 'investment';
 }
 
 export interface PluggyDuplicateCandidate {
-  recordType: 'expense' | 'revenue';
+  recordType: 'expense' | 'revenue' | 'investment';
   recordId: string;
   description: string;
   date: string;
@@ -70,6 +71,11 @@ export interface PluggyDuplicateCandidate {
   canReplace?: boolean;
   cannotReplaceReason?: string | null;
   matchReasons?: string[];
+  name?: string | null;
+  quantity?: number | null;
+  averagePrice?: number | null;
+  groupName?: string | null;
+  assetType?: string | null;
 }
 
 export interface PluggyTransactionPreview {
@@ -89,12 +95,13 @@ export interface PluggyTransactionPreview {
   status: string;
   previewOnly: true;
   registrationStatus: 'PENDING' | 'REGISTERED';
-  registeredRecordType: 'expense' | 'revenue' | null;
+  registeredRecordType: 'expense' | 'revenue' | 'investment' | null;
   registeredRecordId: string | null;
   possibleDuplicate: boolean;
   duplicateCandidate: PluggyDuplicateCandidate | null;
   possibleDuplicateCandidates?: PluggyDuplicateCandidate[];
   importable: boolean;
+  suggestedAmountBrl?: number | null;
   importUnavailableReason: string | null;
 }
 
@@ -120,6 +127,149 @@ export interface PluggyExpenseReconciliationResult {
   action: PluggyExpenseReconciliationAction;
   recordType: 'expense';
   recordId: string;
+  registeredAt: string;
+}
+
+export type PluggyInvestmentReconciliationAction = 'create' | 'link' | 'replace';
+
+export interface PluggyInvestmentReconciliationRequest {
+  transactionId: string;
+  action: PluggyInvestmentReconciliationAction;
+  targetInvestmentId?: string | null;
+  expectedDescription?: string | null;
+  expectedAmount?: number | null;
+  expectedDate?: string | null;
+  investment?: {
+    nome: string;
+    descricao: string;
+    tipo: string;
+    quantidade: number;
+    precoMedio: number;
+    valorAtual: number;
+    dataInvestimento: string;
+    mesReferencia: string;
+    receitaRecorrenteId: string | null;
+    grupoObjetivoId?: string | null;
+    tipoAtivo?: string | null;
+    operacaoId: string;
+  };
+  description?: string | null;
+  amount?: number | null;
+  date?: string | null;
+  confirmPossibleDuplicate?: boolean;
+}
+
+export interface PluggyInvestmentReconciliationResult {
+  transactionId: string;
+  action: PluggyInvestmentReconciliationAction;
+  recordType: 'investment';
+  recordId: string;
+  registeredAt: string;
+}
+
+export interface PluggyInvestmentAssetConnection {
+  connectionId: string;
+  institutionName: string;
+  hasInvestmentProduct: boolean;
+  status: 'never' | 'loading' | 'current' | 'empty' | 'no_product' | 'stale' | string;
+  lastAttemptAt: string | null;
+  lastSuccessAt: string | null;
+  nextRefreshAt: string | null;
+  retryAfterAt?: string | null;
+  message: string | null;
+  assetCount: number;
+}
+
+export interface PluggyInvestmentAssetCandidate {
+  investmentId: string;
+  name: string;
+  type: string;
+  code: string | null;
+  isin: string | null;
+  reason: string;
+  canReplace: boolean;
+  cannotReplaceReason: string | null;
+  descricao?: string;
+  quantidade?: number;
+  precoMedio?: number;
+  valorAtual?: number;
+  dataInvestimento?: string;
+  mesReferencia?: string | null;
+  receitaRecorrenteId?: string | null;
+  grupoObjetivoId?: string | null;
+  tipoAtivo?: string | null;
+  precoUnitarioAtual?: number | null;
+}
+
+export interface PluggyInvestmentAsset {
+  investmentId: string;
+  itemId: string;
+  connectionId: string;
+  institutionName: string;
+  name: string;
+  type: string;
+  subtype: string | null;
+  code: string | null;
+  isin: string | null;
+  balance: number;
+  currencyCode: string;
+  quantity: number | null;
+  currentUnitQuote: number | null;
+  originalAmount: number | null;
+  positionDate: string;
+  purchaseDate: string | null;
+  issuer: string | null;
+  issuerCnpj: string | null;
+  status: string | null;
+  sourceUpdatedAt: string | null;
+  snapshotToken: string;
+  isStale: boolean;
+  canReconcile: boolean;
+  reconcileUnavailableReason: string | null;
+  linkedInvestmentId: string | null;
+  linkedInvestmentName: string | null;
+  candidates: PluggyInvestmentAssetCandidate[];
+}
+
+export interface PluggyInvestmentAssetsOverview {
+  generatedAt: string;
+  connections: PluggyInvestmentAssetConnection[];
+  assets: PluggyInvestmentAsset[];
+}
+
+export type PluggyInvestmentAssetReconciliationAction = 'link' | 'replace' | 'create';
+
+export interface PluggyInvestmentAssetReconciliationRequest {
+  connectionId: string;
+  externalInvestmentId: string;
+  snapshotToken: string;
+  action: PluggyInvestmentAssetReconciliationAction;
+  targetInvestmentId?: string | null;
+  expectedLocalName?: string | null;
+  expectedLocalValue?: number | null;
+  investment?: {
+    nome: string;
+    descricao: string;
+    tipo: string;
+    quantidade: number;
+    precoMedio: number;
+    valorAtual: number;
+    codigoAtivo?: string | null;
+    isin?: string | null;
+    precoUnitarioAtual?: number | null;
+    dataInvestimento: string;
+    mesReferencia: string;
+    receitaRecorrenteId: string | null;
+    grupoObjetivoId?: string | null;
+    tipoAtivo?: string | null;
+    operacaoId: string;
+  };
+}
+
+export interface PluggyInvestmentAssetReconciliationResult {
+  externalInvestmentId: string;
+  action: PluggyInvestmentAssetReconciliationAction;
+  investmentId: string;
   registeredAt: string;
 }
 

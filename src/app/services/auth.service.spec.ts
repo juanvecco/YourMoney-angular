@@ -58,6 +58,24 @@ describe('AuthService', () => {
     expect(service.isLoggedIn()).toBeFalse();
   });
 
+  it('requests and completes password recovery without storing reset secrets', () => {
+    service.requestPasswordReset({ email: 'maria@example.com' }).subscribe();
+    const request = httpMock.expectOne(`${environment.apiUrl}/identidade/esqueci-minha-senha`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ email: 'maria@example.com' });
+    request.flush({ mensagem: 'Se a conta existir, enviaremos as instruções.' });
+
+    service.resetPassword({
+      email: 'maria@example.com', token: 'segredo-temporario',
+      senha: 'NovaSenha123', senhaConfirmacao: 'NovaSenha123',
+    }).subscribe();
+    const reset = httpMock.expectOne(`${environment.apiUrl}/identidade/resetar-senha`);
+    expect(reset.request.method).toBe('POST');
+    reset.flush({ mensagem: 'Senha redefinida.' });
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(localStorage.getItem('reset_token')).toBeNull();
+  });
+
   it('stores authentication data returned by registration', () => {
     service.register({
       nome: 'Maria Silva',

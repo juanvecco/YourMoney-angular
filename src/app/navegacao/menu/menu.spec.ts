@@ -17,20 +17,26 @@ describe('MenuComponent', () => {
     fixture.detectChanges();
   });
 
-  it('exposes every authenticated destination including Disponível', () => {
-    const hrefs = Array.from(fixture.nativeElement.querySelectorAll('a')).map((link: unknown) => (link as HTMLAnchorElement).getAttribute('href'));
-    expect(hrefs).toContain('/dashboard');
-    expect(hrefs).toContain('/receitas');
-    expect(hrefs).toContain('/despesas');
-    expect(hrefs).toContain('/disponivel');
-    expect(hrefs).toContain('/investimento');
-    expect(hrefs).toContain('/metas');
-    expect(hrefs).toContain('/configuracao');
+  it('shows exactly the six primary destinations in the vertical drawer', () => {
+    const links = Array.from(fixture.nativeElement.querySelectorAll('#main-menu .ym-app-drawer__nav a')) as HTMLAnchorElement[];
+    const hrefs = links.map(link => link.getAttribute('href'));
+    expect(hrefs).toEqual(['/dashboard', '/receitas', '/despesas', '/investimento', '/metas', '/openfinance']);
   });
 
   it('has one explicit logout action', () => {
     expect(fixture.nativeElement.querySelectorAll('[data-testid="logout"]')).toHaveSize(1);
     expect(fixture.nativeElement.querySelectorAll('[data-testid="mobile-logout"]')).toHaveSize(0);
+  });
+
+  it('keeps global actions in the top bar and out of the destination drawer', () => {
+    const actions = fixture.nativeElement.querySelector('.ym-topbar__actions') as HTMLElement;
+    const drawer = fixture.nativeElement.querySelector('#main-menu') as HTMLElement;
+    expect(actions.querySelector('.ym-topbar__icon-action')?.getAttribute('aria-label')).toMatch(/valores/i);
+    expect(actions.querySelector('.ym-theme-toggle--icon-only')).not.toBeNull();
+    expect(actions.querySelector('a[href="/configuracao"]')?.textContent).toContain('Configurações');
+    expect(actions.querySelector('[data-testid="logout"]')?.textContent).toContain('Sair');
+    expect(drawer.querySelector('a[href="/configuracao"]')).toBeNull();
+    expect(drawer.querySelector('[data-testid="logout"]')).toBeNull();
   });
 
   it('exposes the primary mobile destinations', () => {

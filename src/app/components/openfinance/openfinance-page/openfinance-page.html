@@ -338,6 +338,7 @@
       }
     </section>
 
+    @if (mostrarDemonstracao) {
     <section class="of-section ym-card">
       <div class="of-section-header"><div><p class="of-eyebrow">Demonstração</p><h2>Prévia de transações</h2><p>Classificações editadas aqui ficam somente nesta tela e não são importadas.</p></div>
         <button type="button" class="ym-button secondary" (click)="carregarPreview()">Recarregar</button>
@@ -363,5 +364,6 @@
         </div>
       }
     </section>
+    }
   </div>
 </div>

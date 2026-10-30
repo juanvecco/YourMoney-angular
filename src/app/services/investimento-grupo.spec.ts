@@ -40,4 +40,18 @@ describe('InvestimentoGrupoService', () => {
     expect(request.request.body.usuarioId).toBeUndefined();
     request.flush(null);
   });
+
+  it('uploads an objective image as multipart form data', () => {
+    const file = new File([new Uint8Array([0x89, 0x50])], 'goal.png', { type: 'image/png' });
+    service.enviarImagem(file).subscribe(response => expect(response.imagemUrl).toContain('/uploads/objetivos/'));
+
+    const request = http.expectOne(`${baseUrl}/imagens`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body instanceof FormData).toBeTrue();
+    const uploaded = (request.request.body as FormData).get('imagem') as File;
+    expect(uploaded.name).toBe('goal.png');
+    expect(uploaded.type).toBe('image/png');
+    expect(uploaded.size).toBe(file.size);
+    request.flush({ imagemUrl: '/uploads/objetivos/goal.png' });
+  });
 });

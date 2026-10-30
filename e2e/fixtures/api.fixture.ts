@@ -68,8 +68,27 @@ export function consolidatedOrganizationFixture(
   };
 }
 
+export function financialActivityFixture(): Record<string, unknown> {
+  return {
+    itens: [
+      { id: 'receita-e2e', tipo: 'receita', descricao: 'Salário', data: '2026-07-05',
+        mesReferencia: '2026-07', valor: 3000, contaFinanceiraId: 'conta-e2e',
+        contaFinanceiraNome: 'Conta principal', categoria: null, rotaOrigem: '/receitas' },
+      { id: 'despesa-e2e', tipo: 'despesa', descricao: 'Moradia', data: '2026-07-10',
+        mesReferencia: '2026-07', valor: 1200, contaFinanceiraId: 'conta-e2e',
+        contaFinanceiraNome: 'Conta principal', categoria: 'Casa', rotaOrigem: '/despesas' },
+    ],
+    pagina: 1, tamanhoPagina: 25, totalItens: 2, totalPaginas: 1,
+    totais: { receitas: 3000, despesas: 1200, investimentos: 400, saldo: 1800 },
+  };
+}
+
 function responseFor(url: string): unknown {
   const path = new URL(url).pathname.toLowerCase();
+  if (path.includes('/movimentacoes')) return financialActivityFixture();
+  if (path.includes('/contafinanceira')) return [
+    { id: 'conta-e2e', descricao: 'Conta principal', dataCriacao: '2026-01-01', podeRemover: false }
+  ];
   if (path.includes('/metas/resumo')) return {
     mesReferencia: '2026-07-01', receitaTotal: 0, receitaTotalBruta: 0, receitaElegivelMetas: 0,
     receitaExcluidaMetas: 0, despesaTotal: 0, despesaTotalBruta: 0, despesaTotalReembolsada: 0,

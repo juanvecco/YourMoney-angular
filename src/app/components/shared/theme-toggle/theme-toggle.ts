@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { ThemeService } from '../../../services/theme.service';
 
 @Component({
@@ -6,6 +6,8 @@ import { ThemeService } from '../../../services/theme.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ThemeToggleComponent {
+  @Input() iconOnly = false;
+
   constructor(readonly themeService: ThemeService) {}
   get destination(): string { return this.themeService.theme() === 'light' ? 'escuro' : 'claro'; }
 }

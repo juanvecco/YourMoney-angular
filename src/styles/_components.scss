@@ -1,8 +1,7 @@
 .ym-route-content { min-height: calc(100vh - 8rem); padding-top: 4.75rem; }
 .ym-auth-shell-hidden { display: none !important; }
 .ym-route-content--auth { min-height: 100vh; padding: 0; }
-.ym-route-content--app { min-height: 100vh; padding: 2rem 2.5rem 3rem 286px; transition: padding-left .22s ease; }
-.ym-route-content--app-collapsed { padding-left: 110px; }
+.ym-route-content--app { min-height: 100vh; padding: 5.75rem 2.5rem 3rem; }
 .ym-page, .ym-shell { width: min(1180px, calc(100% - 2rem)); margin-inline: auto; padding: 2rem 0 3.5rem; }
 .ym-route-content--app :where(.ym-page, .ym-shell) { width: min(1280px, 100%); padding-top: 1rem; }
 .ym-card, .card {
@@ -39,17 +38,15 @@
 .ym-button:disabled { cursor: not-allowed; opacity: .56; transform: none; }
 .text-muted { color: var(--ym-muted) !important; }
 .ym-topbar { background: var(--ym-header); border-bottom-color: var(--ym-border); }
-app-footer.ym-footer--app { display: block; margin-left: 256px; transition: margin-left .22s ease; }
-app-footer.ym-footer--app-collapsed { margin-left: 80px; }
+app-footer.ym-footer--app { display: block; }
 app-footer.ym-footer--app .ym-footer { width: min(1280px, calc(100% - 4rem)); text-align: right; }
 
 @media (max-width: 1199px) {
   .ym-route-content--app { padding: 5.25rem 1.5rem 2rem; }
-  app-footer.ym-footer--app { margin-left: 0; }
 }
 
 @media (max-width: 760px) {
-  .ym-route-content--app { padding: 4.5rem 1rem calc(78px + env(safe-area-inset-bottom)); }
+  .ym-route-content--app { padding: 4.5rem 1rem 2rem; }
   .ym-route-content--app :where(.ym-page, .ym-shell) { width: 100%; padding-top: .75rem; }
   .ym-card-pad { padding: 18px; }
   app-footer.ym-footer--app .ym-footer { width: calc(100% - 2rem); text-align: center; }

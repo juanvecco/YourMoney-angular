@@ -1,75 +1,40 @@
 import { of, throwError } from 'rxjs';
-import { Router } from '@angular/router';
 import { DisponivelPageComponent } from './disponivel-page';
-import { ReceitaService } from '../../../services/receita';
-import { DespesaService } from '../../../services/despesa';
-import { AuthService } from '../../../services/auth.service';
+import { MovimentacaoService } from '../../../services/movimentacao';
+import { FinancialNavigationContextService } from '../../../services/financial-navigation-context.service';
 
 describe('DisponivelPageComponent', () => {
   let component: DisponivelPageComponent;
-  let receitaService: jasmine.SpyObj<ReceitaService>;
-  let despesaService: jasmine.SpyObj<DespesaService>;
-  let authService: jasmine.SpyObj<AuthService>;
-  let router: jasmine.SpyObj<Router>;
+  let movimentacoes: jasmine.SpyObj<MovimentacaoService>;
+  let context: FinancialNavigationContextService;
 
   beforeEach(() => {
-    receitaService = jasmine.createSpyObj<ReceitaService>('ReceitaService', ['obterPorReferencia']);
-    despesaService = jasmine.createSpyObj<DespesaService>('DespesaService', ['obterPorReferencia']);
-    authService = jasmine.createSpyObj<AuthService>('AuthService', ['logout']);
-    router = jasmine.createSpyObj<Router>('Router', ['navigate']);
-    receitaService.obterPorReferencia.and.returnValue(of([]));
-    despesaService.obterPorReferencia.and.returnValue(of([]));
-
-    component = new DisponivelPageComponent(receitaService, despesaService, authService, router);
+    movimentacoes = jasmine.createSpyObj<MovimentacaoService>('MovimentacaoService', ['consultar']);
+    context = new FinancialNavigationContextService();
+    context.setPeriod(new Date(2026, 4, 1));
+    movimentacoes.consultar.and.returnValue(of({
+      itens: [], pagina: 1, tamanhoPagina: 10, totalItens: 2, totalPaginas: 1,
+      totais: { receitas: 3000, despesas: 1200, investimentos: 400, saldo: 1800 },
+    }));
+    component = new DisponivelPageComponent(movimentacoes, context);
+    component.ngOnInit();
   });
 
-  it('loads receitas and despesas for the same selected period', () => {
-    component.mesAtual = new Date(2026, 4, 1);
-    receitaService.obterPorReferencia.and.returnValue(of([
-      {
-        id: 'receita-1',
-        descricao: 'Salario',
-        valor: 3000,
-        data: '2026-05-01',
-        natureza: 'RendaDisponivel',
-        consideraNasMetas: true,
-        valorAbatidoEmDespesa: 0
-      }
-    ]));
-    despesaService.obterPorReferencia.and.returnValue(of([
-      {
-        id: 'despesa-1',
-        descricao: 'Mercado',
-        valor: 1200,
-        data: '2026-05-02',
-        idContaFinanceira: 'conta-1',
-        idCategoria: 'categoria-1'
-      }
-    ]));
-
-    component.carregarDados();
-
-    expect(receitaService.obterPorReferencia).toHaveBeenCalledWith(5, 2026);
-    expect(despesaService.obterPorReferencia).toHaveBeenCalledWith(5, 2026);
-    expect(component.calcularDisponivel()).toBe(1800);
-    expect(component.mensagemCarregamento).toBe('');
+  it('uses the authoritative activity totals for the selected period', () => {
+    expect(movimentacoes.consultar).toHaveBeenCalledWith({
+      mesInicial: '2026-05', mesFinal: '2026-05', pagina: 1, tamanhoPagina: 10,
+    });
+    expect(component.resumo.saldo).toBe(1800);
+    expect(component.resumo.investimentos).toBe(400);
+    expect(component.estadoDaPagina).toBe('loadedWithData');
   });
 
-  it('shows empty-period and partial load-error states', () => {
-    receitaService.obterPorReferencia.and.returnValue(of([]));
-    despesaService.obterPorReferencia.and.returnValue(of([]));
-
+  it('clears stale totals and exposes a recoverable load error', () => {
+    movimentacoes.consultar.and.returnValue(throwError(() => new Error('falha')));
     component.carregarDados();
 
-    expect(component.mensagemCarregamento).toContain('Nenhum registro');
-
-    spyOn(console, 'error');
-    receitaService.obterPorReferencia.and.returnValue(throwError(() => new Error('falha')));
-    despesaService.obterPorReferencia.and.returnValue(of([]));
-
-    component.carregarDados();
-
-    expect(component.estadoReceitas).toBe('loadError');
+    expect(component.resumo).toEqual({ receitas: 0, despesas: 0, investimentos: 0, saldo: 0 });
+    expect(component.estadoDaPagina).toBe('loadError');
     expect(component.mensagemCarregamento).toContain('Não foi possível');
   });
 });

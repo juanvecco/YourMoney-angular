@@ -5,6 +5,9 @@ export interface Investimento {
   tipo: string;
   quantidade: number;
   precoMedio: number;
+  codigoAtivo?: string | null;
+  isin?: string | null;
+  precoUnitarioAtual?: number | null;
   valorAtual: number;
   dataInvestimento: string;
   mesReferencia?: string | null;
@@ -111,6 +114,9 @@ export interface InvestimentoWriteRequest {
   tipo: string;
   quantidade: number;
   precoMedio: number;
+  codigoAtivo?: string | null;
+  isin?: string | null;
+  precoUnitarioAtual?: number | null;
   valorAtual: number;
   dataInvestimento: string;
   mesReferencia: string;

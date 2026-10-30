@@ -13,6 +13,11 @@ import {
   PluggyCredentialStatus,
   PluggyExpenseReconciliationRequest,
   PluggyExpenseReconciliationResult,
+  PluggyInvestmentReconciliationRequest,
+  PluggyInvestmentReconciliationResult,
+  PluggyInvestmentAssetsOverview,
+  PluggyInvestmentAssetReconciliationRequest,
+  PluggyInvestmentAssetReconciliationResult,
   PluggyOverview,
   PluggyOverviewFilter,
   PluggyTransactionImportRequest,
@@ -34,6 +39,35 @@ export class OpenFinanceService {
     return this.http.post<PluggyExpenseReconciliationResult>(
       this.baseUrl + '/OpenFinance/real-transactions/reconcile',
       request
+    );
+  }
+
+  reconciliarInvestimentoPluggy(
+    request: PluggyInvestmentReconciliationRequest
+  ): Observable<PluggyInvestmentReconciliationResult> {
+    return this.http.post<PluggyInvestmentReconciliationResult>(
+      this.baseUrl + '/OpenFinance/real-transactions/reconcile-investment',
+      request
+    );
+  }
+
+  obterAtivosInvestimentoPluggy(
+    connectionId?: string,
+    retryFailed = false
+  ): Observable<PluggyInvestmentAssetsOverview> {
+    let params = new HttpParams();
+    if (connectionId) params = params.set('connectionId', connectionId);
+    if (retryFailed) params = params.set('retryFailed', 'true');
+    return this.http.get<PluggyInvestmentAssetsOverview>(
+      `${this.baseUrl}/OpenFinance/investments/preview`, { params }
+    );
+  }
+
+  reconciliarAtivoInvestimentoPluggy(
+    request: PluggyInvestmentAssetReconciliationRequest
+  ): Observable<PluggyInvestmentAssetReconciliationResult> {
+    return this.http.post<PluggyInvestmentAssetReconciliationResult>(
+      `${this.baseUrl}/OpenFinance/investments/reconcile`, request
     );
   }
 
@@ -96,6 +130,7 @@ export class OpenFinanceService {
     if (filtro.accountId) params = params.set('accountId', filtro.accountId);
     if (filtro.from) params = params.set('from', filtro.from);
     if (filtro.to) params = params.set('to', filtro.to);
+    if (filtro.targetType) params = params.set('targetType', filtro.targetType);
     return this.http.get<PluggyOverview>(`${this.baseUrl}/OpenFinance/real-transactions/overview`, { params });
   }
 

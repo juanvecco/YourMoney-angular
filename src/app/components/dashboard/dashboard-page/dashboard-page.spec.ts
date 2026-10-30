@@ -6,6 +6,7 @@ import { ReceitaService } from '../../../services/receita';
 import { DespesaService } from '../../../services/despesa';
 import { InvestimentoService } from '../../../services/investimento';
 import { AuthService } from '../../../services/auth.service';
+import { MovimentacaoService } from '../../../services/movimentacao';
 
 describe('DashboardPageComponent', () => {
   let fixture: ComponentFixture<DashboardPageComponent>;
@@ -15,6 +16,7 @@ describe('DashboardPageComponent', () => {
   let investimentoService: jasmine.SpyObj<InvestimentoService>;
   let authService: jasmine.SpyObj<AuthService>;
   let router: jasmine.SpyObj<Router>;
+  let movimentacaoService: jasmine.SpyObj<MovimentacaoService>;
 
   beforeEach(async () => {
     receitaService = jasmine.createSpyObj<ReceitaService>('ReceitaService', ['obterPorReferencia']);
@@ -24,6 +26,11 @@ describe('DashboardPageComponent', () => {
     router = jasmine.createSpyObj<Router>('Router', ['navigate', 'createUrlTree', 'serializeUrl'], { events: of() });
     router.createUrlTree.and.returnValue({} as ReturnType<Router['createUrlTree']>);
     router.serializeUrl.and.returnValue('/');
+    movimentacaoService = jasmine.createSpyObj<MovimentacaoService>('MovimentacaoService', ['consultar']);
+    movimentacaoService.consultar.and.returnValue(of({
+      itens: [], pagina: 1, tamanhoPagina: 10, totalItens: 0, totalPaginas: 0,
+      totais: { receitas: 0, despesas: 0, investimentos: 0, saldo: 0 },
+    }));
 
     receitaService.obterPorReferencia.and.returnValue(of([]));
     despesaService.obterPorReferencia.and.returnValue(of([]));
@@ -38,6 +45,7 @@ describe('DashboardPageComponent', () => {
         { provide: ReceitaService, useValue: receitaService },
         { provide: DespesaService, useValue: despesaService },
         { provide: InvestimentoService, useValue: investimentoService },
+        { provide: MovimentacaoService, useValue: movimentacaoService },
         { provide: AuthService, useValue: authService }
       ]
     }).compileComponents();

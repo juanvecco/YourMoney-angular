@@ -10,7 +10,7 @@ for (const viewport of viewports) {
     await page.setViewportSize(viewport);
     await mockApi();
     await authenticateAs(userA);
-    for (const route of ['/dashboard', '/investimento']) {
+    for (const route of ['/dashboard', '/investimento', '/metas']) {
       await page.goto(route, { waitUntil: 'domcontentloaded' });
       const overflows = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
       expect(overflows, `${route} should not overflow at ${viewport.width}px`).toBe(false);

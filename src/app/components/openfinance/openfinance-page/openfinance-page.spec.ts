@@ -137,11 +137,33 @@ describe('OpenFinancePageComponent', () => {
   it('loads transaction preview and keeps status preview-only', () => {
     component.carregarPreview();
 
+    expect(component.mostrarDemonstracao).toBeTrue();
     expect(openFinanceService.obterPreviewTransacoes).toHaveBeenCalledWith('mock-transactions');
     expect(component.estadoPreview).toBe('loaded');
     expect(component.transacoes.length).toBe(2);
     expect(component.transacoes.every(item => item.importStatus === 'preview-only')).toBeTrue();
     expect(component.transacoes.some(item => item.duplicateRisk)).toBeTrue();
+  });
+
+  it('keeps the demonstration hidden and does not fetch it on initialization', () => {
+    spyOn(component, 'carregarFontes');
+    spyOn(component, 'carregarConfiguracaoCredenciaisPluggy');
+    spyOn(component, 'carregarDadosPluggy');
+    const carregarPreview = spyOn(component, 'carregarPreview');
+
+    component.ngOnInit();
+
+    expect(component.mostrarDemonstracao).toBeFalse();
+    expect(component.estadoPreview).toBe('idle');
+    expect(carregarPreview).not.toHaveBeenCalled();
+  });
+
+  it('shows and loads the selected source after choosing to view the demonstration', () => {
+    component.escolherFonte(sourcesResponse.sources[0]);
+
+    expect(component.mostrarDemonstracao).toBeTrue();
+    expect(component.fonteSelecionada).toBe('mock-transactions');
+    expect(openFinanceService.obterPreviewTransacoes).toHaveBeenCalledWith('mock-transactions');
   });
 
   it('updates suggested classification locally only', () => {

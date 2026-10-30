@@ -18,7 +18,7 @@ import {
 import { Despesa, Categoria, ContaFinanceira } from '../../../models/despesa.model';
 import { DespesaService } from '../../../services/despesa';
 
-type ViewState = 'loading' | 'loaded' | 'empty' | 'error';
+type ViewState = 'idle' | 'loading' | 'loaded' | 'empty' | 'error';
 
 @Component({
   selector: 'app-openfinance-page',
@@ -32,7 +32,7 @@ export class OpenFinancePageComponent implements OnInit {
   readiness: OpenFinanceReadiness | null = null;
   transacoes: OpenFinanceTransactionPreview[] = [];
   estadoFontes: ViewState = 'loading';
-  estadoPreview: ViewState = 'loading';
+  estadoPreview: ViewState = 'idle';
   mensagemErroFontes = '';
   mensagemErroPreview = '';
   verificandoProvedor = false;
@@ -89,6 +89,7 @@ export class OpenFinancePageComponent implements OnInit {
   clientSecretPluggy = '';
   mensagemConfiguracaoPluggy = '';
   configuracaoPluggyVisivel = true;
+  mostrarDemonstracao = false;
   fonteSelecionada = 'mock-transactions';
   private fontesRevision = 0;
   private previewRevision = 0;
@@ -101,7 +102,6 @@ export class OpenFinancePageComponent implements OnInit {
 
   ngOnInit(): void {
     this.carregarFontes();
-    this.carregarPreview();
     this.carregarConfiguracaoCredenciaisPluggy();
     this.carregarDadosPluggy();
   }
@@ -174,6 +174,7 @@ export class OpenFinancePageComponent implements OnInit {
   }
 
   carregarPreview(sourceId = this.fonteSelecionada): void {
+    this.mostrarDemonstracao = true;
     const revision = ++this.previewRevision;
     this.estadoPreview = 'loading';
     this.mensagemErroPreview = '';

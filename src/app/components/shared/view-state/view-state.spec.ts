@@ -26,4 +26,16 @@ describe('ViewStateComponent', () => {
     fixture.nativeElement.querySelector('button').click();
     expect(fixture.componentInstance.retry.emit).toHaveBeenCalled();
   });
+
+  it('exposes an optional recovery action with an accessible label', () => {
+    fixture.componentRef.setInput('state', 'emptyPeriod');
+    fixture.componentRef.setInput('message', 'Nenhum lançamento neste mês.');
+    fixture.componentRef.setInput('actionLabel', 'Adicionar receita');
+    fixture.detectChanges();
+    spyOn(fixture.componentInstance.action, 'emit');
+    const button = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    expect(button.textContent).toContain('Adicionar receita');
+    button.click();
+    expect(fixture.componentInstance.action.emit).toHaveBeenCalled();
+  });
 });

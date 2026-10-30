@@ -17,3 +17,16 @@ for (const theme of ['light', 'dark'] as const) {
     }
   });
 }
+
+test('objective management dialog is keyboard reachable and axe clean', async ({ page, mockApi, authenticateAs, userA }) => {
+  await mockApi(); await authenticateAs(userA);
+  await page.goto('/investimento');
+  await page.getByRole('button', { name: 'Gerenciar objetivos' }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByLabel('Nome do novo objetivo')).toBeFocused();
+  const results = await new AxeBuilder({ page }).include('#modalObjetivosInvestimento').analyze();
+  expect(results.violations.filter(item => item.impact === 'serious' || item.impact === 'critical')).toEqual([]);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Gerenciar objetivos' })).toBeFocused();
+});

@@ -6,6 +6,8 @@ import { MetasPageComponent } from './metas-page';
 import { MetaMensalService } from '../../../services/meta-mensal';
 import { MetasMensaisResumo } from '../../../models/meta-mensal.model';
 import { AuthService } from '../../../services/auth.service';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('MetasPageComponent', () => {
   let component: MetasPageComponent;
@@ -243,6 +245,8 @@ describe('MetasPageComponent', () => {
       imports: [MetasPageComponent],
       providers: [
         provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: MetaMensalService, useValue: service },
         { provide: AuthService, useValue: authService }
       ]
