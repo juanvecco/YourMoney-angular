@@ -1,8 +1,1 @@
-.full-height {
-    height: 100vh;
-    /* Ocupa toda a altura da viewport */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    /* Centraliza verticalmente, se necessário */
-}
+:host { display: block; min-height: 100vh; }

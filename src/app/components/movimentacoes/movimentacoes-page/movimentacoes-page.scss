@@ -1,0 +1,37 @@
+:host { display: block; }
+.movement-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.movement-summary article { display: grid; gap: .35rem; padding: 1rem; }
+.movement-summary span, .movement-item p { color: var(--ym-muted); }
+.movement-summary strong { font-size: clamp(1.1rem, 2vw, 1.45rem); }
+.positive { color: var(--ym-success); }
+.negative { color: var(--ym-danger) !important; }
+.investment { color: var(--ym-investment); }
+.movement-filters { display: grid; grid-template-columns: 1fr 1fr minmax(14rem, 2fr) auto; gap: .85rem; align-items: end; padding: 1rem; margin-bottom: 1rem; }
+.movement-filters label { display: grid; gap: .35rem; color: var(--ym-muted); font-weight: 700; }
+.movement-filters input, .movement-filters select { min-height: 44px; padding: .55rem .7rem; border: 1px solid var(--ym-border); border-radius: var(--ym-radius-sm); }
+.movement-filter-actions { display: flex; gap: .5rem; }
+.movement-list { display: grid; gap: .75rem; }
+.movement-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 1rem; align-items: center; padding: 1rem; }
+.movement-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: var(--ym-primary); background: var(--ym-surface-strong); }
+.movement-icon[data-kind='receita'] { color: var(--ym-success); }
+.movement-icon[data-kind='despesa'] { color: var(--ym-danger); }
+.movement-icon[data-kind='investimento'] { color: var(--ym-investment); }
+.movement-title { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.movement-title span { padding: .15rem .45rem; border-radius: 999px; color: var(--ym-muted); background: var(--ym-surface-strong); font-size: .78rem; }
+.movement-item p { margin: .2rem 0 0; }
+.movement-value { white-space: nowrap; color: var(--ym-success); }
+.movement-pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.25rem; text-align: center; }
+@media (max-width: 820px) {
+  .movement-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .movement-filters { grid-template-columns: 1fr 1fr; }
+  .movement-search, .movement-filter-actions { grid-column: 1 / -1; }
+  .movement-item { grid-template-columns: auto minmax(0, 1fr); }
+  .movement-value, .movement-item > a { grid-column: 2; justify-self: start; }
+}
+@media (max-width: 480px) {
+  .movement-summary, .movement-filters { grid-template-columns: 1fr; }
+  .movement-search, .movement-filter-actions { grid-column: auto; }
+  .movement-filter-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .movement-pagination { display: grid; grid-template-columns: 1fr 1fr; }
+  .movement-pagination span { grid-column: 1 / -1; grid-row: 1; }
+}

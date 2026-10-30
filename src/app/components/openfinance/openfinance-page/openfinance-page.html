@@ -1,125 +1,371 @@
-<div class="of-shell">
-  <nav class="of-nav">
-    <a class="of-brand" routerLink="/dashboard">Your Money</a>
-    <ul>
-      <li><a routerLink="/dashboard"><i class="bi bi-speedometer2"></i>Dashboard</a></li>
-      <li><a routerLink="/receitas"><i class="bi bi-arrow-up-circle"></i>Receitas</a></li>
-      <li><a routerLink="/despesas"><i class="bi bi-arrow-down-circle"></i>Despesas</a></li>
-      <li><a routerLink="/investimento"><i class="bi bi-graph-up-arrow"></i>Investimentos</a></li>
-      <li><a routerLink="/metas"><i class="bi bi-bullseye"></i>Metas</a></li>
-      <li><a class="active" routerLink="/openfinance"><i class="bi bi-bank"></i>OpenFinance</a></li>
-      <li><a routerLink="/configuracao"><i class="bi bi-gear"></i>Configuracoes</a></li>
-    </ul>
-  </nav>
+<div class="ym-shell">
+  <div class="ym-container">
+    <app-page-header eyebrow="Conexão pessoal gratuita" heading="Meu Pluggy"
+      description="Veja suas contas e transações; revise cada lançamento antes de cadastrar no histórico financeiro.">
+      <a pageHeaderActions class="ym-button secondary" routerLink="/configuracao">Voltar às configurações</a>
+    </app-page-header>
 
-  <main class="of-main">
-    <section class="of-hero">
-      <div>
-        <p class="of-eyebrow">Modulo separado</p>
-        <h1>OpenFinance</h1>
-        <p class="of-subtitle">
-          Explore fontes publicas ou simuladas antes de conectar dados bancarios reais.
-        </p>
-      </div>
-      <span class="of-mode" *ngIf="readiness">{{ readiness.mode }}</span>
-    </section>
-
-    <section class="of-readiness" *ngIf="readiness">
-      <div>
-        <h2>Prontidao da integracao</h2>
-        <p>{{ readiness.summary }}</p>
-        <strong *ngIf="!readiness.realDataEnabled">
-          Dados reais de contas, cartoes e transacoes ainda nao estao conectados.
-        </strong>
-      </div>
-      <ul>
-        <li *ngFor="let step of readiness.nextSteps">{{ step }}</li>
-      </ul>
-    </section>
-
-    <section class="of-section">
-      <div class="of-section-header">
-        <div>
-          <h2>Fontes disponiveis</h2>
-          <p>O status abaixo nao altera seu historico financeiro.</p>
-        </div>
-        <button type="button" class="of-button secondary" (click)="carregarFontes()">Atualizar</button>
-      </div>
-
-      <div class="of-state" *ngIf="estadoFontes === 'loading'">Verificando fontes OpenFinance...</div>
-      <div class="of-state" *ngIf="estadoFontes === 'empty'">Nenhuma fonte OpenFinance disponivel agora.</div>
-      <div class="of-state error" *ngIf="mensagemErroFontes">{{ mensagemErroFontes }}</div>
-
-      <div class="of-source-grid" *ngIf="fontes.length > 0">
-        <article class="of-source-card" *ngFor="let fonte of fontes">
-          <div class="of-card-topline">
-            <span class="of-badge">{{ obterRotuloTipoFonte(fonte.type) }}</span>
-            <span class="of-status" [class.available]="fonte.status === 'available'">
-              {{ obterRotuloStatus(fonte.status) }}
-            </span>
-          </div>
-          <h3>{{ fonte.name }}</h3>
-          <p>{{ fonte.message }}</p>
-          <small *ngIf="fonte.lastCheckedAt">
-            Verificada em {{ fonte.lastCheckedAt | date:'dd/MM/yyyy HH:mm' }}
-          </small>
-          <button
-            type="button"
-            class="of-button"
-            *ngIf="fonteSuportaPreview(fonte)"
-            (click)="fonteSelecionada = fonte.id; carregarPreview(fonte.id)">
-            Ver preview
-          </button>
-        </article>
-      </div>
-    </section>
-
-    <section class="of-section">
-      <div class="of-section-header">
-        <div>
-          <h2>Preview de transacoes</h2>
-          <p>Classificacoes editadas aqui ficam somente nesta tela.</p>
-        </div>
-        <button type="button" class="of-button secondary" (click)="carregarPreview()">Recarregar preview</button>
-      </div>
-
-      <div class="of-state" *ngIf="estadoPreview === 'loading'">Carregando transacoes simuladas...</div>
-      <div class="of-state" *ngIf="estadoPreview === 'empty'">Nenhuma transacao simulada para revisar.</div>
-      <div class="of-state error" *ngIf="estadoPreview === 'error'">{{ mensagemErroPreview }}</div>
-
-      <div class="of-preview-list" *ngIf="estadoPreview === 'loaded'">
-        <article class="of-preview-row" *ngFor="let transacao of transacoes">
+    @if (configuracaoPluggyVisivel) {
+      <section class="of-section ym-card of-credential-section" aria-labelledby="pluggyCredentialsTitle">
+        <div class="of-section-header">
           <div>
-            <h3>{{ transacao.description }}</h3>
-            <p>
-              {{ transacao.transactionDate | date:'dd/MM/yyyy' }}
-              <span class="of-dot"></span>
-              {{ obterRotuloDirecao(transacao.direction) }}
-            </p>
-            <span class="of-warning" *ngIf="transacao.duplicateRisk">
-              {{ transacao.duplicateReason || 'Possivel duplicidade detectada.' }}
-            </span>
+            <p class="of-eyebrow">Configuração segura</p>
+            <h2 id="pluggyCredentialsTitle">Credenciais da aplicação Pluggy</h2>
+            <p>O Client ID e o Client Secret são criados no Dashboard da Pluggy. O Meu Pluggy autoriza os bancos, mas não gera essas credenciais.</p>
+            <p>O YourMoney valida as credenciais antes de salvar e protege o segredo no servidor. O segredo não será exibido novamente nem enviado de volta para esta tela.</p>
           </div>
+        </div>
+        @if (carregandoConfiguracaoPluggy) {
+          <app-view-state state="loading" message="Consultando a configuração Pluggy..."></app-view-state>
+        }
+        @if (configuracaoCredenciaisPluggy; as credenciais) {
+          @if (credenciais.configured) {
+            <div class="of-credential-status" role="status">
+              <span class="of-status available">{{ credenciais.source === 'server' ? 'Credenciais padrão do servidor' : 'Configurada e protegida' }}</span>
+              @if (credenciais.clientIdHint) { <span>Client ID: {{ credenciais.clientIdHint }}</span> }
+              @if (credenciais.updatedAt) { <span>Atualizada em {{ credenciais.updatedAt | date:'dd/MM/yyyy HH:mm' }}</span> }
+            </div>
+          } @else if (credenciais.message) {
+            <p class="of-warning" role="alert">{{ credenciais.message }}</p>
+          } @else if (credenciais.source === 'server') {
+            <p class="of-warning">A configuração padrão do servidor está incompleta. Informe abaixo o Client ID e o Client Secret da sua aplicação Pluggy para validar e habilitar o acesso.</p>
+          } @else {
+            <p class="of-warning">As credenciais ainda não foram configuradas.</p>
+          }
+          @if (credenciais.canSave) {
+            @if (credenciais.source === 'server' && credenciais.configured) {
+              <p>Você também pode informar as credenciais da sua aplicação abaixo. Depois de validadas, elas serão guardadas com proteção e usadas nesta integração pessoal, no lugar das credenciais padrão.</p>
+            }
+            <div class="of-credential-form">
+              <p class="ym-form-hint">Campos com * são obrigatórios.</p>
+              <label><span>Client ID <span class="ym-required" aria-hidden="true">*</span></span>
+                <input type="text" name="pluggyClientId" [(ngModel)]="clientIdPluggy" autocomplete="off" maxlength="200" placeholder="Cole o Client ID do Dashboard" required>
+              </label>
+              <label><span>Client Secret <span class="ym-required" aria-hidden="true">*</span></span>
+                <input type="password" name="pluggyClientSecret" [(ngModel)]="clientSecretPluggy" autocomplete="off" maxlength="1000" placeholder="Cole o Client Secret do Dashboard" required>
+              </label>
+              <button type="button" class="ym-button primary" (click)="salvarCredenciaisPluggy()" [disabled]="salvandoCredenciaisPluggy || !clientIdPluggy.trim() || !clientSecretPluggy">
+                {{ salvandoCredenciaisPluggy ? 'Validando e salvando...' : credenciais.configured ? 'Validar e substituir credenciais' : credenciais.source === 'database' ? 'Validar e atualizar credenciais' : 'Validar e salvar credenciais' }}
+              </button>
+            </div>
+          } @else {
+            <p>Não é possível editar as credenciais nesta conta.</p>
+          }
+        }
+        @if (mensagemConfiguracaoPluggy) { <p class="of-provider-message" role="status">{{ mensagemConfiguracaoPluggy }}</p> }
+      </section>
+    }
 
-          <div class="of-preview-actions">
-            <strong [class.outflow]="transacao.direction === 'outflow'">
-              {{ formatarMoeda(transacao.amount) }}
-            </strong>
-            <label>
-              Classificacao
-              <select
-                [ngModel]="transacao.suggestedFinancialType"
-                (ngModelChange)="atualizarClassificacaoLocal(transacao, $event)">
-                <option value="receita">Receita</option>
-                <option value="despesa">Despesa</option>
-                <option value="unknown">A revisar</option>
-              </select>
-            </label>
-            <span class="of-status">{{ obterRotuloClassificacao(transacao.suggestedFinancialType) }}</span>
-            <span class="of-badge">{{ transacao.importStatus }}</span>
-          </div>
-        </article>
+    <section class="of-section ym-card" aria-labelledby="pluggyConnectionsTitle">
+      <div class="of-section-header">
+        <div><p class="of-eyebrow">Até cinco conexões · uso pessoal</p><h2 id="pluggyConnectionsTitle">Conexões Meu Pluggy</h2>
+          <p>Conecte os bancos primeiro em <a href="https://meu.pluggy.ai/" target="_blank" rel="noopener noreferrer">meu.pluggy.ai</a>. Depois autorize cada banco aqui, um por vez. Cada autorização adiciona uma conexão e mantém as anteriores. Na visão geral, escolha “Todas as instituições” para reunir os dados dos bancos conectados. Esta opção gratuita é para uso pessoal e não permite conectar diretamente outros bancos neste fluxo.</p>
+          <p>As transações ficam como prévia até você confirmar cada cadastro. O Meu Pluggy atualiza os bancos aproximadamente a cada 24 horas; recarregar esta tela busca os dados mais recentes já recebidos.</p>
+        </div>
+        <div class="of-connect-actions">
+          <button type="button" class="ym-button primary" (click)="conectarBanco()" [disabled]="!podeAdicionarConexao">
+            {{ textoBotaoConexaoPluggy }}
+          </button>
+          <button type="button" class="ym-button secondary" (click)="carregarDadosPluggy()" [disabled]="carregandoConexoesPluggy || carregandoContasPluggy || carregandoTransacoesPluggy">Recarregar dados</button>
+        </div>
       </div>
+      @if (mensagemProvedor) { <p class="of-provider-message" [class.available]="provedorDisponivel" role="status">{{ mensagemProvedor }}</p> }
+      @if (carregandoConexoesPluggy) { <app-view-state state="loading" message="Carregando conexões Pluggy..."></app-view-state> }
+      @if (!carregandoConexoesPluggy && erroCarregamentoConexoesPluggy) {
+        <app-view-state state="loadError" [message]="erroCarregamentoConexoesPluggy" [retryAvailable]="!configuracaoPluggyAusente" (retry)="carregarDadosPluggy()"></app-view-state>
+      }
+      @if (!carregandoConexoesPluggy && !erroCarregamentoConexoesPluggy && configuracaoPluggyAusente) {
+        <app-view-state state="emptyPeriod" message="Configure as credenciais da aplicação Pluggy antes de carregar ou autorizar conexões bancárias."></app-view-state>
+      }
+      @if (mostrarSemConexoesPluggy) {
+        <app-view-state state="emptyPeriod" message="Nenhuma conexão Meu Pluggy. Conecte seus bancos primeiro em meu.pluggy.ai e depois autorize o acesso por aqui."></app-view-state>
+      }
+      @if (conexoesPluggy.length > 0) {
+        <div class="of-source-grid">
+          @for (conexao of conexoesPluggy; track conexao.id) {
+            <article class="of-source-card">
+              <div class="of-card-topline">
+                <span class="of-badge">Meu Pluggy</span>
+                <span class="of-status" [class.available]="conexao.status === 'UPDATED'" [class.expired]="autorizacaoExpirada(conexao)">{{ autorizacaoExpirada(conexao) ? 'Autorização expirada' : conexao.status }}</span>
+              </div>
+              <h3>{{ conexao.institutionName }}</h3>
+              <p>Conectada em {{ conexao.connectedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+              @if (conexao.lastUpdatedAt) { <p>Dados recebidos em {{ conexao.lastUpdatedAt | date:'dd/MM/yyyy HH:mm' }}</p> }
+              @if (conexao.consentExpiresAt) { <p>Autorização válida até {{ conexao.consentExpiresAt | date:'dd/MM/yyyy' }}</p> }
+              @if (autorizacaoExpirada(conexao)) { <p class="of-warning">Autorize o Meu Pluggy novamente para voltar a consultar os dados.</p> }
+              @else if (autorizacaoExpiraEmBreve(conexao)) { <p class="of-warning">A autorização vence em breve. Renove para manter o acesso.</p> }
+              <div class="of-connection-actions">
+                <button type="button" class="ym-button secondary" (click)="conectarBanco(conexao)" [disabled]="!podeConectarBanco">Renovar autorização</button>
+                <button type="button" class="ym-button secondary" (click)="desconectarBanco(conexao)" [disabled]="conexaoSendoRemovida === conexao.id">
+                  {{ conexaoSendoRemovida === conexao.id ? 'Removendo...' : 'Remover do YourMoney' }}
+                </button>
+              </div>
+            </article>
+          }
+        </div>
+      }
     </section>
-  </main>
+
+    @if (podeMostrarVisaoGeralPluggy) {
+    <section class="of-section ym-card" aria-labelledby="pluggyAccountsTitle">
+      <div class="of-overview-heading">
+        <div><p class="of-eyebrow">Resumo pessoal · últimos 30 dias</p><h2 id="pluggyAccountsTitle">Visão geral</h2>
+          <p>Confira os saldos e decida quais transações cadastrar no histórico financeiro.</p>
+          @if (visaoGeralPluggy?.sourceUpdatedAt) { <small class="of-source-updated">Dados da origem atualizados em {{ visaoGeralPluggy?.sourceUpdatedAt | date:'dd/MM/yyyy HH:mm' }}</small> }
+        </div>
+        <button type="button" class="ym-button secondary" (click)="carregarDadosPluggy()" [disabled]="carregandoContasPluggy">Atualizar</button>
+      </div>
+
+      <div class="of-overview-filters" aria-label="Filtros das transações Meu Pluggy">
+        <label>Instituição
+          <select name="filtroInstituicaoPluggy" [(ngModel)]="filtroInstituicaoPluggy" (ngModelChange)="onInstituicaoPluggyChange()">
+            <option value="">Todas as instituições</option>
+            @for (conexao of conexoesPluggy; track conexao.id) {
+              <option [value]="conexao.id">{{ conexao.institutionName }}</option>
+            }
+          </select>
+        </label>
+        <label>Conta ou instituição
+          <select name="filtroContaPluggy" [(ngModel)]="filtroContaPluggy" (ngModelChange)="carregarVisaoGeralPluggy()">
+            <option value="">Todas as contas</option>
+            @for (conta of contasFiltradasFiltroPluggy; track conta.accountId) {
+              <option [value]="conta.accountId">{{ conta.institutionName }} · {{ conta.name }}{{ conta.number ? ' · •••• ' + conta.number : '' }}</option>
+            }
+          </select>
+        </label>
+        <label>De
+          <input type="date" name="filtroInicioPluggy" [(ngModel)]="filtroDataInicioPluggy" (change)="carregarVisaoGeralPluggy()">
+        </label>
+        <label>Até
+          <input type="date" name="filtroFimPluggy" [(ngModel)]="filtroDataFimPluggy" (change)="carregarVisaoGeralPluggy()">
+        </label>
+      </div>
+
+      @if (mensagemContasPluggy) { <app-view-state state="loadError" [message]="mensagemContasPluggy" [retryAvailable]="true" (retry)="carregarDadosPluggy()"></app-view-state> }
+      @if (carregandoContasPluggy && !visaoGeralPluggy) { <app-view-state state="loading" message="Carregando sua visão financeira..."></app-view-state> }
+      @if (!carregandoContasPluggy && !mensagemContasPluggy && contasPluggy.length === 0) { <app-view-state state="emptyPeriod" message="Conecte o Meu Pluggy para visualizar suas contas e transações nesta tela."></app-view-state> }
+
+      @if (saldosPluggy.length > 0) {
+        <div class="of-balance-grid" aria-label="Saldos agrupados por moeda e tipo de conta">
+          @for (saldo of saldosPluggy; track saldo.currencyCode + '-' + saldo.accountType) {
+            <article class="of-balance-card" [class.credit-balance]="saldo.accountType === 'CREDIT'">
+              <span class="of-badge">{{ saldo.accountType === 'CREDIT' ? 'Fatura de cartão' : saldo.accountType === 'BANK' ? 'Saldo bancário' : 'Saldo de conta' }}</span>
+              <strong>{{ saldo.balance | financialValue:saldo.currencyCode }}</strong>
+              <small>{{ saldo.accountCount }} {{ saldo.accountCount === 1 ? 'conta' : 'contas' }} · {{ saldo.currencyCode }}</small>
+            </article>
+          }
+        </div>
+      }
+
+      @if (contasPluggy.length > 0) {
+        <div class="of-account-grid" aria-label="Contas conectadas">
+          @for (conta of contasPluggy; track conta.accountId) {
+            <article class="of-account-tile">
+              <div class="of-account-icon" aria-hidden="true"><i class="bi" [class.bi-credit-card-2-front]="conta.type === 'CREDIT'" [class.bi-bank]="conta.type !== 'CREDIT'"></i></div>
+              <div class="of-account-copy"><span>{{ conta.institutionName }}</span><h3>{{ conta.name }}</h3>
+                @if (conta.number) { <small>•••• {{ conta.number }}</small> }
+              </div>
+              @if (conta.balance !== null) { <strong>{{ conta.balance | financialValue:conta.currencyCode }}</strong> }
+            </article>
+          }
+        </div>
+      }
+
+      <div class="of-transactions-heading">
+        <div><p class="of-eyebrow">Prévia bancária</p><h3 id="pluggyTransactionsTitle">Transações recentes</h3>
+          <p>Somente as transações que você confirmar serão incluídas nas despesas ou receitas.</p>
+        </div>
+        @if (mensagemSucessoImportacao) { <span class="of-success-message" role="status">{{ mensagemSucessoImportacao }}</span> }
+      </div>
+      @if (carregandoTransacoesPluggy) { <app-view-state state="loading" message="Carregando transações bancárias..."></app-view-state> }
+      @if (mensagemTransacoesPluggy) { <app-view-state state="loadError" [message]="mensagemTransacoesPluggy" [retryAvailable]="true" (retry)="carregarDadosPluggy()"></app-view-state> }
+      @if (!carregandoTransacoesPluggy && !mensagemTransacoesPluggy && transacoesPluggy.length === 0 && contasPluggy.length > 0) { <app-view-state state="emptyPeriod" message="Nenhuma transação encontrada neste período."></app-view-state> }
+      @if (transacoesPluggy.length > 0) {
+        <div class="of-transaction-list">
+          @for (transacao of transacoesPluggy; track transacao.transactionId) {
+            <article class="of-transaction-row" [class.registered]="transacao.registrationStatus === 'REGISTERED'">
+              <div class="of-transaction-main">
+                <div class="of-transaction-title"><span class="of-transaction-direction" [class.inflow]="transacao.direction === 'CREDIT'" [class.outflow]="transacao.direction === 'DEBIT'">{{ transacao.direction === 'CREDIT' ? '+' : transacao.direction === 'DEBIT' ? '−' : '•' }}</span>
+                  <div><h4>{{ transacao.description }}</h4><p>{{ transacao.date | date:'dd/MM/yyyy' }} · {{ transacao.institutionName }} · {{ transacao.accountName }}</p></div>
+                </div>
+                @if (transacao.currencyCode !== transacao.accountCurrencyCode && transacao.amountInAccountCurrency !== null) {
+                  <small class="of-account-equivalent">Na moeda da conta: {{ transacao.amountInAccountCurrency | financialValue:transacao.accountCurrencyCode }}</small>
+                }
+                @if (transacao.possibleDuplicate && transacao.duplicateCandidate; as candidato) {
+                  <div class="of-duplicate-warning" role="note">
+                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                    <span>Parece coincidir com {{ candidato.recordType === 'expense' ? 'uma despesa' : 'uma receita' }} manual: {{ candidato.description }} · {{ candidato.date | date:'dd/MM/yyyy' }} · {{ candidato.amount | financialValue:'BRL' }}.</span>
+                    <a [routerLink]="candidato.recordType === 'expense' ? '/despesas' : '/receitas'">Abrir histórico</a>
+                  </div>
+                }
+                @if (!transacao.importable && transacao.registrationStatus !== 'REGISTERED' && transacao.importUnavailableReason) {
+                  <small class="of-unavailable-reason">{{ transacao.importUnavailableReason }}</small>
+                }
+              </div>
+              <div class="of-transaction-side">
+                <strong [class.outflow]="transacao.direction === 'DEBIT'">{{ obterValorTransacao(transacao) | financialValue:transacao.currencyCode }}</strong>
+                <div class="of-transaction-meta"><span>{{ obterRotuloDirecaoPluggy(transacao.direction) }}</span><span>{{ transacao.status }}</span></div>
+                @if (transacao.registrationStatus === 'REGISTERED') {
+                  <span class="of-registered-status"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Cadastrada</span>
+                  <a class="of-ledger-link" [routerLink]="obterRotaLancamento(transacao)">Ver {{ transacao.registeredRecordType === 'expense' ? 'despesa' : 'receita' }}</a>
+                } @else {
+                  <span class="of-pending-status">{{ transacao.possibleDuplicate ? 'Possível duplicidade' : 'Pendente de revisão' }}</span>
+                  <button type="button" class="ym-button primary of-register-button" (click)="abrirRevisaoTransacao(transacao)" [disabled]="!transacao.importable">Revisar e cadastrar</button>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+    }
+
+    @if (transacaoEmRevisao; as transacao) {
+      <div class="of-dialog-backdrop" (click)="fecharRevisaoTransacao()">
+        <section class="of-import-dialog" role="dialog" aria-modal="true" aria-labelledby="ofImportTitle" (click)="$event.stopPropagation()">
+          <header class="of-import-header">
+            <div><p class="of-eyebrow">Confirmação necessária</p><h2 id="ofImportTitle">Cadastrar transação</h2></div>
+            <button type="button" class="of-dialog-close" aria-label="Fechar" (click)="fecharRevisaoTransacao()" [disabled]="salvandoImportacao">×</button>
+          </header>
+          <p class="of-import-intro">Confira e ajuste os dados. Nada será gravado até você confirmar.</p>
+          @if (transacao.possibleDuplicate && transacao.duplicateCandidate; as candidato) {
+            <div class="of-duplicate-warning" role="alert"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+              <span>Já existe um lançamento parecido: {{ candidato.description }} em {{ candidato.date | date:'dd/MM/yyyy' }}, no valor de {{ candidato.amount | financialValue:'BRL' }}. Revise antes de continuar.</span>
+            </div>
+          }
+          @if (transacao.status === 'PENDING') { <p class="of-pending-warning" role="note">A instituição ainda marca esta transação como pendente. Confirme os dados antes do cadastro.</p> }
+          @if (transacaoExigeClassificacaoManual(transacao) && !formImportacao.recordType) {
+            <p class="of-pending-warning" role="note">Esta transação está pendente, pode ser transferência/estorno ou não tem direção clara. Escolha manualmente se deseja cadastrá-la como despesa ou receita.</p>
+          } @else if ((transacao.direction === 'CREDIT' && formImportacao.recordType === 'expense') || (transacao.direction === 'DEBIT' && formImportacao.recordType === 'revenue')) {
+            <p class="of-pending-warning" role="note">A classificação escolhida difere da direção informada pelo banco. Confira antes de confirmar.</p>
+          }
+          @if (carregandoCadastrosImportacao) { <app-view-state state="loading" message="Carregando suas contas e categorias..."></app-view-state> }
+          @if (erroImportacao) { <p class="of-import-error" role="alert">{{ erroImportacao }}</p> }
+          @if (!carregandoCadastrosImportacao) {
+            <div class="of-import-form">
+              <p class="ym-form-hint">Campos com * são obrigatórios.</p>
+              <label><span>Tipo de lançamento <span class="ym-required" aria-hidden="true">*</span></span>
+                <select name="importRecordType" [(ngModel)]="formImportacao.recordType" required>
+                  <option value="">Selecione a classificação</option><option value="expense">Despesa</option><option value="revenue">Receita</option>
+                </select>
+              </label>
+              <label><span>Descrição <span class="ym-required" aria-hidden="true">*</span></span>
+                <input type="text" name="importDescription" maxlength="255" [(ngModel)]="formImportacao.descricao" required>
+              </label>
+              <div class="of-import-pair">
+                <label><span>Valor (R$) <span class="ym-required" aria-hidden="true">*</span></span>
+                  <input type="number" name="importAmount" min="0.01" step="0.01" [(ngModel)]="formImportacao.valor" required>
+                </label>
+                <label><span>Data <span class="ym-required" aria-hidden="true">*</span></span>
+                  <input type="date" name="importDate" [(ngModel)]="formImportacao.data" (change)="onDataImportacaoChange()" required>
+                </label>
+              </div>
+              <label><span>Conta do YourMoney <span class="ym-required" aria-hidden="true">*</span></span>
+                <select name="importAccount" [(ngModel)]="formImportacao.idContaFinanceira" required>
+                  <option value="">Selecione uma conta</option>
+                  @for (conta of contasFinanceirasImportacao; track conta.id) { <option [value]="conta.id">{{ conta.descricao }}</option> }
+                </select>
+              </label>
+              @if (formImportacao.recordType === 'expense') {
+                <div class="of-import-pair">
+                  <label><span>Tipo de despesa <span class="ym-required" aria-hidden="true">*</span></span>
+                    <select name="importExpenseType" [(ngModel)]="formImportacao.idTipoDespesa" (ngModelChange)="onTipoDespesaImportacaoChange()" required>
+                      <option value="">Selecione</option>
+                      @for (tipo of tiposDespesaImportacao; track tipo.id) { <option [value]="tipo.id">{{ tipo.descricao }}</option> }
+                    </select>
+                  </label>
+                  <label>Natureza (opcional)
+                    <select name="importExpenseNature" [(ngModel)]="formImportacao.idNaturezaDespesa" (ngModelChange)="onNaturezaDespesaImportacaoChange()" [disabled]="!naturezasDespesaImportacao.length">
+                      <option value="">Selecione</option>
+                      @for (natureza of naturezasDespesaImportacao; track natureza.id) { <option [value]="natureza.id">{{ natureza.descricao }}</option> }
+                    </select>
+                  </label>
+                </div>
+                @if (categoriasEspecificasImportacao.length) {
+                  <label>Categoria específica (opcional)
+                    <select name="importExpenseCategory" [(ngModel)]="formImportacao.idCategoriaEspecifica">
+                      <option value="">Use a natureza selecionada</option>
+                      @for (categoria of categoriasEspecificasImportacao; track categoria.id) { <option [value]="categoria.id">{{ categoria.descricao }}</option> }
+                    </select>
+                  </label>
+                }
+              } @else if (formImportacao.recordType === 'revenue') {
+                <label><span>Natureza da receita <span class="ym-required" aria-hidden="true">*</span></span>
+                  <select name="importRevenueNature" [(ngModel)]="formImportacao.naturezaReceita" (ngModelChange)="onNaturezaReceitaImportacaoChange()" required>
+                    <option value="RendaDisponivel">Renda disponível</option>
+                    <option value="EntradaVinculadaDespesa">Destinada a despesa</option>
+                    <option value="Reembolso">Reembolso</option>
+                  </select>
+                </label>
+                @if (formImportacao.naturezaReceita === 'Reembolso') {
+                  <label><span>Despesa vinculada <span class="ym-required" aria-hidden="true">*</span></span>
+                    <select name="importRefundExpense" [(ngModel)]="formImportacao.despesaVinculadaId" required>
+                      <option value="">Selecione uma despesa</option>
+                      @for (despesa of despesasVinculaveisImportacao; track despesa.id) { <option [value]="despesa.id">{{ despesa.descricao }} · {{ despesa.valor | financialValue }}</option> }
+                    </select>
+                  </label>
+                }
+              } @else {
+                <p class="of-pending-warning" role="note">Escolha Despesa ou Receita para carregar os campos de classificação correspondentes.</p>
+              }
+            </div>
+          }
+          <footer class="of-import-actions">
+            <button type="button" class="ym-button secondary" (click)="fecharRevisaoTransacao()" [disabled]="salvandoImportacao">Agora não</button>
+            <button type="button" class="ym-button primary" (click)="confirmarImportacaoTransacao()" [disabled]="salvandoImportacao || carregandoCadastrosImportacao || !formularioImportacaoValido()">
+              {{ salvandoImportacao ? 'Cadastrando...' : 'Confirmar cadastro' }}
+            </button>
+          </footer>
+        </section>
+      </div>
+    }
+
+    <section class="of-section ym-card">
+      <div class="of-section-header"><div><p class="of-eyebrow">Demonstração independente</p><h2>Outras fontes disponíveis</h2><p>Estas fontes não fazem parte das conexões pessoais do Meu Pluggy.</p></div>
+        <button type="button" class="ym-button secondary" (click)="carregarFontes()">Atualizar</button>
+      </div>
+      @if (estadoFontes === 'loading') { <app-view-state state="loading" message="Verificando fontes Open Finance..."></app-view-state> }
+      @if (estadoFontes === 'empty') { <app-view-state state="emptyPeriod" message="Nenhuma fonte disponível agora."></app-view-state> }
+      @if (estadoFontes === 'error') { <app-view-state state="loadError" [message]="mensagemErroFontes" [retryAvailable]="true" (retry)="carregarFontes()"></app-view-state> }
+      @if (fontes.length) {
+        <div class="of-source-grid">
+          @for (fonte of fontes; track fonte.id) {
+            <article class="of-source-card"><div class="of-card-topline"><span class="of-badge">{{ obterRotuloTipoFonte(fonte.type) }}</span><span class="of-status" [class.available]="fonte.status === 'available'">{{ obterRotuloStatus(fonte.status) }}</span></div>
+              <h3>{{ fonte.name }}</h3><p>{{ fonte.message }}</p>
+              @if (fonte.lastCheckedAt) { <small>Verificada em {{ fonte.lastCheckedAt | date:'dd/MM/yyyy HH:mm' }}</small> }
+              @if (fonteSuportaPreview(fonte)) { <button type="button" class="ym-button primary" (click)="escolherFonte(fonte)">Ver demonstração</button> }
+            </article>
+          }
+        </div>
+      }
+    </section>
+
+    @if (mostrarDemonstracao) {
+    <section class="of-section ym-card">
+      <div class="of-section-header"><div><p class="of-eyebrow">Demonstração</p><h2>Prévia de transações</h2><p>Classificações editadas aqui ficam somente nesta tela e não são importadas.</p></div>
+        <button type="button" class="ym-button secondary" (click)="carregarPreview()">Recarregar</button>
+      </div>
+      @if (estadoPreview === 'loading') { <app-view-state state="loading" message="Carregando transações simuladas..."></app-view-state> }
+      @if (estadoPreview === 'empty') { <app-view-state state="emptyPeriod" message="Nenhuma transação simulada para revisar."></app-view-state> }
+      @if (estadoPreview === 'error') { <app-view-state state="loadError" [message]="mensagemErroPreview" [retryAvailable]="true" (retry)="carregarPreview()"></app-view-state> }
+      @if (estadoPreview === 'loaded') {
+        <div class="of-preview-list">
+          @for (transacao of transacoes; track transacao.id) {
+            <article class="of-preview-row"><div><h3>{{ transacao.description }}</h3><p>{{ transacao.transactionDate | date:'dd/MM/yyyy' }} · {{ obterRotuloDirecao(transacao.direction) }}</p>
+              @if (transacao.duplicateRisk) { <span class="of-warning">{{ transacao.duplicateReason || 'Possível duplicidade detectada.' }}</span> }
+            </div>
+            <div class="of-preview-actions"><strong [class.outflow]="transacao.direction === 'outflow'">{{ formatarMoeda(transacao.amount) | financialValue }}</strong>
+              <label>Classificação
+                <select [ngModel]="transacao.suggestedFinancialType" (ngModelChange)="atualizarClassificacaoLocal(transacao, $event)">
+                  <option value="receita">Receita</option><option value="despesa">Despesa</option><option value="unknown">A revisar</option>
+                </select>
+              </label>
+              <span class="of-status">{{ obterRotuloClassificacao(transacao.suggestedFinancialType) }}</span><span class="of-badge">Somente demonstração</span>
+            </div></article>
+          }
+        </div>
+      }
+    </section>
+    }
+  </div>
 </div>

@@ -1,0 +1,76 @@
+<div class="ym-shell">
+  <div class="ym-container">
+    <app-page-header eyebrow="Histórico unificado" heading="Movimentações"
+      description="Encontre receitas, despesas e investimentos sem trocar de tela.">
+      <app-month-picker pageHeaderActions [period]="periodo" (periodChange)="selecionarPeriodo($event)"></app-month-picker>
+    </app-page-header>
+
+    <section class="movement-summary" aria-label="Resumo do período">
+      <article class="ym-card"><span>Receitas</span><strong class="positive">{{ formatarMoeda(totais.receitas) | financialValue }}</strong></article>
+      <article class="ym-card"><span>Despesas</span><strong class="negative">{{ formatarMoeda(totais.despesas) | financialValue }}</strong></article>
+      <article class="ym-card"><span>Investimentos</span><strong class="investment">{{ formatarMoeda(totais.investimentos) | financialValue }}</strong></article>
+      <article class="ym-card"><span>Saldo</span><strong [class.negative]="totais.saldo < 0">{{ formatarMoeda(totais.saldo) | financialValue }}</strong></article>
+    </section>
+
+    <form class="ym-card movement-filters" (ngSubmit)="aplicarFiltros()" aria-label="Filtros de movimentações">
+      <label>Tipo
+        <select [(ngModel)]="filtroTipo" name="tipo">
+          <option value="">Todos</option><option value="receita">Receitas</option>
+          <option value="despesa">Despesas</option><option value="investimento">Investimentos</option>
+        </select>
+      </label>
+      <label>Conta
+        <select [(ngModel)]="filtroConta" name="conta">
+          <option value="">Todas</option>
+          @for (conta of contas; track conta.id) { <option [value]="conta.id">{{ conta.descricao }}</option> }
+        </select>
+      </label>
+      <label class="movement-search">Buscar
+        <input [(ngModel)]="busca" name="busca" maxlength="100" placeholder="Descrição, conta ou categoria">
+      </label>
+      <div class="movement-filter-actions">
+        <button class="ym-button primary" type="submit">Aplicar</button>
+        <button class="ym-button secondary" type="button" (click)="limparFiltros()" [disabled]="!temFiltro">Limpar</button>
+      </div>
+    </form>
+
+    @if (estado !== 'loadedWithData') {
+      <app-view-state [state]="estado" [message]="mensagemEstado" [retryAvailable]="estado === 'loadError'"
+        (retry)="carregar()"></app-view-state>
+    }
+
+    @if (resposta.itens.length) {
+      <section class="movement-list" aria-label="Linha do tempo de movimentações">
+        @for (item of resposta.itens; track item.tipo + item.id) {
+          <article class="ym-card movement-item">
+            <span class="movement-icon" [attr.data-kind]="item.tipo" aria-hidden="true">
+              <i class="bi" [class.bi-arrow-down-left]="item.tipo === 'receita'"
+                [class.bi-arrow-up-right]="item.tipo === 'despesa'"
+                [class.bi-graph-up-arrow]="item.tipo === 'investimento'"></i>
+            </span>
+            <div class="movement-copy">
+              <div class="movement-title"><strong>{{ item.descricao }}</strong><span>{{ rotuloTipo(item.tipo) }}</span></div>
+              <p>
+                <time [attr.datetime]="item.data">{{ item.data | date:'dd/MM/yyyy' }}</time>
+                @if (item.contaFinanceiraNome) { · {{ item.contaFinanceiraNome }} }
+                @if (item.categoria) { · {{ item.categoria }} }
+              </p>
+            </div>
+            <strong class="movement-value" [class.negative]="item.tipo === 'despesa'">
+              {{ item.tipo === 'despesa' ? '−' : '+' }} {{ formatarMoeda(item.valor) | financialValue }}
+            </strong>
+            <a class="ym-button secondary" [routerLink]="item.rotaOrigem" [attr.aria-label]="'Abrir ' + rotuloTipo(item.tipo).toLowerCase()">
+              Abrir <i class="bi bi-arrow-right" aria-hidden="true"></i>
+            </a>
+          </article>
+        }
+      </section>
+
+      <nav class="movement-pagination" aria-label="Paginação de movimentações">
+        <button class="ym-button secondary" type="button" (click)="irParaPagina(resposta.pagina - 1)" [disabled]="resposta.pagina <= 1">Anterior</button>
+        <span>Página {{ resposta.pagina }} de {{ resposta.totalPaginas }} · {{ resposta.totalItens }} itens</span>
+        <button class="ym-button secondary" type="button" (click)="irParaPagina(resposta.pagina + 1)" [disabled]="resposta.pagina >= resposta.totalPaginas">Próxima</button>
+      </nav>
+    }
+  </div>
+</div>

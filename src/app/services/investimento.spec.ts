@@ -21,13 +21,15 @@ describe('InvestimentoService', () => {
   it('posts only the typed create payload', () => {
     const request = {
       nome: 'Tesouro',
-      descricao: '',
+      descricao: 'Reserva',
       tipo: 'Renda fixa',
       quantidade: 1,
       precoMedio: 100,
       valorAtual: 110,
       dataInvestimento: '2026-06-09',
-      mesReferencia: '2026-05-01'
+      mesReferencia: '2026-05-01',
+      receitaRecorrenteId: null,
+      operacaoId: 'operacao-1'
     };
     const response = {
       id: 'investimento-1',
@@ -53,13 +55,14 @@ describe('InvestimentoService', () => {
     const request = {
       id: 'investimento-1',
       nome: 'Tesouro',
-      descricao: '',
+      descricao: 'Reserva',
       tipo: 'Renda fixa',
       quantidade: 1,
       precoMedio: 100,
       valorAtual: 110,
       dataInvestimento: '2026-06-09',
-      mesReferencia: '2026-07-01'
+      mesReferencia: '2026-07-01',
+      receitaRecorrenteId: 'salario-1'
     };
 
     service.atualizarInvestimento(request).subscribe();
@@ -69,5 +72,51 @@ describe('InvestimentoService', () => {
     expect(req.request.body.id).toBeUndefined();
     expect(req.request.body.mesReferencia).toBe('2026-07-01');
     req.flush({ ...request, id: 'investimento-1', dataResgate: null, ativo: true });
+  });
+
+  it('gets the consolidated wallet without month parameters and propagates failures', () => {
+    let failed = false;
+    service.obterConsolidado().subscribe({ error: () => failed = true });
+    const req = httpMock.expectOne(`${environment.apiUrl}/Investimento/consolidado`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.keys()).toEqual([]);
+    req.flush({ message: 'falha' }, { status: 500, statusText: 'Error' });
+    expect(failed).toBeTrue();
+  });
+
+  it('gets an investment by id', () => {
+    service.obterPorId('investimento-1').subscribe();
+    const req = httpMock.expectOne(`${environment.apiUrl}/Investimento/investimento-1`);
+    expect(req.request.method).toBe('GET');
+    req.flush({});
+  });
+
+  it('sends explicit null organization independently from legacy tipo', () => {
+    const request = {
+      nome: 'ETF', descricao: 'Exterior', tipo: 'IVVB11', quantidade: 1, precoMedio: 100,
+      valorAtual: 110, dataInvestimento: '2026-08-01', mesReferencia: '2026-08-01',
+      receitaRecorrenteId: null, grupoObjetivoId: null, tipoAtivo: null, operacaoId: 'op-2'
+    };
+    service.criarInvestimento(request).subscribe();
+    const call = httpMock.expectOne(`${environment.apiUrl}/Investimento`);
+    expect(call.request.body.tipo).toBe('IVVB11');
+    expect(call.request.body.grupoObjetivoId).toBeNull();
+    expect(call.request.body.tipoAtivo).toBeNull();
+    call.flush({});
+  });
+
+  it('distinguishes all, absence and combined filter query parameters', () => {
+    service.obterConsolidado({ semGrupo: true, tipoAtivo: 'RendaFixa' }).subscribe();
+    const absence = httpMock.expectOne(req => req.url === `${environment.apiUrl}/Investimento/consolidado`);
+    expect(absence.request.params.get('semGrupo')).toBe('true');
+    expect(absence.request.params.get('tipoAtivo')).toBe('RendaFixa');
+    expect(absence.request.params.has('grupoObjetivoId')).toBeFalse();
+    absence.flush({});
+
+    service.obterConsolidado({ grupoObjetivoId: 'g1', naoClassificado: true }).subscribe();
+    const combined = httpMock.expectOne(req => req.url === `${environment.apiUrl}/Investimento/consolidado`);
+    expect(combined.request.params.get('grupoObjetivoId')).toBe('g1');
+    expect(combined.request.params.get('naoClassificado')).toBe('true');
+    combined.flush({});
   });
 });

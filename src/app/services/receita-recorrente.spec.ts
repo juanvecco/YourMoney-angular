@@ -86,4 +86,11 @@ describe('ReceitaRecorrenteService', () => {
       }]
     });
   });
+
+  it('lists only the minimal eligible salary lookup', () => {
+    service.listarElegiveisParaInvestimento().subscribe(response => expect(response.itens.length).toBe(1));
+    const request = httpMock.expectOne(`${baseUrl}/elegiveis-para-investimento`);
+    expect(request.request.method).toBe('GET');
+    request.flush({ itens: [{ id: 'salario-1', descricao: 'Salário', contaDescricao: 'Principal', valorPrevisto: 5000 }] });
+  });
 });

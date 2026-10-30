@@ -1,31 +1,32 @@
-<div class="modal fade show d-block ym-modal" tabindex="-1">
+<div class="modal fade show d-block ym-modal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="categoriaModalTitulo" (keydown.escape)="fecharModal()">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">{{ editando ? 'Editar categoria específica' : 'Nova categoria específica' }}</h5>
-                <button type="button" class="btn-close btn-close-white" aria-label="Fechar" (click)="fecharModal()"></button>
+                <h2 id="categoriaModalTitulo" class="modal-title">{{ editando ? 'Editar categoria específica' : 'Nova categoria específica' }}</h2>
+                <button type="button" class="btn-close" aria-label="Fechar diálogo de categoria" (click)="fecharModal()"></button>
             </div>
 
             <div class="modal-body">
+                <p class="ym-form-hint">Campos com * são obrigatórios.</p>
                 <div class="mb-3">
-                    <label class="form-label" for="categoriaTipo">Tipo</label>
-                    <select id="categoriaTipo" class="form-select" [(ngModel)]="tipoId" (ngModelChange)="atualizarNaturezas()">
+                    <label class="form-label" for="categoriaTipo">Tipo <span class="ym-required" aria-hidden="true">*</span></label>
+                      <select id="categoriaTipo" class="form-select" [(ngModel)]="tipoId" (ngModelChange)="atualizarNaturezas()" required>
                         <option value="" disabled>Selecione</option>
                         <option *ngFor="let tipo of tiposDespesa" [value]="tipo.id">{{ tipo.descricao }}</option>
                     </select>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label" for="categoriaNatureza">Natureza</label>
-                    <select id="categoriaNatureza" class="form-select" [(ngModel)]="naturezaId" [disabled]="naturezasDespesa.length === 0">
+                    <label class="form-label" for="categoriaNatureza">Natureza <span class="ym-required" aria-hidden="true">*</span></label>
+                      <select id="categoriaNatureza" class="form-select" [(ngModel)]="naturezaId" [disabled]="naturezasDespesa.length === 0" required>
                         <option value="" disabled>Selecione</option>
                         <option *ngFor="let natureza of naturezasDespesa" [value]="natureza.id">{{ natureza.descricao }}</option>
                     </select>
                 </div>
 
                 <div class="mb-0">
-                    <label class="form-label" for="categoriaDescricao">Categoria específica</label>
-                    <input id="categoriaDescricao" type="text" class="form-control" [(ngModel)]="descricao" maxlength="120" autofocus />
+                    <label class="form-label" for="categoriaDescricao">Categoria específica <span class="ym-required" aria-hidden="true">*</span></label>
+                      <input id="categoriaDescricao" type="text" class="form-control" [(ngModel)]="descricao" maxlength="120" required autofocus />
                 </div>
             </div>
 

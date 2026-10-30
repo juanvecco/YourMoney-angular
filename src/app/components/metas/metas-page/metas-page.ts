@@ -1,25 +1,48 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
-import { MetaMensal, MetaMensalStatus, MetasMensaisResumo } from '../../../models/meta-mensal.model';
+import {
+  AtualizarMetaMensalRequest,
+  CriarMetaMensalRequest,
+  MetaMensal,
+  MetaMensalStatus,
+  MetasMensaisResumo,
+  TipoDefinicaoMeta
+} from '../../../models/meta-mensal.model';
 import { AuthService } from '../../../services/auth.service';
 import { MetaMensalService } from '../../../services/meta-mensal';
+import { FinancialNavigationContextService } from '../../../services/financial-navigation-context.service';
+import { MonthPickerComponent } from '../../shared/month-picker/month-picker';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { ViewStateComponent } from '../../shared/view-state/view-state';
+import { FinancialViewState, financialStateMessage } from '../../../models/financial-view-state.model';
+import { GrupoObjetivoInvestimento } from '../../../models/investimento-grupo.model';
+import { Investimento } from '../../../models/investimento.model';
+import { InvestimentoGrupoService } from '../../../services/investimento-grupo';
+import { InvestimentoService } from '../../../services/investimento';
+import { ConfirmarAporteDialogComponent } from '../../investimento/confirmar-aporte-dialog/confirmar-aporte-dialog';
+import { FinancialValuePipe } from '../../../pipes/financial-value.pipe';
+import { FinancialValueInputDirective } from '../../../directives/financial-value-input.directive';
 
 type MetasViewState = 'loading' | 'loaded' | 'empty' | 'error';
 
 @Component({
   selector: 'app-metas-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, FinancialValuePipe, FinancialValueInputDirective, MonthPickerComponent, PageHeaderComponent, ViewStateComponent, ConfirmarAporteDialogComponent],
   templateUrl: './metas-page.html',
   styleUrls: ['./metas-page.scss']
 })
 export class MetasPageComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
+  private loadRevision = 0;
+  private definicaoOriginal: Pick<MetaMensal, 'tipoDefinicao' | 'percentualReceita' | 'valorMeta'> | null = null;
 
   @ViewChild('calendarioInput') calendarioInput!: ElementRef<HTMLInputElement>;
+  @ViewChild(ConfirmarAporteDialogComponent) aporteDialog?: ConfirmarAporteDialogComponent;
 
   resumo: MetasMensaisResumo | null = null;
   metas: MetaMensal[] = [];
@@ -27,17 +50,40 @@ export class MetasPageComponent implements OnInit, OnDestroy {
   mensagemErro = '';
   mesAtual = new Date();
   salvando = false;
+  grupos: GrupoObjetivoInvestimento[] = [];
+  investimentos: Investimento[] = [];
+  novoObjetivo = { nome: '', valorAlvo: null as number | null, dataAlvo: '' };
   editando = false;
-  formulario = { id: '', nome: '', percentualReceita: 0 };
+  formulario: {
+    id: string;
+    nome: string;
+    tipoDefinicao: TipoDefinicaoMeta;
+    percentualReceita: number | null;
+    valorMeta: number | null;
+    grupoObjetivoInvestimentoId?: string | null;
+  } = {
+    id: '',
+    nome: '',
+    tipoDefinicao: 'Percentual',
+    percentualReceita: null,
+    valorMeta: null,
+    grupoObjetivoInvestimentoId: null
+  };
 
   constructor(
     private metaMensalService: MetaMensalService,
     private authService: AuthService,
-    private router: Router
-  ) { }
+    private router: Router,
+    private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService(),
+    private grupoService: InvestimentoGrupoService = undefined!,
+    private investimentoService: InvestimentoService = undefined!
+  ) {
+    this.mesAtual = this.financialContext.period().date;
+  }
 
   ngOnInit(): void {
     this.carregarResumo();
+    this.carregarApoio();
   }
 
   ngOnDestroy(): void {
@@ -46,6 +92,7 @@ export class MetasPageComponent implements OnInit, OnDestroy {
   }
 
   carregarResumo(): void {
+    const revision = ++this.loadRevision;
     const mes = this.mesAtual.getMonth() + 1;
     const ano = this.mesAtual.getFullYear();
     this.estado = 'loading';
@@ -55,11 +102,13 @@ export class MetasPageComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (resumo) => {
+          if (revision !== this.loadRevision) return;
           this.resumo = resumo;
           this.metas = resumo.metas;
           this.estado = resumo.metas.length > 0 ? 'loaded' : 'empty';
         },
         error: () => {
+          if (revision !== this.loadRevision) return;
           this.estado = 'error';
           this.resumo = null;
           this.metas = [];
@@ -72,25 +121,35 @@ export class MetasPageComponent implements OnInit, OnDestroy {
     if (this.salvando || !this.formularioValido()) return;
 
     this.salvando = true;
-    const request = {
-      nome: this.formulario.nome.trim(),
-      percentualReceita: Number(this.formulario.percentualReceita)
-    };
+    this.mensagemErro = '';
+
+    const request = this.editando
+      ? this.criarRequestAtualizacao()
+      : this.criarRequestCadastro();
     const operacao$ = this.editando
-      ? this.metaMensalService.atualizarMeta({ id: this.formulario.id, ...request })
-      : this.metaMensalService.criarMeta({ ...request, mesReferencia: this.converterMesReferenciaParaApi(this.mesAtual) });
+      ? this.metaMensalService.atualizarMeta(request as AtualizarMetaMensalRequest)
+      : this.metaMensalService.criarMeta(request as CriarMetaMensalRequest);
 
     operacao$.pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
         this.resetarFormulario();
-        this.carregarResumo();
         this.salvando = false;
+        this.carregarResumo();
       },
-      error: () => {
-        this.mensagemErro = 'Não foi possível salvar a meta.';
+      error: (erro: HttpErrorResponse) => {
+        this.mensagemErro = this.obterMensagemErro(erro);
         this.salvando = false;
       }
     });
+  }
+
+  alterarTipoDefinicao(tipoDefinicao: TipoDefinicaoMeta): void {
+    if (tipoDefinicao === this.formulario.tipoDefinicao) return;
+
+    this.formulario.tipoDefinicao = tipoDefinicao;
+    this.formulario.percentualReceita = null;
+    this.formulario.valorMeta = null;
+    this.mensagemErro = '';
   }
 
   editarMeta(meta: MetaMensal): void {
@@ -98,8 +157,17 @@ export class MetasPageComponent implements OnInit, OnDestroy {
     this.formulario = {
       id: meta.id,
       nome: meta.nome,
-      percentualReceita: meta.percentualReceita
+      tipoDefinicao: meta.tipoDefinicao,
+      percentualReceita: meta.tipoDefinicao === 'Percentual' ? meta.percentualReceita : null,
+      valorMeta: meta.tipoDefinicao === 'Valor' ? meta.valorMeta : null
+      ,grupoObjetivoInvestimentoId: meta.grupoObjetivoInvestimentoId ?? null
     };
+    this.definicaoOriginal = {
+      tipoDefinicao: meta.tipoDefinicao,
+      percentualReceita: meta.percentualReceita,
+      valorMeta: meta.valorMeta
+    };
+    this.mensagemErro = '';
   }
 
   cancelarEdicao(): void {
@@ -120,9 +188,9 @@ export class MetasPageComponent implements OnInit, OnDestroy {
   }
 
   mudarMes(direcao: number): void {
-    const novoMes = new Date(this.mesAtual);
-    novoMes.setMonth(novoMes.getMonth() + direcao);
-    this.mesAtual = novoMes;
+    this.financialContext.setPeriod(this.mesAtual);
+    this.financialContext.shiftPeriod(direcao);
+    this.mesAtual = this.financialContext.period().date;
     this.resetarFormulario();
     this.carregarResumo();
   }
@@ -139,9 +207,28 @@ export class MetasPageComponent implements OnInit, OnDestroy {
   selecionarMesDoCalendario(event: Event): void {
     const input = event.target as HTMLInputElement;
     const [ano, mes] = input.value.split('-').map(Number);
-    this.mesAtual = new Date(ano, mes - 1, 1);
+    this.financialContext.setPeriod(new Date(ano, mes - 1, 1));
+    this.mesAtual = this.financialContext.period().date;
     this.resetarFormulario();
     this.carregarResumo();
+  }
+
+  selecionarMes(periodo: Date): void {
+    this.financialContext.setPeriod(periodo);
+    this.mesAtual = this.financialContext.period().date;
+    this.resetarFormulario();
+    this.carregarResumo();
+  }
+
+  get estadoCompartilhado(): FinancialViewState {
+    if (this.estado === 'loading') return 'loading';
+    if (this.estado === 'error') return 'loadError';
+    if (this.estado === 'empty') return 'emptyPeriod';
+    return 'loadedWithData';
+  }
+
+  get mensagemEstado(): string {
+    return this.mensagemErro || financialStateMessage(this.estadoCompartilhado, this.mesAtual, 'metas');
   }
 
   logout(): void {
@@ -150,9 +237,15 @@ export class MetasPageComponent implements OnInit, OnDestroy {
   }
 
   formularioValido(): boolean {
-    return this.formulario.nome.trim().length > 0
-      && this.formulario.nome.trim().length <= 100
-      && Number(this.formulario.percentualReceita) > 0;
+    const nome = this.formulario.nome.trim();
+    if (!nome || nome.length > 100) return false;
+
+    if (this.formulario.tipoDefinicao === 'Percentual') {
+      return this.valorValido(this.formulario.percentualReceita, 4);
+    }
+
+    return this.valorValido(this.formulario.valorMeta, 2)
+      && (this.temReceitaElegivelPositiva || this.podeRenomearMetaPorValorSemReceita());
   }
 
   formatarMoeda(valor = 0): string {
@@ -164,7 +257,11 @@ export class MetasPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  formatarPercentual(valor = 0): string {
+  formatarPercentual(valor: number | null | undefined): string {
+    if (valor === null || valor === undefined || !Number.isFinite(valor)) {
+      return 'Indisponível';
+    }
+
     return `${valor.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%`;
   }
 
@@ -181,9 +278,69 @@ export class MetasPageComponent implements OnInit, OnDestroy {
     return !!this.resumo?.alertas?.length;
   }
 
+  get temReceitaElegivelPositiva(): boolean {
+    return (this.resumo?.receitaElegivelMetas ?? this.resumo?.receitaTotal ?? 0) > 0;
+  }
+
   private resetarFormulario(): void {
     this.editando = false;
-    this.formulario = { id: '', nome: '', percentualReceita: 0 };
+    this.definicaoOriginal = null;
+    this.formulario = {
+      id: '',
+      nome: '',
+      tipoDefinicao: 'Percentual',
+      percentualReceita: null,
+      valorMeta: null,
+      grupoObjetivoInvestimentoId: null
+    };
+  }
+
+  private criarRequestCadastro(): CriarMetaMensalRequest {
+    const base = {
+      nome: this.formulario.nome.trim(),
+      mesReferencia: this.converterMesReferenciaParaApi(this.mesAtual),
+      ...(this.formulario.grupoObjetivoInvestimentoId
+        ? { grupoObjetivoInvestimentoId: this.formulario.grupoObjetivoInvestimentoId }
+        : {})
+    };
+
+    return this.formulario.tipoDefinicao === 'Valor'
+      ? { ...base, tipoDefinicao: 'Valor', valorMeta: Number(this.formulario.valorMeta), percentualReceita: null }
+      : { ...base, tipoDefinicao: 'Percentual', percentualReceita: Number(this.formulario.percentualReceita), valorMeta: null };
+  }
+
+  private criarRequestAtualizacao(): AtualizarMetaMensalRequest {
+    const base = {
+      id: this.formulario.id,
+      nome: this.formulario.nome.trim(),
+      ...(this.formulario.grupoObjetivoInvestimentoId
+        ? { grupoObjetivoInvestimentoId: this.formulario.grupoObjetivoInvestimentoId }
+        : {})
+    };
+
+    return this.formulario.tipoDefinicao === 'Valor'
+      ? { ...base, tipoDefinicao: 'Valor', valorMeta: Number(this.formulario.valorMeta), percentualReceita: null }
+      : { ...base, tipoDefinicao: 'Percentual', percentualReceita: Number(this.formulario.percentualReceita), valorMeta: null };
+  }
+
+  private valorValido(valor: number | null, casasDecimais: number): boolean {
+    if (valor === null || !Number.isFinite(Number(valor)) || Number(valor) <= 0) return false;
+
+    const fator = 10 ** casasDecimais;
+    return Math.abs(Number(valor) * fator - Math.round(Number(valor) * fator)) < 0.0000001;
+  }
+
+  private podeRenomearMetaPorValorSemReceita(): boolean {
+    return this.editando
+      && this.definicaoOriginal?.tipoDefinicao === 'Valor'
+      && Number(this.definicaoOriginal.valorMeta) === Number(this.formulario.valorMeta);
+  }
+
+  private obterMensagemErro(erro: HttpErrorResponse): string {
+    const mensagem = erro.error?.message;
+    return typeof mensagem === 'string' && mensagem.trim()
+      ? mensagem
+      : 'Não foi possível salvar a meta.';
   }
 
   private converterMesReferenciaParaApi(data: Date): string {
@@ -191,4 +348,25 @@ export class MetasPageComponent implements OnInit, OnDestroy {
     const mes = String(data.getMonth() + 1).padStart(2, '0');
     return `${ano}-${mes}-01`;
   }
+
+  criarObjetivo(): void {
+    const nome = this.novoObjetivo.nome.trim();
+    if (!nome || !this.grupoService) return;
+    this.grupoService.criar({ nome, valorAlvo: this.novoObjetivo.valorAlvo,
+      dataAlvo: this.novoObjetivo.dataAlvo || null }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: grupo => { this.grupos = [...this.grupos, grupo].sort((a, b) => a.nome.localeCompare(b.nome));
+        this.formulario.grupoObjetivoInvestimentoId = grupo.id; this.novoObjetivo = { nome: '', valorAlvo: null, dataAlvo: '' }; },
+      error: erro => this.mensagemErro = this.obterMensagemErro(erro)
+    });
+  }
+
+  confirmarAporte(meta: MetaMensal): void { this.aporteDialog?.abrir(meta); }
+
+  private carregarApoio(): void {
+    if (this.grupoService)
+      this.grupoService.listar().pipe(takeUntil(this.destroy$)).subscribe({ next: grupos => this.grupos = grupos });
+    if (this.investimentoService)
+      this.investimentoService.obterConsolidado().pipe(takeUntil(this.destroy$)).subscribe({ next: carteira => this.investimentos = carteira.itens });
+  }
+
 }

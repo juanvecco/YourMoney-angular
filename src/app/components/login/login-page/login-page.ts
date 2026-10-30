@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 
 @Component({
@@ -19,13 +19,15 @@ export class LoginPageComponent implements OnInit {
     form: FormGroup;
     loading = false;
     error: string | null = null;
+    validationSummary: string[] = [];
 
     showPassword = false;
 
     constructor(
         private fb: FormBuilder,
         private authService: AuthService,
-        private router: Router
+        private router: Router,
+        private route: ActivatedRoute
     ) {
         this.form = this.fb.group({
             email: ['', [Validators.required, Validators.email]],
@@ -34,10 +36,15 @@ export class LoginPageComponent implements OnInit {
     }
 
     onSubmit(): void {
-        if (this.form.invalid) return;
+        if (this.form.invalid) {
+            this.form.markAllAsTouched();
+            this.validationSummary = this.collectValidationSummary();
+            return;
+        }
 
         this.loading = true;
         this.error = null;
+        this.validationSummary = [];
 
         const payload = {
             email: this.form.value.email,
@@ -47,7 +54,11 @@ export class LoginPageComponent implements OnInit {
         this.authService.login(payload).subscribe({
             next: () => {
                 this.loading = false;
-                this.router.navigate(['/dashboard']);
+                const requested = this.route.snapshot.queryParamMap.get('returnUrl');
+                const returnUrl = requested && requested.startsWith('/') && !requested.startsWith('//')
+                    ? requested
+                    : '/dashboard';
+                this.router.navigateByUrl(returnUrl);
             },
             error: (err) => {
                 this.error = this.extractErrorMessage(err);
@@ -64,6 +75,34 @@ export class LoginPageComponent implements OnInit {
             'Erro ao fazer login'
         );
     }
+
+    hasError(controlName: string, errorName: string): boolean {
+        const control = this.form.get(controlName);
+        return !!control && control.touched && control.hasError(errorName);
+    }
+
+    isInvalid(controlName: string): boolean {
+        const control = this.form.get(controlName);
+        return !!control && control.invalid && control.touched;
+    }
+
+    onFormInput(): void {
+        this.error = null;
+        if (this.validationSummary.length) {
+            this.validationSummary = this.collectValidationSummary();
+        }
+    }
+
+    private collectValidationSummary(): string[] {
+        const messages: string[] = [];
+        const email = this.form.get('email');
+        const senha = this.form.get('senha');
+        if (email?.hasError('required')) messages.push('Preencha o campo E-mail.');
+        else if (email?.hasError('email')) messages.push('Informe um e-mail válido.');
+        if (senha?.hasError('required')) messages.push('Preencha o campo Senha.');
+        return messages;
+    }
+
     ngOnInit(): void { }
     togglePasswordVisibility(): void {
         this.showPassword = !this.showPassword;

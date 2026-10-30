@@ -80,3 +80,14 @@ export interface ProjecaoReservaEmergenciaResponse {
 }
 
 export type ConfirmarSugestaoReceitaRecorrenteResponse = CriarReceitaResponse;
+
+export interface SalarioElegivelInvestimento {
+  id: string;
+  descricao: string;
+  contaDescricao: string;
+  valorPrevisto: number;
+}
+
+export interface ListarSalariosElegiveisInvestimentoResponse {
+  itens: SalarioElegivelInvestimento[];
+}

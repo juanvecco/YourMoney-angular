@@ -18,6 +18,8 @@ export interface Despesa {
 export interface ContaFinanceira {
   id: string;
   descricao: string;
+  dataCriacao?: string;
+  podeRemover?: boolean;
 }
 
 export interface Categoria {

@@ -1,5 +1,10 @@
-<app-menu *ngIf="!isLoginPage()"></app-menu>
-<div [ngClass]="{'full-height': isLoginPage(), 'container my-4': !isLoginPage()}">
-    <router-outlet></router-outlet>
-</div>
-<app-footer *ngIf="!isLoginPage()"></app-footer>
+<a class="ym-skip-link" href="#main-content">Ir para o conteúdo principal</a>
+<app-menu #appMenu [class.ym-auth-shell-hidden]="isAuthPage()" [attr.aria-hidden]="isAuthPage()"></app-menu>
+<main id="main-content" class="ym-route-content" [class.ym-route-content--auth]="isAuthPage()"
+  [class.ym-route-content--app]="!isAuthPage() && appMenu.isLoggedIn()"
+  [class.ym-route-content--with-sidebar]="!isAuthPage() && appMenu.isLoggedIn() && appMenu.menuOpen" tabindex="-1">
+  <router-outlet></router-outlet>
+</main>
+<app-footer [class.ym-auth-shell-hidden]="isAuthPage()"
+  [class.ym-footer--app]="!isAuthPage() && appMenu.isLoggedIn()"
+  [class.ym-footer--with-sidebar]="!isAuthPage() && appMenu.isLoggedIn() && appMenu.menuOpen"></app-footer>

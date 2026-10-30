@@ -1,12 +1,14 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   AtualizarInvestimentoRequest,
   CriarInvestimentoRequest,
   CriarInvestimentoResponse,
-  Investimento
+  Investimento,
+  CarteiraInvestimentosConsolidada,
+  FiltroOrganizacaoInvestimentos
 } from '../models/investimento.model';
 
 export type {
@@ -28,6 +30,19 @@ export class InvestimentoService {
     return this.http.get<Investimento[]>(`${this.baseUrl}/Investimento/por-referencia`, {
       params: { mes: mes.toString(), ano: ano.toString() }
     });
+  }
+
+  obterConsolidado(filtro: FiltroOrganizacaoInvestimentos = {}): Observable<CarteiraInvestimentosConsolidada> {
+    let params = new HttpParams();
+    if (filtro.grupoObjetivoId) params = params.set('grupoObjetivoId', filtro.grupoObjetivoId);
+    if (filtro.semGrupo) params = params.set('semGrupo', 'true');
+    if (filtro.tipoAtivo) params = params.set('tipoAtivo', filtro.tipoAtivo);
+    if (filtro.naoClassificado) params = params.set('naoClassificado', 'true');
+    return this.http.get<CarteiraInvestimentosConsolidada>(`${this.baseUrl}/Investimento/consolidado`, { params });
+  }
+
+  obterPorId(id: string): Observable<Investimento> {
+    return this.http.get<Investimento>(`${this.baseUrl}/Investimento/${id}`);
   }
 
   criarInvestimento(request: CriarInvestimentoRequest): Observable<CriarInvestimentoResponse> {

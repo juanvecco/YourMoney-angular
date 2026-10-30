@@ -1,79 +1,233 @@
-<header class="ym-topbar">
-  <nav class="ym-nav">
-    <a class="ym-brand" routerLink="/dashboard">
-      <img src="assets/logo.png" alt="Your Money" class="ym-logo" />
-    </a>
-    <ul class="ym-menu">
-      <li><a routerLink="/dashboard"><i class="bi bi-speedometer2"></i>Dashboard</a></li>
-      <li><a routerLink="/receitas"><i class="bi bi-arrow-up-circle"></i>Receitas</a></li>
-      <li><a routerLink="/despesas"><i class="bi bi-arrow-down-circle"></i>Despesas</a></li>
-      <li><a class="active" routerLink="/investimento"><i class="bi bi-graph-up-arrow"></i>Investimentos</a></li>
-      <li><a routerLink="/metas"><i class="bi bi-bullseye"></i>Metas</a></li>
-      <li><a routerLink="/configuracao"><i class="bi bi-gear"></i>Configurações</a></li>
-      <li>
-        <button class="ym-logout-link" type="button" (click)="logout()" aria-label="Sair da conta">
-          <i class="bi bi-box-arrow-right"></i>Sair
-        </button>
-      </li>
-    </ul>
-  </nav>
-</header>
-
-<main class="ym-shell">
+<div class="ym-shell">
   <div class="ym-container">
-    <div class="ym-page-header">
-      <div class="ym-title-group">
-        <p class="ym-eyebrow">Patrimônio</p>
-        <h1 class="ym-title">Investimentos</h1>
-        <p class="ym-subtitle">Acompanhe as aplicações cadastradas no mês selecionado.</p>
+    <app-page-header eyebrow="Patrimônio" heading="Investimentos"
+      description="Acompanhe todo o patrimônio investido e o progresso de cada reserva salarial.">
+        <button pageHeaderActions class="ym-button primary accent-investment" type="button" (click)="abrirModalInvestimento()">
+          <i class="bi bi-plus-lg"></i>Novo investimento
+        </button>
+        <button pageHeaderActions class="ym-button secondary" type="button" (click)="abrirGerenciadorObjetivos()">
+          <i class="bi bi-bullseye"></i>Gerenciar objetivos
+        </button>
+    </app-page-header>
+    <app-view-state [state]="estadoCompartilhado" [message]="mensagemEstado"
+      [retryAvailable]="estadoCompartilhado === 'loadError' || estadoCompartilhado === 'stale'" (retry)="carregarInvestimentos()"></app-view-state>
+
+    <section class="ym-objective-summary" *ngIf="objetivosResumo.length" aria-labelledby="objetivosResumoTitulo">
+      <div class="ym-section-header"><div><h2 class="ym-section-title" id="objetivosResumoTitulo">Progresso dos objetivos</h2><p class="ym-subtitle">Patrimônio atual e cumprimento do valor planejado no mês, sem duplicar saldos.</p></div></div>
+      <div class="ym-objective-summary__grid">
+        <article class="ym-card ym-objective-card" *ngFor="let objetivo of objetivosPrincipais()">
+          <div class="ym-objective-card__cover" [class.empty]="!imagemObjetivo(objetivo)">
+            <img *ngIf="imagemObjetivo(objetivo) as imagem" [src]="imagem" [alt]="'Imagem do objetivo ' + objetivo.nome + (objetivo.descricao ? ': ' + objetivo.descricao : '')" />
+            <i *ngIf="!imagemObjetivo(objetivo)" class="bi bi-bullseye" aria-hidden="true"></i>
+            <span class="ym-objective-card__category"><i class="bi bi-heart" aria-hidden="true"></i> Objetivo pessoal</span>
+          </div>
+          <div class="ym-objective-card__content">
+            <div class="ym-objective-card__heading"><div><h3>{{ objetivo.nome }}</h3><p *ngIf="objetivo.descricao">{{ objetivo.descricao }}</p></div><span class="ym-badge">{{ objetivo.ativo === false ? 'Arquivado' : 'Em andamento' }}</span></div>
+            <div class="ym-objective-card__amount">
+              <span>{{ subobjetivosDe(objetivo.id).length ? 'Patrimônio integrado, incluindo subobjetivos' : 'Patrimônio integrado ao objetivo' }}</span>
+              <strong>{{ formatarMoeda(objetivo.valorAtualCarteira) | financialValue }}</strong>
+              <small *ngIf="objetivo.valorAlvo">Valor-alvo: {{ formatarMoeda(objetivo.valorAlvo) | financialValue }}</small>
+            </div>
+            <div class="ym-objective-card__progress" *ngIf="objetivo.valorAlvo">
+              <div class="ym-goal-label"><span>{{ formatarMoeda(objetivo.valorAtualCarteira) | financialValue }} guardados</span><strong>{{ formatarPercentual(objetivo.percentualAlvoAtingido ?? 0) }}</strong></div>
+              <div class="ym-progress" role="progressbar" [attr.aria-label]="'Progresso de ' + objetivo.nome" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="larguraProgresso(objetivo.percentualAlvoAtingido ?? 0)"><span [style.width.%]="larguraProgresso(objetivo.percentualAlvoAtingido ?? 0)"></span></div>
+              <p>Faltam <strong>{{ formatarMoeda(valorRestanteObjetivo(objetivo)) | financialValue }}</strong><span *ngIf="objetivo.dataAlvo"> · até {{ formatarDataCivil(objetivo.dataAlvo) }}</span></p>
+            </div>
+            <p class="ym-objective-card__integrated" *ngIf="!objetivo.valorAlvo">
+              <i class="bi bi-link-45deg" aria-hidden="true"></i>
+              Total de {{ objetivo.quantidadeInvestimentos }} investimento(s) vinculado(s){{ subobjetivosDe(objetivo.id).length ? ', incluindo os subobjetivos' : '' }}. Defina um valor-alvo apenas se quiser acompanhar percentual e valor restante.
+            </p>
+            <div class="ym-objective-card__monthly"><span>Planejado no mês <strong>{{ formatarMoeda(objetivo.valorPlanejadoMes) | financialValue }}</strong></span><span>Confirmado <strong>{{ formatarMoeda(objetivo.valorConfirmadoMes) | financialValue }}</strong></span></div>
+            <p *ngIf="objetivo.valorAguardandoAlocacao > 0" class="ym-objective-card__pending">Aguardando destino: {{ formatarMoeda(objetivo.valorAguardandoAlocacao) | financialValue }}</p>
+            <small>{{ objetivo.quantidadeInvestimentos }} investimento(s) vinculado(s){{ subobjetivosDe(objetivo.id).length ? ' · inclui subobjetivos' : '' }}</small>
+            <button *ngIf="subobjetivosDe(objetivo.id).length" class="ym-subobjective-toggle" type="button"
+              [attr.aria-expanded]="subobjetivosAbertos(objetivo.id)"
+              [attr.aria-controls]="'subobjetivos-' + objetivo.id"
+              (click)="alternarSubobjetivos(objetivo.id)">
+              <i class="bi" [ngClass]="subobjetivosAbertos(objetivo.id) ? 'bi-chevron-up' : 'bi-chevron-down'" aria-hidden="true"></i>
+              {{ subobjetivosAbertos(objetivo.id) ? 'Ocultar' : 'Ver' }} subobjetivos ({{ subobjetivosDe(objetivo.id).length }})
+            </button>
+            <div *ngIf="subobjetivosAbertos(objetivo.id)" class="ym-subobjective-list" [id]="'subobjetivos-' + objetivo.id">
+              <article *ngFor="let subobjetivo of subobjetivosDe(objetivo.id)" class="ym-subobjective-card">
+                <div class="ym-subobjective-card__heading">
+                  <img *ngIf="imagemObjetivo(subobjetivo) as imagem" [src]="imagem" [alt]="'Imagem do subobjetivo ' + subobjetivo.nome" />
+                  <div><span>Subobjetivo</span><h4>{{ subobjetivo.nome }}</h4><p *ngIf="subobjetivo.descricao">{{ subobjetivo.descricao }}</p></div>
+                </div>
+                <div class="ym-subobjective-card__amount"><span>Guardado para este objetivo</span><strong>{{ formatarMoeda(subobjetivo.valorAtualCarteira) | financialValue }}</strong></div>
+                <div *ngIf="subobjetivo.valorAlvo" class="ym-objective-card__progress">
+                  <div class="ym-goal-label"><span>Alvo {{ formatarMoeda(subobjetivo.valorAlvo) | financialValue }}</span><strong>{{ formatarPercentual(subobjetivo.percentualAlvoAtingido ?? 0) }}</strong></div>
+                  <div class="ym-progress" role="progressbar" [attr.aria-label]="'Progresso de ' + subobjetivo.nome" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="larguraProgresso(subobjetivo.percentualAlvoAtingido ?? 0)"><span [style.width.%]="larguraProgresso(subobjetivo.percentualAlvoAtingido ?? 0)"></span></div>
+                  <p>Faltam <strong>{{ formatarMoeda(valorRestanteObjetivo(subobjetivo)) | financialValue }}</strong><span *ngIf="subobjetivo.dataAlvo"> · até {{ formatarDataCivil(subobjetivo.dataAlvo) }}</span></p>
+                </div>
+              </article>
+            </div>
+          </div>
+        </article>
       </div>
-      <div class="ym-month-picker">
-        <button class="ym-icon-button" type="button" (click)="mudarMes(-1)" aria-label="Mês anterior">
-          <i class="bi bi-chevron-left"></i>
-        </button>
-        <button type="button" class="ym-month-trigger" (click)="abrirCalendario()">
-          <span class="ym-month-label">{{ mesAtual | date:'MMMM yyyy':'pt-BR' }}</span>
-        </button>
-        <input type="month" #calendarioInput class="d-none" [value]="(mesAtual | date:'yyyy-MM')"
-          (change)="selecionarMesDoCalendario($event)">
-        <button class="ym-icon-button" type="button" (click)="mudarMes(1)" aria-label="Próximo mês">
-          <i class="bi bi-chevron-right"></i>
-        </button>
+    </section>
+
+    <section class="ym-card ym-card-pad ym-openfinance-investments" aria-labelledby="openFinanceInvestimentosTitulo">
+      <div class="ym-openfinance-investments__header">
+        <div>
+          <h2 class="ym-section-title" id="openFinanceInvestimentosTitulo">Ativos de investimento Open Finance</h2>
+          <p class="ym-subtitle">Consulte as posições de investimento recebidas dos bancos e decida como relacioná-las à carteira. Nada é cadastrado automaticamente.</p>
+        </div>
+        <label class="ym-openfinance-toggle">
+          <input type="checkbox" [ngModel]="mostrarAtivosOpenFinance"
+            (ngModelChange)="alternarAtivosOpenFinance($event)" aria-describedby="openFinanceInvestimentosAjuda" />
+          <span>Mostrar ativos Open Finance</span>
+        </label>
       </div>
-    </div>
+      <p id="openFinanceInvestimentosAjuda" class="form-text">Esta prévia exibe posições de investimento, não transações bancárias. Cotação unitária e preço médio de aquisição são informações diferentes.</p>
+
+      <div *ngIf="mostrarAtivosOpenFinance" class="ym-openfinance-investments__body" aria-live="polite">
+        <div *ngIf="erroOpenFinance" class="ym-openfinance-alert error" role="alert">
+          <span>{{ erroOpenFinance }}</span>
+          <button type="button" class="ym-button secondary" (click)="carregarAtivosOpenFinance(undefined, true)">Tentar novamente</button>
+        </div>
+        <p *ngIf="erroReconciliacaoOpenFinance && !ativoOpenFinanceContext" class="ym-openfinance-alert error" role="alert">{{ erroReconciliacaoOpenFinance }}</p>
+        <p *ngIf="carregandoOpenFinance" class="ym-openfinance-state" role="status"><i class="bi bi-arrow-repeat" aria-hidden="true"></i> Consultando posições de investimento…</p>
+        <p *ngIf="semConexaoOpenFinance && !carregandoOpenFinance && !erroOpenFinance" class="ym-openfinance-state">Nenhuma conexão Meu Pluggy disponível. Conecte seus bancos na área Open Finance e tente novamente.</p>
+
+        <div *ngIf="ativosOpenFinanceOverview as overview" class="ym-openfinance-investments__body">
+          <div class="ym-openfinance-connection-list" *ngIf="overview.connections.length">
+            <article class="ym-openfinance-connection" *ngFor="let conexao of overview.connections">
+              <div><strong>{{ conexao.institutionName }}</strong><span>{{ conexao.assetCount }} posição(ões) · {{ rotuloEstadoAtivos(conexao.status) }}</span></div>
+              <small *ngIf="conexao.lastSuccessAt">Última consulta concluída {{ formatarDataCivil(dataCivilOpenFinance(conexao.lastSuccessAt)) }}<span *ngIf="conexao.nextRefreshAt"> · próxima atualização após {{ formatarDataCivil(dataCivilOpenFinance(conexao.nextRefreshAt)) }}</span></small>
+              <small *ngIf="conexao.status === 'no_product'">Esta instituição não disponibilizou o produto de investimentos.</small>
+              <small *ngIf="conexao.status === 'empty'">Nenhuma posição de investimento foi recebida nesta conexão.</small>
+              <small *ngIf="conexao.status === 'stale'" class="warning">
+                <ng-container *ngIf="conexao.lastSuccessAt; else falhaSemSnapshot">
+                  {{ mensagemFalhaAtivosOpenFinance(conexao) }}
+                  Última consulta bem-sucedida: {{ formatarDataCivil(dataCivilOpenFinance(conexao.lastSuccessAt)) }}.
+                  Cadastros e atualizações estão bloqueados até uma consulta recente.
+                </ng-container>
+                <ng-template #falhaSemSnapshot>
+                  {{ mensagemFalhaAtivosOpenFinance(conexao) }}
+                </ng-template>
+                <span *ngIf="conexao.retryAfterAt && !podeTentarNovamenteAtivosOpenFinance(conexao)">
+                  Nova tentativa disponível a partir de {{ formatarDataHoraOpenFinance(conexao.retryAfterAt) }}.
+                </span>
+              </small>
+              <button *ngIf="conexao.status === 'stale'" type="button" class="ym-button secondary"
+                [disabled]="!podeTentarNovamenteAtivosOpenFinance(conexao)"
+                (click)="carregarAtivosOpenFinance(conexao.connectionId, true)">Tentar novamente</button>
+              <small *ngIf="conexao.status === 'configuration_required'" class="warning">{{ conexao.message }}</small>
+            </article>
+          </div>
+          <p *ngIf="!overview.assets.length && !carregandoOpenFinance && !hasConnectionErrorOpenFinance(overview)" class="ym-openfinance-state">Nenhuma posição de investimento disponível nas conexões selecionadas.</p>
+
+          <div class="ym-openfinance-asset-list" *ngIf="overview.assets.length">
+            <article class="ym-openfinance-asset" *ngFor="let ativo of overview.assets">
+              <header><div><strong>{{ ativo.name }}</strong><span>{{ ativo.institutionName }} · {{ ativo.type }}<span *ngIf="ativo.subtype"> / {{ ativo.subtype }}</span></span></div><span class="ym-openfinance-asset__status" [class.warning]="ativo.isStale">{{ ativo.isStale ? 'Dados desatualizados' : rotuloSituacaoAtivo(ativo.status) }}</span></header>
+              <div class="ym-openfinance-asset__facts">
+                <span><small>Saldo atual</small><strong>{{ formatarValorAtivo(ativo.balance, ativo.currencyCode) | financialValue }}</strong></span>
+                <span *ngIf="ativo.quantity !== null"><small>Quantidade</small><strong>{{ ativo.quantity | number:'1.0-8' }}</strong></span>
+                <span *ngIf="ativo.currentUnitQuote !== null"><small>Cotação unitária</small><strong>{{ formatarValorAtivo(ativo.currentUnitQuote, ativo.currencyCode) | financialValue }}</strong></span>
+                <span><small>Data da posição</small><strong>{{ formatarDataCivil(dataCivilOpenFinance(ativo.positionDate)) }}</strong></span>
+              </div>
+              <p class="ym-openfinance-asset__identifiers" *ngIf="ativo.code || ativo.isin || ativo.issuer"><span *ngIf="ativo.code">Código: {{ ativo.code }}</span><span *ngIf="ativo.isin">ISIN: {{ ativo.isin }}</span><span *ngIf="ativo.issuer">Emissor: {{ ativo.issuer }}</span></p>
+              <div *ngIf="ativo.linkedInvestmentId" class="ym-openfinance-state registered"><i class="bi bi-link-45deg" aria-hidden="true"></i> Já vinculada a {{ ativo.linkedInvestmentName || 'um investimento' }}. Nenhum cadastro duplicado foi criado.</div>
+              <p *ngIf="!ativo.canReconcile && !ativo.linkedInvestmentId" class="ym-openfinance-state unavailable">{{ ativo.reconcileUnavailableReason || 'Esta posição pode ser consultada, mas não pode ser cadastrada neste momento.' }}</p>
+              <div *ngIf="!ativo.linkedInvestmentId && ativo.candidates.length" class="ym-openfinance-candidates">
+                <h3>Possíveis correspondências na carteira</h3>
+                <p>Comparamos nome e descrição, mesmo sem código ou ISIN. O valor manual pode estar desatualizado; valores próximos ajudam a ordenar as sugestões. Confirme qual cadastro representa este ativo.</p>
+                <article class="ym-openfinance-candidate" *ngFor="let candidata of ativo.candidates">
+                  <div class="ym-openfinance-candidate__details">
+                    <strong>{{ candidata.name }}</strong>
+                    <span *ngIf="candidata.descricao && candidata.descricao !== candidata.name">{{ candidata.descricao }}</span>
+                    <span>{{ candidata.type }} · {{ candidata.reason }}</span>
+                    <dl class="ym-openfinance-candidate__comparison">
+                      <div><dt>Valor cadastrado</dt><dd>{{ formatarMoeda(candidata.valorAtual ?? 0) | financialValue }}</dd></div>
+                      <div><dt>Saldo Open Finance</dt><dd>{{ formatarValorAtivo(ativo.balance, ativo.currencyCode) | financialValue }}</dd></div>
+                      <div *ngIf="candidata.valueDifference !== null && candidata.valueDifference !== undefined" class="ym-openfinance-candidate__difference"><dt>Diferença em relação ao cadastro</dt><dd>{{ formatarDiferencaAtivo(candidata) | financialValue }}</dd></div>
+                    </dl>
+                    <small *ngIf="!candidata.canReplace" class="ym-openfinance-candidate__note">{{ candidata.cannotReplaceReason }}</small>
+                  </div>
+                  <div class="ym-openfinance-candidate__actions">
+                    <button type="button" class="ym-button secondary" [disabled]="salvandoOpenFinance" (click)="vincularAtivoOpenFinance(ativo, candidata)">Manter e vincular</button>
+                    <button type="button" class="ym-button secondary" [disabled]="salvandoOpenFinance || !ativo.canReconcile || !candidata.canReplace" [attr.title]="candidata.cannotReplaceReason || null" (click)="abrirSubstituicaoAtivoOpenFinance(ativo, candidata)">Revisar e atualizar</button>
+                  </div>
+                </article>
+              </div>
+              <p *ngIf="!ativo.linkedInvestmentId && !ativo.candidates.length" class="ym-openfinance-state">Nenhuma correspondência sugerida. Confira sua carteira antes de cadastrar outro investimento.</p>
+              <div class="ym-openfinance-asset__actions" *ngIf="!ativo.linkedInvestmentId">
+                <button type="button" class="ym-button primary accent-investment" [disabled]="salvandoOpenFinance || !ativo.canReconcile" (click)="abrirCadastroAtivoOpenFinance(ativo)">Cadastrar ativo preenchido</button>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ym-card ym-card-pad ym-investment-filters" aria-labelledby="filtrosInvestimentosTitulo">
+      <div class="ym-section-header"><div><h2 class="ym-section-title" id="filtrosInvestimentosTitulo">Organizar carteira</h2><p class="ym-subtitle">Objetivo é para que o dinheiro será usado; tipo de ativo é onde ou como ele está investido.</p></div><button *ngIf="filtrosAtivos" class="ym-button secondary" type="button" (click)="limparFiltros()">Limpar filtros</button></div>
+      <div class="ym-filter-grid">
+        <div><label for="filtroObjetivo">Objetivo financeiro</label><select id="filtroObjetivo" class="form-select" [(ngModel)]="filtroGrupo" (ngModelChange)="aplicarFiltros()"><option value="todos">Todos os objetivos</option><option value="semGrupo">Sem grupo</option><option *ngFor="let grupo of gruposAtivos" [value]="grupo.id">{{ nomeGrupoObjetivo(grupo) }}</option></select></div>
+        <div><label for="filtroTipoAtivo">Tipo de ativo</label><select id="filtroTipoAtivo" class="form-select" [(ngModel)]="filtroTipo" (ngModelChange)="aplicarFiltros()"><option value="todos">Todos os tipos</option><option value="naoClassificado">Não classificado</option><option *ngFor="let tipo of tiposAtivo" [value]="tipo.codigo">{{ tipo.nome }}</option></select></div>
+      </div>
+    </section>
+
+    <section class="ym-reserve-section" *ngIf="reservas.length">
+      <div class="ym-section-header"><h2 class="ym-section-title">Reservas por renda</h2></div>
+      <div class="ym-reserve-grid">
+        <article class="ym-card ym-card-pad ym-reserve-card" *ngFor="let reserva of reservas">
+          <div class="ym-reserve-heading">
+            <div><h3>{{ reserva.descricao }}</h3><p>{{ reserva.contaDescricao }}</p></div>
+            <span class="ym-badge" [class.unavailable]="!reserva.elegivelParaNovaAssociacao">
+              {{ reserva.elegivelParaNovaAssociacao ? 'Disponível' : 'Inativa / indisponível' }}
+            </span>
+          </div>
+          <p class="ym-reserve-total"><small>Valor acumulado</small>{{ formatarMoeda(reserva.valorAcumulado) | financialValue }}</p>
+          <div class="ym-goal" *ngFor="let meta of [reserva.metaSeisMeses, reserva.metaDozeMeses]">
+            <div class="ym-goal-label"><span>Meta de {{ meta.meses }} meses</span><strong>{{ formatarPercentual(meta.percentualAlcancado) }}</strong></div>
+            <div class="ym-progress"><span [style.width.%]="larguraProgresso(meta.percentualAlcancado)"></span></div>
+            <p>{{ formatarMoeda(meta.valorMeta) | financialValue }} · faltam {{ formatarMoeda(meta.valorRestante) | financialValue }}</p>
+          </div>
+        </article>
+      </div>
+    </section>
 
     <section class="ym-grid">
       <div class="ym-stack">
-        <article class="ym-card ym-kpi accent-investment">
+        <div class="ym-investment-kpis"><article class="ym-card ym-kpi accent-investment">
           <i class="ym-kpi-icon bi bi-gem"></i>
           <h2 class="ym-kpi-label">Total investido</h2>
-          <p class="ym-kpi-value">R$ {{ totalInvestimentos | number:'1.2-2' }}</p>
-          <p class="ym-kpi-meta">Referência: {{ mesAtual | date:'MMMM yyyy':'pt-BR' }}</p>
-        </article>
+          <p class="ym-kpi-value">{{ totalInvestimentos | financialValue }}</p>
+          <p class="ym-kpi-meta">Soma de todos os investimentos cadastrados</p>
+        </article><article class="ym-card ym-kpi accent-investment" *ngIf="filtrosAtivos"><i class="ym-kpi-icon bi bi-funnel"></i><h2 class="ym-kpi-label">Total filtrado</h2><p class="ym-kpi-value">{{ totalFiltrado | financialValue }}</p><p class="ym-kpi-meta">Interseção dos filtros selecionados</p></article></div>
 
         <section class="ym-card ym-card-pad">
           <div class="ym-section-header">
-            <h2 class="ym-section-title">Carteira do mês</h2>
+            <h2 class="ym-section-title">{{ filtrosAtivos ? 'Resultado filtrado' : 'Carteira completa' }}</h2>
             <button class="ym-button primary accent-investment" type="button" (click)="abrirModalInvestimento()">
               <i class="bi bi-plus-lg"></i>Novo investimento
             </button>
           </div>
 
-          <div *ngIf="estadoCarregamento !== 'loadedWithData'" class="ym-empty ym-state-message"
+          <div *ngIf="estadoCarregamento !== 'loadedWithData' && estadoCarregamento !== 'refreshing' && estadoCarregamento !== 'stale'" class="ym-empty ym-state-message"
             [class.ym-state-error]="estadoCarregamento === 'loadError'">
-            {{ mensagemCarregamento }}
+            {{ estadoCarregamento === 'loading' ? 'Carregando investimentos...' : estadoCarregamento === 'loadError' ? 'Não foi possível carregar os investimentos.' : 'Nenhum investimento cadastrado.' }}
           </div>
           <div class="ym-list" *ngIf="estadoCarregamento === 'loadedWithData'">
             <article *ngFor="let investimento of investimentos" class="ym-list-item">
               <div class="ym-list-main">
                 <h3 class="ym-list-title">{{ investimento.nome }}</h3>
                 <div class="ym-list-meta">
-                  <span>{{ investimento.tipo || 'Sem tipo' }}</span>
-                  <span><i class="bi bi-calendar3"></i> {{ investimento.dataInvestimento | date:'dd/MM/yyyy' }}</span>
+                  <span>Produto ou modalidade: {{ investimento.tipo }}</span>
+                  <span><i class="bi bi-calendar3"></i> {{ formatarDataCivil(investimento.dataInvestimento) }}</span>
+                  <span *ngIf="investimento.codigoAtivo">Código: {{ investimento.codigoAtivo }}</span>
+                  <span *ngIf="investimento.isin">ISIN: {{ investimento.isin }}</span>
+                  <span *ngIf="investimento.precoUnitarioAtual != null">Cotação unitária atual: {{ formatarMoeda(investimento.precoUnitarioAtual) | financialValue }}</span>
                 </div>
+                <div class="ym-organization-chips"><span class="ym-badge"><i class="bi bi-bullseye"></i>{{ investimento.grupoObjetivo?.nome || 'Sem grupo' }}</span><span class="ym-badge"><i class="bi bi-pie-chart"></i>{{ rotuloTipoAtivo(investimento.tipoAtivo) }}</span></div>
+                <p class="ym-association" *ngIf="investimento.reservaAssociada">
+                  <i class="bi bi-shield-check"></i>{{ investimento.reservaAssociada.descricao }} · {{ investimento.reservaAssociada.contaDescricao }}
+                  <span class="ym-badge unavailable" *ngIf="!investimento.reservaAssociada.elegivelParaNovaAssociacao">Indisponível</span>
+                </p>
               </div>
               <div class="ym-list-actions accent-investment">
-                <span class="ym-amount">R$ {{ investimento.valorAtual | number:'1.2-2' }}</span>
+                <span class="ym-amount">{{ investimento.valorAtual | financialValue }}</span>
                 <button class="ym-icon-button" type="button" (click)="abrirModalEditar(investimento)"
                   aria-label="Editar investimento">
                   <i class="bi bi-pencil"></i>
@@ -89,15 +243,13 @@
       </div>
 
       <aside class="ym-card ym-card-pad">
-        <h2 class="ym-section-title">Ações rápidas</h2>
-        <p class="ym-subtitle">Cadastre novos ativos para manter a carteira atualizada.</p>
-        <button class="ym-button primary accent-investment mt-3" type="button" (click)="abrirModalInvestimento()">
-          <i class="bi bi-plus-circle"></i>Novo investimento
-        </button>
+        <h2 class="ym-section-title">Subtotais da seleção</h2><p class="ym-subtitle">Valores calculados pelo servidor, sem duplicação.</p>
+        <section class="ym-subtotal-section"><h3>Por objetivo</h3><p *ngIf="!subtotaisPorGrupo.length">Nenhum subtotal disponível.</p><ul><li *ngFor="let subtotal of subtotaisPorGrupo"><span>{{ subtotal.nome }} <small>({{ subtotal.quantidadeInvestimentos }})</small></span><span class="ym-subtotal-value"><strong>{{ formatarMoeda(subtotal.valorAtual) | financialValue }}</strong><span class="ym-objective-percentage">{{ subtotal.percentual ?? 0 | number:'1.1-1' }}%</span></span></li></ul></section>
+        <section class="ym-subtotal-section"><h3>Por tipo de ativo</h3><p *ngIf="!subtotaisPorTipoAtivo.length">Nenhum subtotal disponível.</p><ul><li *ngFor="let subtotal of subtotaisPorTipoAtivo"><span>{{ subtotal.nome }} <small>({{ subtotal.quantidadeInvestimentos }})</small></span><strong>{{ formatarMoeda(subtotal.valorAtual) | financialValue }}</strong></li></ul></section>
       </aside>
     </section>
   </div>
-</main>
+</div>
 
 <div class="modal fade ym-modal accent-investment" id="modalInvestimento" tabindex="-1"
   aria-labelledby="modalInvestimentoLabel" aria-hidden="true">
@@ -107,64 +259,100 @@
         <h5 class="modal-title" id="modalInvestimentoLabel">
           {{ novoInvestimento.id ? 'Editar' : 'Novo' }} Investimento
         </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar" (click)="cancelarCadastroOpenFinance()"></button>
       </div>
       <div class="modal-body">
+        <div *ngIf="ativoOpenFinanceContext as contexto" class="ym-openfinance-review-note">
+          <strong>{{ contexto.action === 'replace' ? 'Revisar atualização da posição' : 'Dados recebidos do Open Finance' }}</strong>
+          <span>{{ contexto.ativo.institutionName }} · {{ contexto.ativo.name }} · {{ formatarValorAtivo(contexto.ativo.balance, contexto.ativo.currencyCode) | financialValue }}</span>
+          <p *ngIf="contexto.action === 'replace' && contexto.candidata as candidata">Antes: {{ candidata.name }} · {{ formatarMoeda(candidata.valorAtual ?? 0) | financialValue }}. O nome, a descrição, a data de aquisição e o preço médio cadastrados foram mantidos para revisão. Confira o saldo, a quantidade e a cotação recebidos do banco.</p>
+          <p *ngIf="contexto.action === 'create'">Os dados disponíveis foram preenchidos para revisão. Complete os campos ausentes. A cotação unitária não representa o preço médio de aquisição.</p>
+        </div>
+        <p *ngIf="(ativoOpenFinanceContext || transacaoOpenFinanceParaCadastro) && erroReconciliacaoOpenFinance" class="ym-openfinance-alert error" role="alert">{{ erroReconciliacaoOpenFinance }}</p>
         <form>
+          <p class="ym-form-hint">Campos com * são obrigatórios.</p>
           <div class="row g-3">
             <div class="col-12">
-              <label class="form-label">Nome</label>
-              <input type="text" class="form-control" [(ngModel)]="novoInvestimento.nome" name="nome"
+              <label class="form-label" for="nomeInvestimento">Nome <span class="ym-required" aria-hidden="true">*</span></label>
+                <input id="nomeInvestimento" type="text" class="form-control" [(ngModel)]="novoInvestimento.nome" name="nome"
                 maxlength="100" required aria-required="true" />
             </div>
             <div class="col-12">
-              <label class="form-label">Descrição</label>
-              <input type="text" class="form-control" [(ngModel)]="novoInvestimento.descricao" name="descricao"
-                maxlength="500" />
+              <label class="form-label" for="descricaoInvestimento">Descrição <span class="ym-required" aria-hidden="true">*</span></label>
+                <input id="descricaoInvestimento" type="text" class="form-control" [(ngModel)]="novoInvestimento.descricao" name="descricao"
+                maxlength="500" required aria-required="true" />
             </div>
             <div class="col-12">
-              <label class="form-label">Tipo</label>
-              <input type="text" class="form-control" [(ngModel)]="novoInvestimento.tipo" name="tipo"
+              <label class="form-label" for="modalidadeInvestimento">Produto ou modalidade <span class="ym-required" aria-hidden="true">*</span></label>
+                <input id="modalidadeInvestimento" type="text" class="form-control" [(ngModel)]="novoInvestimento.tipo" name="tipo"
                 maxlength="100" required aria-required="true" />
+              <div class="form-text">Ex.: Tesouro Selic 2029, CDB Banco X ou ETF IVVB11.</div>
             </div>
+            <div class="col-md-6"><label class="form-label" for="objetivoInvestimento">Objetivo financeiro (opcional)</label><select id="objetivoInvestimento" class="form-select" [(ngModel)]="novoInvestimento.grupoObjetivoId" name="grupoObjetivoId"><option [ngValue]="null">Sem grupo</option><option *ngFor="let grupo of gruposAtivos" [ngValue]="grupo.id">{{ nomeGrupoObjetivo(grupo) }}</option></select></div>
+            <div class="col-md-6"><label class="form-label" for="tipoAtivoInvestimento">Tipo de ativo (opcional)</label><select id="tipoAtivoInvestimento" class="form-select" [(ngModel)]="novoInvestimento.tipoAtivo" name="tipoAtivo"><option [ngValue]="null">Não classificado</option><option *ngFor="let tipo of tiposAtivo" [ngValue]="tipo.codigo">{{ tipo.nome }}</option></select></div>
             <div class="col-md-6">
-              <label class="form-label">Quantidade</label>
-              <input type="number" step="0.01" min="0.01" class="form-control"
+              <label class="form-label" for="quantidadeInvestimento">Quantidade <span class="ym-required" aria-hidden="true">*</span></label>
+                <input id="quantidadeInvestimento" type="number" step="0.00000001" min="0.00000001" class="form-control"
                 [(ngModel)]="novoInvestimento.quantidade" name="quantidade" required aria-required="true" />
             </div>
             <div class="col-md-6">
-              <label class="form-label">Preço médio (R$)</label>
-              <input type="number" step="0.01" min="0.01" class="form-control"
+              <label class="form-label" for="precoMedioInvestimento">Preço médio (R$) <span class="ym-required" aria-hidden="true">*</span></label>
+                <input id="precoMedioInvestimento" type="number" financialValueInput step="0.00000001" min="0.00000001" class="form-control"
                 [(ngModel)]="novoInvestimento.precoMedio" name="precoMedio" required aria-required="true" />
             </div>
             <div class="col-md-6">
-              <label class="form-label">Valor (R$)</label>
-              <input type="number" step="0.01" min="0.01" class="form-control"
+              <label class="form-label" for="codigoAtivoInvestimento">Código / ticker (opcional)</label>
+                <input id="codigoAtivoInvestimento" type="text" class="form-control" maxlength="100" [(ngModel)]="novoInvestimento.codigoAtivo" name="codigoAtivo" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="isinInvestimento">ISIN (opcional)</label>
+                <input id="isinInvestimento" type="text" class="form-control" maxlength="20" [(ngModel)]="novoInvestimento.isin" name="isin" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="cotacaoUnitarioInvestimento">Cotação unitária atual (R$)</label>
+                <input id="cotacaoUnitarioInvestimento" type="number" step="0.00000001" min="0.00000001" class="form-control" [(ngModel)]="novoInvestimento.precoUnitarioAtual" name="precoUnitarioAtual" />
+              <div class="form-text">Campo separado do preço médio de aquisição.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="valorAtualInvestimento">Valor (R$) <span class="ym-required" aria-hidden="true">*</span></label>
+                <input id="valorAtualInvestimento" type="number" financialValueInput step="0.01" min="0.01" class="form-control"
                 [(ngModel)]="novoInvestimento.valorAtual" name="valor" required aria-required="true" />
             </div>
             <div class="col-md-6">
-              <label class="form-label">Data do investimento</label>
-              <input type="date" class="form-control" [(ngModel)]="novoInvestimento.dataInvestimento" name="data"
+              <label class="form-label" for="dataInvestimento">Data do investimento <span class="ym-required" aria-hidden="true">*</span></label>
+                <input id="dataInvestimento" type="date" class="form-control" [(ngModel)]="novoInvestimento.dataInvestimento" name="data"
                 required aria-required="true" />
             </div>
             <div class="col-md-6">
-              <label class="form-label">Mês de referência</label>
-              <input type="month" class="form-control" [(ngModel)]="novoInvestimento.mesReferencia"
+              <label class="form-label" for="mesReferenciaInvestimento">Mês de referência <span class="ym-required" aria-hidden="true">*</span></label>
+                <input id="mesReferenciaInvestimento" type="month" class="form-control" [(ngModel)]="novoInvestimento.mesReferencia"
                 name="mesReferencia" required aria-required="true" />
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="reservaSalarialInvestimento">Reserva salarial (opcional)</label>
+                <select id="reservaSalarialInvestimento" class="form-select" [(ngModel)]="novoInvestimento.receitaRecorrenteId" name="receitaRecorrenteId" [disabled]="carregandoSalarios">
+                <option [ngValue]="null">Sem vínculo com uma renda</option>
+                <option *ngFor="let salario of salariosElegiveis" [ngValue]="salario.id">
+                  {{ salario.descricao }} · {{ salario.contaDescricao }}{{ salario.historica ? ' (indisponível — vínculo atual)' : '' }}
+                </option>
+              </select>
+              <div class="form-text">Apenas salários ativos classificados como Renda disponível podem receber novos vínculos.</div>
             </div>
           </div>
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="ym-button" data-bs-dismiss="modal" [disabled]="salvandoInvestimento">
+        <button type="button" class="ym-button" data-bs-dismiss="modal" [disabled]="salvandoInvestimento || salvandoOpenFinance" (click)="cancelarCadastroOpenFinance()">
           Cancelar
         </button>
         <button type="button" class="ym-button primary" (click)="salvarInvestimento()"
-          [disabled]="salvandoInvestimento" [attr.aria-busy]="salvandoInvestimento">
-          <i class="bi" [ngClass]="salvandoInvestimento ? 'bi-hourglass-split' : 'bi-check2'"></i>
-          {{ salvandoInvestimento ? 'Salvando...' : 'Salvar Investimento' }}
+          [disabled]="salvandoInvestimento || salvandoOpenFinance" [attr.aria-busy]="salvandoInvestimento || salvandoOpenFinance">
+          <i class="bi" [ngClass]="salvandoInvestimento || salvandoOpenFinance ? 'bi-hourglass-split' : 'bi-check2'"></i>
+          {{ salvandoInvestimento || salvandoOpenFinance ? 'Salvando...' : 'Salvar Investimento' }}
         </button>
       </div>
     </div>
   </div>
 </div>
+
+<app-grupo-objetivo-dialog [grupos]="grupos" (alterado)="objetivosAlterados()"></app-grupo-objetivo-dialog>

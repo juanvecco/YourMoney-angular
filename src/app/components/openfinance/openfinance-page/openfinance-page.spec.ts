@@ -70,12 +70,34 @@ describe('OpenFinancePageComponent', () => {
   beforeEach(() => {
     openFinanceService = jasmine.createSpyObj<OpenFinanceService>('OpenFinanceService', [
       'obterFontes',
-      'obterPreviewTransacoes'
+      'obterPreviewTransacoes',
+      'verificarProvedor',
+      'obterConfiguracaoCredenciaisPluggy',
+      'salvarConfiguracaoCredenciaisPluggy',
+      'obterConexoes',
+      'obterConnectToken'
     ]);
     openFinanceService.obterFontes.and.returnValue(of(sourcesResponse));
     openFinanceService.obterPreviewTransacoes.and.returnValue(of(previewResponse));
+    openFinanceService.verificarProvedor.and.returnValue(of({ accessToken: 'temporary', expiresAt: '2026-10-27T15:00:00Z' }));
+    openFinanceService.obterConfiguracaoCredenciaisPluggy.and.returnValue(of({
+      configured: false,
+      source: 'none',
+      clientIdHint: null,
+      updatedAt: null,
+      canSave: true,
+    }));
+    openFinanceService.salvarConfiguracaoCredenciaisPluggy.and.returnValue(of({
+      configured: true,
+      source: 'database',
+      clientIdHint: 'abcd…wxyz',
+      updatedAt: '2026-10-28T20:00:00Z',
+      canSave: true,
+    }));
+    openFinanceService.obterConexoes.and.returnValue(of([]));
+    openFinanceService.obterConnectToken.and.returnValue(of({ accessToken: 'temporary', expiresAt: '2026-10-27T15:00:00Z' }));
 
-    component = new OpenFinancePageComponent(openFinanceService);
+    component = new OpenFinancePageComponent(openFinanceService, {} as any);
   });
 
   it('loads sources and readiness without enabling real data', () => {
@@ -98,7 +120,7 @@ describe('OpenFinancePageComponent', () => {
     component.carregarFontes();
 
     expect(component.estadoFontes).toBe('error');
-    expect(component.mensagemErroFontes).toContain('Nao foi possivel');
+    expect(component.mensagemErroFontes).toContain('Não foi possível');
   });
 
   it('preserves last known source status after a reload failure', () => {
@@ -115,11 +137,33 @@ describe('OpenFinancePageComponent', () => {
   it('loads transaction preview and keeps status preview-only', () => {
     component.carregarPreview();
 
+    expect(component.mostrarDemonstracao).toBeTrue();
     expect(openFinanceService.obterPreviewTransacoes).toHaveBeenCalledWith('mock-transactions');
     expect(component.estadoPreview).toBe('loaded');
     expect(component.transacoes.length).toBe(2);
     expect(component.transacoes.every(item => item.importStatus === 'preview-only')).toBeTrue();
     expect(component.transacoes.some(item => item.duplicateRisk)).toBeTrue();
+  });
+
+  it('keeps the demonstration hidden and does not fetch it on initialization', () => {
+    spyOn(component, 'carregarFontes');
+    spyOn(component, 'carregarConfiguracaoCredenciaisPluggy');
+    spyOn(component, 'carregarDadosPluggy');
+    const carregarPreview = spyOn(component, 'carregarPreview');
+
+    component.ngOnInit();
+
+    expect(component.mostrarDemonstracao).toBeFalse();
+    expect(component.estadoPreview).toBe('idle');
+    expect(carregarPreview).not.toHaveBeenCalled();
+  });
+
+  it('shows and loads the selected source after choosing to view the demonstration', () => {
+    component.escolherFonte(sourcesResponse.sources[0]);
+
+    expect(component.mostrarDemonstracao).toBeTrue();
+    expect(component.fonteSelecionada).toBe('mock-transactions');
+    expect(openFinanceService.obterPreviewTransacoes).toHaveBeenCalledWith('mock-transactions');
   });
 
   it('updates suggested classification locally only', () => {
@@ -138,11 +182,82 @@ describe('OpenFinancePageComponent', () => {
 
     expect(component.estadoPreview).toBe('error');
     expect(component.transacoes.length).toBe(0);
-    expect(component.mensagemErroPreview).toContain('Nao foi possivel');
+    expect(component.mensagemErroPreview).toContain('Não foi possível');
   });
 
   it('identifies only available sources as preview capable', () => {
     expect(component.fonteSuportaPreview(sourcesResponse.sources[0])).toBeTrue();
     expect(component.fonteSuportaPreview(sourcesResponse.sources[1])).toBeFalse();
+  });
+
+  it('checks real provider availability without storing the connect token', () => {
+    component.verificarProvedor();
+    expect(component.provedorDisponivel).toBeTrue();
+    expect(component.mensagemProvedor).toContain('disponível');
+    expect(localStorage.getItem('pluggy_token')).toBeNull();
+  });
+
+  it('keeps the demonstration usable when the real provider is not configured', () => {
+    openFinanceService.verificarProvedor.and.returnValue(throwError(() => ({ status: 503 })));
+    component.verificarProvedor();
+    expect(component.provedorDisponivel).toBeFalse();
+    expect(component.mensagemProvedor).toContain('não configurado');
+    expect(component.estadoPreview).not.toBe('error');
+  });
+
+  it('does not report no connections or allow connecting when the server returns 503', () => {
+    openFinanceService.obterConexoes.and.returnValue(throwError(() => ({ status: 503 })));
+
+    (component as any).carregarConexoesPluggy();
+
+    expect(component.conexoesPluggy).toEqual([]);
+    expect(component.conexoesPluggyCarregadas).toBeFalse();
+    expect(component.configuracaoServidorPluggyPendente).toBeTrue();
+    expect(component.erroCarregamentoConexoesPluggy).toContain('não está configurado no servidor');
+    expect(component.mostrarSemConexoesPluggy).toBeFalse();
+    expect(component.podeMostrarVisaoGeralPluggy).toBeFalse();
+    expect(component.podeAdicionarConexao).toBeFalse();
+
+    component.conectarBanco();
+
+    expect(openFinanceService.obterConnectToken).not.toHaveBeenCalled();
+    expect(component.mensagemProvedor).toContain('Configure as credenciais');
+  });
+
+  it('shows the no-connection state only after connections load successfully', () => {
+    component.configuracaoCredenciaisPluggy = {
+      configured: true,
+      source: 'server',
+      clientIdHint: 'abcd…wxyz',
+      updatedAt: null,
+      canSave: false,
+    };
+    openFinanceService.obterConexoes.and.returnValue(of([]));
+
+    (component as any).carregarConexoesPluggy();
+
+    expect(component.conexoesPluggyCarregadas).toBeTrue();
+    expect(component.mostrarSemConexoesPluggy).toBeTrue();
+    expect(component.podeAdicionarConexao).toBeTrue();
+  });
+
+  it('shows the safe reason returned by the API when starting a connection fails', () => {
+    component.configuracaoCredenciaisPluggy = {
+      configured: true,
+      source: 'server',
+      clientIdHint: 'abcd…wxyz',
+      updatedAt: null,
+      canSave: false,
+    };
+    openFinanceService.obterConexoes.and.returnValue(of([]));
+    (component as any).carregarConexoesPluggy();
+    openFinanceService.obterConnectToken.and.returnValue(throwError(() => ({
+      status: 503,
+      error: { message: 'Não foi possível abrir as credenciais protegidas.' },
+    })));
+
+    component.conectarBanco();
+
+    expect(component.mensagemProvedor).toBe('Não foi possível abrir as credenciais protegidas.');
   });
 });

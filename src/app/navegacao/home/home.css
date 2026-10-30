@@ -1,18 +1,1 @@
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-button {
-    transition: all 0.2s ease;
-}
-
-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 28px rgba(171, 153, 101, 0.5) !important;
-}
-
-button:active {
-    transform: translateY(0);
-}
+:host { display: block; }

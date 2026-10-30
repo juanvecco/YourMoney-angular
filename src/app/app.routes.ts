@@ -10,12 +10,17 @@ import { DashboardPageComponent } from './components/dashboard/dashboard-page/da
 import { LoginPageComponent } from './components/login/login-page/login-page';
 import { CadastroPageComponent } from './components/cadastro/cadastro-page/cadastro-page';
 import { MetasPageComponent } from './components/metas/metas-page/metas-page';
+import { MovimentacoesPageComponent } from './components/movimentacoes/movimentacoes-page/movimentacoes-page';
+import { RecuperarSenhaPageComponent } from './components/auth/recuperar-senha-page/recuperar-senha-page';
+import { RedefinirSenhaPageComponent } from './components/auth/redefinir-senha-page/redefinir-senha-page';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
 
     { path: 'login', component: LoginPageComponent },
     { path: 'cadastro', component: CadastroPageComponent },
+    { path: 'recuperar-senha', component: RecuperarSenhaPageComponent },
+    { path: 'redefinir-senha', component: RedefinirSenhaPageComponent },
 
     {
         path: 'dashboard',
@@ -45,6 +50,17 @@ export const routes: Routes = [
     {
         path: 'metas',
         component: MetasPageComponent,
+        canActivate: [AuthGuard]
+    },
+    {
+        path: 'movimentacoes',
+        component: MovimentacoesPageComponent,
+        canActivate: [AuthGuard]
+    },
+    {
+        path: 'openfinance',
+        loadComponent: () => import('./components/openfinance/openfinance-page/openfinance-page')
+            .then(module => module.OpenFinancePageComponent),
         canActivate: [AuthGuard]
     },
     {

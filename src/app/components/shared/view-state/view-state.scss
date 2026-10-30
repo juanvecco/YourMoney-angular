@@ -1,0 +1,12 @@
+.ym-view-state {
+  display: grid; min-height: 10rem; place-items: center; align-content: center; gap: .75rem; padding: 1.5rem;
+  text-align: center; color: var(--ym-muted); background: var(--ym-surface); border: 1px dashed var(--ym-border-strong);
+  border-radius: var(--ym-radius);
+}
+.ym-view-state p { max-width: 38rem; margin: 0; }
+.ym-view-state--error { color: var(--ym-danger); border-color: var(--ym-danger); }
+.ym-view-state__spinner {
+  width: 2rem; height: 2rem; border: 3px solid var(--ym-border); border-top-color: var(--ym-primary);
+  border-radius: 50%; animation: ym-spin .8s linear infinite;
+}
+@keyframes ym-spin { to { transform: rotate(1turn); } }

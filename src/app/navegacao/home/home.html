@@ -1,113 +1,83 @@
-<!-- Header minimalista -->
-<header class="py-3 px-5"
-    style="background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid rgba(0, 0, 0, 0.06);">
-    <div class="d-flex justify-content-between align-items-center" style="max-width: 1400px; margin: 0 auto;">
-        <div class="fw-semibold fs-5" style="letter-spacing: -0.5px;">
-            YourMoney
+<section class="ym-home-hero">
+    <div class="ym-home-container ym-home-hero__grid">
+        <div class="ym-home-copy">
+            <p class="ym-home-eyebrow"><span aria-hidden="true"></span>Seu financeiro, com direção</p>
+            <h1 class="ym-home-title">Controle total<br />do seu dinheiro.</h1>
+            <p class="ym-home-lead">Acompanhe receitas, despesas e objetivos com uma visão clara do que acontece com cada real.</p>
+            <div class="ym-home-actions">
+                <button type="button" class="btn btn-lg ym-home-action" (click)="goToLogin()">
+                    Acessar meu painel <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+                </button>
+                <span class="ym-home-note"><i class="bi bi-shield-check" aria-hidden="true"></i> Gratuito para começar</span>
+            </div>
+            <div class="ym-home-topics" aria-label="Recursos do YourMoney">
+                <span><i class="bi bi-journal-text" aria-hidden="true"></i> Receitas e despesas</span>
+                <span><i class="bi bi-graph-up-arrow" aria-hidden="true"></i> Investimentos</span>
+                <span><i class="bi bi-bullseye" aria-hidden="true"></i> Metas</span>
+            </div>
         </div>
-        <button class="btn btn-sm px-4" (click)="goToLogin()"
-            style="background: #007AFF; color: white; border: none; border-radius: 20px; font-size: 14px; padding: 8px 20px; font-weight: 600;">
-            Entrar
-        </button>
-    </div>
-</header>
 
-<!-- Hero Section -->
-<section class="text-center"
-    style="padding: 120px 40px 100px; background: linear-gradient(180deg, #ffffff 0%, #f5f5f7 100%);">
-    <div style="max-width: 1200px; margin: 0 auto;">
-        <h1 class="fw-bold mb-3"
-            style="font-size: clamp(48px, 7vw, 80px); line-height: 1.05; letter-spacing: -2px; color: #1d1d1f;">
-            Controle total<br />do seu dinheiro.
-        </h1>
-
-        <p class="mx-auto mb-5"
-            style="font-size: clamp(21px, 3vw, 28px); line-height: 1.4; color: #6e6e73; max-width: 600px; font-weight: 400;">
-            Acompanhe para onde cada real vai.
-        </p>
-
-        <button class="btn btn-lg px-5 mb-2" (click)="goToLogin()"
-            style="background: #007AFF; color: white; border: none; border-radius: 30px; font-size: 17px; padding: 14px 40px; font-weight: 500; box-shadow: 0 4px 16px rgba(0, 122, 255, 0.25);">
-            Acessar meu painel
-        </button>
-
-        <div class="mt-2" style="font-size: 14px; color: #86868b;">
-            Gratuito para começar
-        </div>
-    </div>
-</section>
-
-<!-- Features Section -->
-<section class="py-5" style="background: #f5f5f7;">
-    <div class="container" style="max-width: 1200px; padding: 60px 20px;">
-        <div class="row g-4">
-            <!-- Feature 1 -->
-            <div class="col-md-4">
-                <div class="text-center p-4"
-                    style="background: white; border-radius: 18px; height: 100%; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);">
-                    <div class="mb-3" style="font-size: 48px;">📊</div>
-                    <h5 class="fw-semibold mb-3" style="font-size: 24px; letter-spacing: -0.5px; color: #1d1d1f;">
-                        Clareza total
-                    </h5>
-                    <p style="font-size: 17px; line-height: 1.5; color: #6e6e73;">
-                        Veja exatamente para onde seu dinheiro vai.
-                    </p>
+        <div class="ym-home-visual" aria-hidden="true">
+            <div class="ym-home-orbit ym-home-orbit--outer"></div>
+            <div class="ym-home-orbit ym-home-orbit--inner"></div>
+            <div class="ym-home-preview">
+                <div class="ym-home-preview__top">
+                    <div class="ym-home-preview__brand"><span><i class="bi bi-wallet2"></i></span>YourMoney</div>
+                    <span class="ym-home-preview__period">VISÃO GERAL</span>
                 </div>
-            </div>
-
-            <!-- Feature 2 -->
-            <div class="col-md-4">
-                <div class="text-center p-4"
-                    style="background: white; border-radius: 18px; height: 100%; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);">
-                    <div class="mb-3" style="font-size: 48px;">🎯</div>
-                    <h5 class="fw-semibold mb-3" style="font-size: 24px; letter-spacing: -0.5px; color: #1d1d1f;">
-                        Decida com dados reais
-                    </h5>
-                    <p style="font-size: 17px; line-height: 1.5; color: #6e6e73;">
-                        Planeje com dados, não com suposições.
-                    </p>
+                <div class="ym-home-preview__balance">
+                    <small>RESUMO FINANCEIRO</small>
+                    <strong>Seu mês, em equilíbrio.</strong>
+                    <div class="ym-home-preview__trend"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
                 </div>
-            </div>
-
-            <!-- Feature 3 -->
-            <div class="col-md-4">
-                <div class="text-center p-4"
-                    style="background: white; border-radius: 18px; height: 100%; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);">
-                    <div class="mb-3" style="font-size: 48px;">✨</div>
-                    <h5 class="fw-semibold mb-3" style="font-size: 24px; letter-spacing: -0.5px; color: #1d1d1f;">
-                        Evite surpresas no fim do mês
-                    </h5>
-                    <p style="font-size: 17px; line-height: 1.5; color: #6e6e73;">
-                        Saiba exatamente quanto pode gastar.
-                    </p>
+                <div class="ym-home-preview__cards">
+                    <div><i class="bi bi-arrow-down-left-circle"></i><span>Receitas</span><b></b></div>
+                    <div><i class="bi bi-arrow-up-right-circle"></i><span>Despesas</span><b></b></div>
+                    <div><i class="bi bi-graph-up-arrow"></i><span>Investimentos</span><b></b></div>
                 </div>
+                <div class="ym-home-preview__bottom"><span>Clareza para decidir melhor</span><i class="bi bi-stars"></i></div>
             </div>
+            <div class="ym-home-float ym-home-float--top"><i class="bi bi-check2-circle"></i> Tudo em um só lugar</div>
+            <div class="ym-home-float ym-home-float--bottom"><i class="bi bi-shield-lock"></i> Seus dados protegidos</div>
         </div>
     </div>
 </section>
 
-<!-- CTA Section -->
-<section class="text-center" style="padding: 80px 20px; background: white;">
-    <div class="container" style="max-width: 800px;">
-        <h2 class="fw-bold mb-4"
-            style="font-size: clamp(36px, 5vw, 56px); line-height: 1.1; letter-spacing: -1.5px; color: #1d1d1f;">
-            Comece hoje mesmo.
-        </h2>
-        <p class="mb-4" style="font-size: 21px; line-height: 1.4; color: #6e6e73;">
-            Simples, rápido e totalmente gratuito.
-        </p>
-        <button class="btn btn-lg px-5" (click)="goToLogin()"
-            style="background: #007AFF; color: white; border: none; border-radius: 30px; font-size: 17px; padding: 14px 40px; font-weight: 500;">
-            Acessar meu painel
-        </button>
+<section class="ym-home-features">
+    <div class="ym-home-container">
+        <div class="ym-home-section-heading">
+            <p class="ym-home-eyebrow"><span aria-hidden="true"></span>Mais clareza no dia a dia</p>
+            <h2>Uma visão melhor das suas finanças.</h2>
+        </div>
+        <div class="ym-home-feature-grid">
+            <article class="ym-home-card">
+                <div class="ym-home-icon"><i class="bi bi-bar-chart-line" aria-hidden="true"></i></div>
+                <h3 class="ym-home-card-title">Clareza total</h3>
+                <p>Veja para onde seu dinheiro vai e acompanhe o mês com mais tranquilidade.</p>
+            </article>
+            <article class="ym-home-card">
+                <div class="ym-home-icon"><i class="bi bi-compass" aria-hidden="true"></i></div>
+                <h3 class="ym-home-card-title">Decida com confiança</h3>
+                <p>Organize entradas, saídas e investimentos em um só painel fácil de entender.</p>
+            </article>
+            <article class="ym-home-card">
+                <div class="ym-home-icon"><i class="bi bi-bullseye" aria-hidden="true"></i></div>
+                <h3 class="ym-home-card-title">Chegue mais longe</h3>
+                <p>Defina objetivos e acompanhe seu progresso ao longo do tempo.</p>
+            </article>
+        </div>
     </div>
 </section>
 
-<!-- Footer -->
-<footer class="text-center py-4" style="background: #f5f5f7; border-top: 1px solid rgba(0, 0, 0, 0.06);">
-    <div class="container">
-        <p class="mb-0" style="font-size: 12px; color: #86868b;">
-            © {{ anoAtual }} YourMoney. Todos os direitos reservados.
-        </p>
+<section class="ym-home-cta">
+    <div class="ym-home-container ym-home-container--narrow">
+        <div>
+            <p class="ym-home-eyebrow"><span aria-hidden="true"></span>Seu próximo passo começa aqui</p>
+            <h2 class="ym-home-cta-title">Cuide do seu dinheiro com mais clareza.</h2>
+            <p class="ym-home-lead">Comece hoje. É simples, rápido e gratuito.</p>
+        </div>
+        <button type="button" class="btn btn-lg ym-home-action" (click)="goToLogin()">
+            Acessar meu painel <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+        </button>
     </div>
-</footer>
+</section>

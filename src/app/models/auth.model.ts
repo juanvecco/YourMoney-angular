@@ -8,6 +8,22 @@ export interface RegisterRequest {
     email: string;
     senha: string;
     senhaConfirmacao: string;
+    origemConhecimento?: string;
+}
+
+export interface PasswordResetRequest {
+    email: string;
+}
+
+export interface PasswordResetConfirmRequest {
+    email: string;
+    token: string;
+    senha: string;
+    senhaConfirmacao: string;
+}
+
+export interface PasswordResetMessage {
+    mensagem: string;
 }
 
 export interface AuthResponse {

@@ -8,6 +8,7 @@ import {
   EncerrarReceitaRecorrenteRequest,
   ListarReceitasRecorrentesResponse,
   ListarSugestoesReceitasRecorrentesResponse,
+  ListarSalariosElegiveisInvestimentoResponse,
   ProjecaoReservaEmergenciaResponse,
   ReceitaRecorrenteRequest,
   ReceitaRecorrenteResponse
@@ -66,5 +67,9 @@ export class ReceitaRecorrenteService {
 
   obterProjecaoReserva(): Observable<ProjecaoReservaEmergenciaResponse> {
     return this.http.get<ProjecaoReservaEmergenciaResponse>(`${this.baseUrl}/reserva-emergencia`);
+  }
+
+  listarElegiveisParaInvestimento(): Observable<ListarSalariosElegiveisInvestimentoResponse> {
+    return this.http.get<ListarSalariosElegiveisInvestimentoResponse>(`${this.baseUrl}/elegiveis-para-investimento`);
   }
 }

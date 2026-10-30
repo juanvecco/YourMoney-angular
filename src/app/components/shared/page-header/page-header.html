@@ -1,0 +1,10 @@
+<header class="ym-page-header">
+  <div class="ym-page-header__copy">
+    @if (eyebrow) { <p class="ym-page-header__eyebrow">{{ eyebrow }}</p> }
+    <h1>{{ heading }}</h1>
+    @if (description) { <p class="ym-page-header__description">{{ description }}</p> }
+  </div>
+  <div class="ym-page-header__actions">
+    <ng-content select="[pageHeaderActions]"></ng-content>
+  </div>
+</header>

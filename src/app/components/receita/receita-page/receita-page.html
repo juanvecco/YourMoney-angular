@@ -1,53 +1,18 @@
-<header class="ym-topbar">
-    <nav class="ym-nav">
-        <a class="ym-brand" routerLink="/dashboard">
-            <img src="assets/logo.png" alt="Your Money" class="ym-logo" />
-        </a>
-        <ul class="ym-menu">
-            <li><a routerLink="/dashboard"><i class="bi bi-speedometer2"></i>Dashboard</a></li>
-            <li><a class="active" routerLink="/receitas"><i class="bi bi-arrow-up-circle"></i>Receitas</a></li>
-            <li><a routerLink="/despesas"><i class="bi bi-arrow-down-circle"></i>Despesas</a></li>
-            <li><a routerLink="/investimento"><i class="bi bi-graph-up-arrow"></i>Investimentos</a></li>
-            <li><a routerLink="/metas"><i class="bi bi-bullseye"></i>Metas</a></li>
-            <li><a routerLink="/configuracao"><i class="bi bi-gear"></i>Configurações</a></li>
-            <li>
-                <button class="ym-logout-link" type="button" (click)="logout()" aria-label="Sair da conta">
-                    <i class="bi bi-box-arrow-right"></i>Sair
-                </button>
-            </li>
-        </ul>
-    </nav>
-</header>
-
-<main class="ym-shell">
+<div class="ym-shell">
     <div class="ym-container">
-        <div class="ym-page-header">
-            <div class="ym-title-group">
-                <p class="ym-eyebrow">Entradas</p>
-                <h1 class="ym-title">Receitas</h1>
-                <p class="ym-subtitle">Registre as entradas e acompanhe o motor do crescimento mensal.</p>
-            </div>
-            <div class="ym-month-picker">
-                <button class="ym-icon-button" type="button" (click)="mudarMes(-1)" aria-label="Mês anterior">
-                    <i class="bi bi-chevron-left"></i>
-                </button>
-                <button type="button" class="ym-month-trigger" (click)="abrirCalendario()">
-                    <span class="ym-month-label">{{ mesAtual | date:'MMMM yyyy':'pt-BR' }}</span>
-                </button>
-                <input type="month" #calendarioInput class="d-none" [value]="(mesAtual | date:'yyyy-MM')"
-                    (change)="selecionarMesDoCalendario($event)">
-                <button class="ym-icon-button" type="button" (click)="mudarMes(1)" aria-label="Próximo mês">
-                    <i class="bi bi-chevron-right"></i>
-                </button>
-            </div>
-        </div>
+        <app-page-header eyebrow="Entradas" heading="Receitas"
+            description="Registre as entradas e acompanhe o motor do crescimento mensal.">
+            <app-month-picker pageHeaderActions [period]="mesAtual" (periodChange)="selecionarMes($event)"></app-month-picker>
+        </app-page-header>
+        <app-view-state [state]="estadoCarregamento" [message]="mensagemCarregamento"
+            [retryAvailable]="estadoCarregamento === 'loadError'" (retry)="carregarReceitas()"></app-view-state>
 
         <section class="ym-grid">
             <div class="ym-stack">
                 <article class="ym-card ym-kpi accent-success">
                     <i class="ym-kpi-icon bi bi-cash-stack"></i>
                     <h2 class="ym-kpi-label">Total de receitas</h2>
-                    <p class="ym-kpi-value">R$ {{ totalReceitas | number:'1.2-2' }}</p>
+                    <p class="ym-kpi-value">{{ totalReceitas | financialValue }}</p>
                     <p class="ym-kpi-meta">Referência: {{ mesAtual | date:'MMMM yyyy':'pt-BR' }}</p>
                 </article>
 
@@ -58,7 +23,7 @@
                             <p class="ym-subtitle">{{ mesAtual | date:'MMMM yyyy':'pt-BR' }}</p>
                         </div>
                         <span class="ym-chip ym-recurring-total" *ngIf="obterTotalSugestoesPendentes() > 0">
-                            R$ {{ obterTotalSugestoesPendentes() | number:'1.2-2' }}
+                            {{ obterTotalSugestoesPendentes() | financialValue }}
                         </span>
                     </div>
 
@@ -82,7 +47,7 @@
                                     </div>
                                 </div>
                                 <div class="ym-list-actions accent-success">
-                                    <span class="ym-amount">R$ {{ sugestao.valorPrevisto | number:'1.2-2' }}</span>
+                                    <span class="ym-amount">{{ sugestao.valorPrevisto | financialValue }}</span>
                                     <ng-container *ngIf="sugestao.status === 'Pendente'">
                                         <button class="ym-icon-button" type="button" (click)="editarSugestao(sugestao)"
                                             [disabled]="salvandoSugestaoRecorrente" title="Editar antes de confirmar"
@@ -111,7 +76,7 @@
                                 </label>
                                 <label class="ym-filter-field">
                                     <span>Valor</span>
-                                    <input type="number" min="0.01" step="0.01" [(ngModel)]="confirmacaoSugestao.valor"
+                                    <input type="number" financialValueInput min="0.01" step="0.01" [(ngModel)]="confirmacaoSugestao.valor"
                                         name="receitaSugestaoValor{{ sugestao.ocorrenciaId }}">
                                 </label>
                                 <label class="ym-filter-field">
@@ -174,7 +139,7 @@
                                 </div>
                             </div>
                             <div class="ym-list-actions accent-success">
-                                <span class="ym-amount">R$ {{ receita.valor | number:'1.2-2' }}</span>
+                                <span class="ym-amount">{{ receita.valor | financialValue }}</span>
                                 <button class="ym-icon-button" type="button" (click)="abrirModalEditar(receita)"
                                     aria-label="Editar receita">
                                     <i class="bi bi-pencil"></i>
@@ -221,7 +186,7 @@
                             </div>
                         </div>
                         <div class="ym-recurring-config-footer accent-success">
-                            <strong class="ym-amount">R$ {{ recorrencia.valorPrevisto | number:'1.2-2' }}</strong>
+                            <strong class="ym-amount">{{ recorrencia.valorPrevisto | financialValue }}</strong>
                             <div class="ym-list-actions">
                                 <button class="ym-icon-button" type="button" (click)="abrirModalRecorrencia(recorrencia)"
                                     title="Editar recorrência" aria-label="Editar receita recorrente">
@@ -268,15 +233,15 @@
                 aria-label="Totais da reserva de emergência">
                 <div class="ym-reserve-total-item">
                     <span>Renda mensal considerada</span>
-                    <strong>R$ {{ totalReservaMensal | number:'1.2-2' }}</strong>
+                    <strong>{{ totalReservaMensal | financialValue }}</strong>
                 </div>
                 <div class="ym-reserve-total-item">
                     <span>Total para 6 meses</span>
-                    <strong>R$ {{ totalReservaSeisMeses | number:'1.2-2' }}</strong>
+                    <strong>{{ totalReservaSeisMeses | financialValue }}</strong>
                 </div>
                 <div class="ym-reserve-total-item emphasis">
                     <span>Total para 12 meses</span>
-                    <strong>R$ {{ totalReservaDozeMeses | number:'1.2-2' }}</strong>
+                    <strong>{{ totalReservaDozeMeses | financialValue }}</strong>
                 </div>
             </div>
 
@@ -293,14 +258,14 @@
                         <strong>{{ projecao.descricao }}</strong>
                         <span>{{ projecao.contaDescricao }}<ng-container *ngIf="projecao.ehSalario"> · Salário</ng-container></span>
                     </div>
-                    <span role="cell">R$ {{ projecao.valorMensal | number:'1.2-2' }}</span>
-                    <strong role="cell">R$ {{ projecao.valorSeisMeses | number:'1.2-2' }}</strong>
-                    <strong role="cell">R$ {{ projecao.valorDozeMeses | number:'1.2-2' }}</strong>
+                    <span role="cell">{{ projecao.valorMensal | financialValue }}</span>
+                    <strong role="cell">{{ projecao.valorSeisMeses | financialValue }}</strong>
+                    <strong role="cell">{{ projecao.valorDozeMeses | financialValue }}</strong>
                 </div>
             </div>
         </section>
     </div>
-</main>
+</div>
 
 <div class="modal fade ym-modal accent-success" id="modalReceita" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -313,30 +278,31 @@
             </div>
             <div class="modal-body pt-4">
                 <form>
+                  <p class="ym-form-hint">Campos com * são obrigatórios.</p>
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label">Descrição</label>
-                            <input type="text" class="form-control" [(ngModel)]="novaReceita.descricao"
+                            <label class="form-label" for="receita-descricao">Descrição <span class="ym-required" aria-hidden="true">*</span></label>
+                              <input id="receita-descricao" type="text" class="form-control" [(ngModel)]="novaReceita.descricao"
                                 name="descricao" required />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Valor (R$)</label>
-                            <input type="number" step="0.01" class="form-control" [(ngModel)]="novaReceita.valor"
+                            <label class="form-label" for="receita-valor">Valor (R$) <span class="ym-required" aria-hidden="true">*</span></label>
+                              <input id="receita-valor" type="number" financialValueInput step="0.01" class="form-control" [(ngModel)]="novaReceita.valor"
                                 name="valor" required />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Data</label>
-                            <input type="date" class="form-control" [(ngModel)]="novaReceita.data" name="data"
+                            <label class="form-label" for="receita-data">Data <span class="ym-required" aria-hidden="true">*</span></label>
+                              <input id="receita-data" type="date" class="form-control" [(ngModel)]="novaReceita.data" name="data"
                                 required />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Mês de Referência</label>
-                            <input type="month" class="form-control" [(ngModel)]="novaReceita.mesReferencia"
+                            <label class="form-label" for="receita-mesReferencia">Mês de Referência <span class="ym-required" aria-hidden="true">*</span></label>
+                              <input id="receita-mesReferencia" type="month" class="form-control" [(ngModel)]="novaReceita.mesReferencia"
                                 name="mesReferencia" required />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Natureza da entrada</label>
-                            <select class="form-select" [(ngModel)]="novaReceita.natureza"
+                            <label class="form-label" for="receita-naturezaReceita">Natureza da entrada <span class="ym-required" aria-hidden="true">*</span></label>
+                              <select id="receita-naturezaReceita" class="form-select" [(ngModel)]="novaReceita.natureza"
                                 name="naturezaReceita" (change)="onNaturezaReceitaChange()" required>
                                 <option value="RendaDisponivel">Renda disponível</option>
                                 <option value="EntradaVinculadaDespesa">Destinada a despesa</option>
@@ -344,19 +310,19 @@
                             </select>
                         </div>
                         <div class="col-md-6" *ngIf="novaReceita.natureza === 'Reembolso'">
-                            <label class="form-label">Despesa vinculada</label>
-                            <select class="form-select" [(ngModel)]="novaReceita.despesaVinculadaId"
+                            <label class="form-label" for="receita-despesaVinculada">Despesa vinculada <span class="ym-required" aria-hidden="true">*</span></label>
+                              <select id="receita-despesaVinculada" class="form-select" [(ngModel)]="novaReceita.despesaVinculadaId"
                                 name="despesaVinculada" required>
                                 <option value="" disabled>Selecione a despesa</option>
                                 <option *ngFor="let despesa of despesasVinculaveis" [value]="despesa.id">
-                                    {{ despesa.descricao }} - R$ {{ obterValorPendenteDespesa(despesa) | number:'1.2-2' }}
+                                    {{ despesa.descricao }} - {{ obterValorPendenteDespesa(despesa) | financialValue }}
                                 </option>
                             </select>
                         </div>
                         <div class="col-12" *ngIf="novaReceita.natureza === 'Reembolso' && obterDespesaSelecionada() as despesaSelecionada">
                             <div class="ym-empty compact text-start receita-reembolso-detalhe">
                                 Reembolso para {{ despesaSelecionada.descricao }}. Pendente atual:
-                                R$ {{ obterValorPendenteDespesa(despesaSelecionada) | number:'1.2-2' }}.
+                                {{ obterValorPendenteDespesa(despesaSelecionada) | financialValue }}.
                             </div>
                         </div>
                     </div>
@@ -387,58 +353,59 @@
             </div>
             <div class="modal-body pt-4">
                 <form>
+                  <p class="ym-form-hint">Campos com * são obrigatórios.</p>
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label" for="recorrenciaDescricao">Descrição</label>
-                            <input id="recorrenciaDescricao" type="text" maxlength="255" class="form-control"
+                            <label class="form-label" for="recorrenciaDescricao">Descrição <span class="ym-required" aria-hidden="true">*</span></label>
+                              <input id="recorrenciaDescricao" type="text" maxlength="255" class="form-control"
                                 [(ngModel)]="novaRecorrencia.descricao" name="recorrenciaDescricao" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label" for="recorrenciaValor">Valor mensal (R$)</label>
-                            <input id="recorrenciaValor" type="number" min="0.01" step="0.01" class="form-control"
+                            <label class="form-label" for="recorrenciaValor">Valor mensal (R$) <span class="ym-required" aria-hidden="true">*</span></label>
+                              <input id="recorrenciaValor" type="number" financialValueInput min="0.01" step="0.01" class="form-control"
                                 [(ngModel)]="novaRecorrencia.valorPrevisto" name="recorrenciaValor" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label" for="recorrenciaConta">Conta</label>
-                            <select id="recorrenciaConta" class="form-select" [(ngModel)]="novaRecorrencia.idContaFinanceira"
+                            <label class="form-label" for="recorrenciaConta">Conta <span class="ym-required" aria-hidden="true">*</span></label>
+                              <select id="recorrenciaConta" class="form-select" [(ngModel)]="novaRecorrencia.idContaFinanceira"
                                 name="recorrenciaConta" required>
                                 <option value="" disabled>Selecione uma conta</option>
                                 <option *ngFor="let conta of contas" [value]="conta.id">{{ conta.descricao }}</option>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label" for="recorrenciaNatureza">Natureza</label>
-                            <select id="recorrenciaNatureza" class="form-select" [(ngModel)]="novaRecorrencia.natureza"
+                            <label class="form-label" for="recorrenciaNatureza">Natureza <span class="ym-required" aria-hidden="true">*</span></label>
+                              <select id="recorrenciaNatureza" class="form-select" [(ngModel)]="novaRecorrencia.natureza"
                                 name="recorrenciaNatureza" required>
                                 <option value="RendaDisponivel">Renda disponível</option>
                                 <option value="EntradaVinculadaDespesa">Destinada a despesa</option>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label" for="recorrenciaRecebimento">Data-base de recebimento</label>
-                            <input id="recorrenciaRecebimento" type="date" class="form-control"
+                            <label class="form-label" for="recorrenciaRecebimento">Data-base de recebimento <span class="ym-required" aria-hidden="true">*</span></label>
+                              <input id="recorrenciaRecebimento" type="date" class="form-control"
                                 [(ngModel)]="novaRecorrencia.dataRecebimento" name="recorrenciaRecebimento" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label" for="recorrenciaInicio">Início</label>
-                            <input id="recorrenciaInicio" type="date" class="form-control"
+                            <label class="form-label" for="recorrenciaInicio">Início <span class="ym-required" aria-hidden="true">*</span></label>
+                              <input id="recorrenciaInicio" type="date" class="form-control"
                                 [(ngModel)]="novaRecorrencia.dataInicio" name="recorrenciaInicio" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label" for="recorrenciaTermino">Término</label>
-                            <input id="recorrenciaTermino" type="date" class="form-control"
+                            <label class="form-label" for="recorrenciaTermino">Término (opcional)</label>
+                              <input id="recorrenciaTermino" type="date" class="form-control"
                                 [(ngModel)]="novaRecorrencia.dataTermino" name="recorrenciaTermino">
                         </div>
                         <div class="col-md-6">
                             <label class="ym-check-row accent-success" for="recorrenciaSalario">
-                                <input id="recorrenciaSalario" type="checkbox" [(ngModel)]="novaRecorrencia.ehSalario"
+                              <input id="recorrenciaSalario" type="checkbox" [(ngModel)]="novaRecorrencia.ehSalario"
                                     name="recorrenciaSalario">
                                 <span>Identificar como salário</span>
                             </label>
                         </div>
                         <div class="col-md-6">
                             <label class="ym-check-row accent-success" for="recorrenciaReserva">
-                                <input id="recorrenciaReserva" type="checkbox"
+                              <input id="recorrenciaReserva" type="checkbox"
                                     [(ngModel)]="novaRecorrencia.consideraReservaEmergencia" name="recorrenciaReserva">
                                 <span>Usar como base da reserva</span>
                             </label>

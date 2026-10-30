@@ -6,6 +6,7 @@ import { ReceitaService } from '../../../services/receita';
 import { DespesaService } from '../../../services/despesa';
 import { InvestimentoService } from '../../../services/investimento';
 import { AuthService } from '../../../services/auth.service';
+import { MovimentacaoService } from '../../../services/movimentacao';
 
 describe('DashboardPageComponent', () => {
   let fixture: ComponentFixture<DashboardPageComponent>;
@@ -15,6 +16,7 @@ describe('DashboardPageComponent', () => {
   let investimentoService: jasmine.SpyObj<InvestimentoService>;
   let authService: jasmine.SpyObj<AuthService>;
   let router: jasmine.SpyObj<Router>;
+  let movimentacaoService: jasmine.SpyObj<MovimentacaoService>;
 
   beforeEach(async () => {
     receitaService = jasmine.createSpyObj<ReceitaService>('ReceitaService', ['obterPorReferencia']);
@@ -24,6 +26,11 @@ describe('DashboardPageComponent', () => {
     router = jasmine.createSpyObj<Router>('Router', ['navigate', 'createUrlTree', 'serializeUrl'], { events: of() });
     router.createUrlTree.and.returnValue({} as ReturnType<Router['createUrlTree']>);
     router.serializeUrl.and.returnValue('/');
+    movimentacaoService = jasmine.createSpyObj<MovimentacaoService>('MovimentacaoService', ['consultar']);
+    movimentacaoService.consultar.and.returnValue(of({
+      itens: [], pagina: 1, tamanhoPagina: 10, totalItens: 0, totalPaginas: 0,
+      totais: { receitas: 0, despesas: 0, investimentos: 0, saldo: 0 },
+    }));
 
     receitaService.obterPorReferencia.and.returnValue(of([]));
     despesaService.obterPorReferencia.and.returnValue(of([]));
@@ -38,6 +45,7 @@ describe('DashboardPageComponent', () => {
         { provide: ReceitaService, useValue: receitaService },
         { provide: DespesaService, useValue: despesaService },
         { provide: InvestimentoService, useValue: investimentoService },
+        { provide: MovimentacaoService, useValue: movimentacaoService },
         { provide: AuthService, useValue: authService }
       ]
     }).compileComponents();
@@ -46,7 +54,7 @@ describe('DashboardPageComponent', () => {
     component = fixture.componentInstance;
   });
 
-  it('maps positive monthly totals into chart items', () => {
+  it('maps positive monthly totals without adding the positive balance to the chart', () => {
     const resumo = component.criarResumoGrafico(
       [
         {
@@ -89,8 +97,42 @@ describe('DashboardPageComponent', () => {
     expect(resumo.estado).toBe('pronto');
     expect(resumo.periodoReferencia.mes).toBe(5);
     expect(resumo.periodoReferencia.ano).toBe(2026);
-    expect(resumo.items.map(item => item.id)).toEqual(['receitas', 'despesas', 'investimentos', 'saldo']);
-    expect(resumo.items.find(item => item.id === 'saldo')?.valor).toBe(3800);
+    expect(resumo.items.map(item => item.id)).toEqual(['receitas', 'despesas', 'investimentos']);
+    expect(resumo.items.find(item => item.id === 'saldo')).toBeUndefined();
+    expect(resumo.total).toBe(7700);
+  });
+
+  it('keeps a negative balance in the chart', () => {
+    const resumo = component.criarResumoGrafico(
+      [
+        {
+          id: 'receita-1',
+          descricao: 'Salario',
+          valor: 1000,
+          data: '2026-05-01',
+          natureza: 'RendaDisponivel',
+          consideraNasMetas: true,
+          valorAbatidoEmDespesa: 0
+        }
+      ],
+      [
+        {
+          id: 'despesa-1',
+          descricao: 'Mercado',
+          valor: 1200,
+          data: '2026-05-02',
+          idContaFinanceira: 'conta-1',
+          idCategoria: 'categoria-1'
+        }
+      ],
+      [],
+      new Date(2026, 4, 1)
+    );
+
+    expect(resumo.items.find(item => item.id === 'saldo')).toEqual(jasmine.objectContaining({
+      rotulo: 'Saldo negativo',
+      valor: 200
+    }));
   });
 
   it('recalculates chart data when the dashboard month changes', () => {
@@ -144,20 +186,12 @@ describe('DashboardPageComponent', () => {
     expect(nativeElement.textContent).toContain('Receitas');
   });
 
-  it('logs out before navigating to login', () => {
-    component.logout();
-
-    expect(authService.logout).toHaveBeenCalled();
-    expect(router.navigate).toHaveBeenCalledWith(['/login']);
-  });
-
-  it('renders an accessible logout action', () => {
+  it('does not render a duplicated logout action inside the page', () => {
     fixture.detectChanges();
 
     const nativeElement = fixture.nativeElement as HTMLElement;
     const logoutButton = nativeElement.querySelector('button[aria-label="Sair da conta"]');
 
-    expect(logoutButton).not.toBeNull();
-    expect(logoutButton?.textContent).toContain('Sair');
+    expect(logoutButton).toBeNull();
   });
 });

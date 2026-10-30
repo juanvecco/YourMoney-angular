@@ -1,10 +1,16 @@
-<main class="login-container">
+<div class="login-container">
     <section class="branding-section">
         <div class="logo-container">
             <div class="logo-icon">
                 <i class="bi bi-graph-up-arrow"></i>
             </div>
-            <h1 class="brand-name">Your Money</h1>
+            <div><h1 class="brand-name">YourMoney</h1><p class="brand-tagline">Suas finanças, com mais clareza.</p></div>
+        </div>
+
+        <div class="branding-copy">
+            <p class="branding-eyebrow">BEM-VINDO DE VOLTA</p>
+            <h2>Mais clareza para cuidar do seu dinheiro.</h2>
+            <p>Um só lugar para acompanhar receitas, despesas, investimentos e objetivos.</p>
         </div>
 
         <ul class="feature-list">
@@ -25,32 +31,37 @@
 
     <section class="form-section">
         <div class="form-container">
+            <a routerLink="/" class="back-home"><i class="bi bi-arrow-left" aria-hidden="true"></i>Voltar para home</a>
             <div class="form-header">
-                <h2 class="form-title">Seja bem-vindo(a)</h2>
-                <p class="form-subtitle">Acesse sua conta para continuar</p>
+                <p class="form-kicker">SEJA BEM-VINDO(A)</p>
+                <h2 class="form-title">Entre na sua conta</h2>
+                <p class="form-subtitle">Acesse seu espaço financeiro e continue de onde parou.</p>
             </div>
 
-            <form [formGroup]="form" (ngSubmit)="onSubmit()">
+            <form [formGroup]="form" (ngSubmit)="onSubmit()" (input)="onFormInput()" novalidate>
                 <div class="form-group">
-                    <label class="form-label">
-                        <i class="bi bi-envelope"></i>E-mail
+                    <label class="form-label" for="loginEmail">
+                        <span><i class="bi bi-envelope"></i>E-mail</span><span class="required-mark" aria-label="obrigatório">*</span>
                     </label>
-                    <input type="email" class="form-control" formControlName="email" placeholder="seu@email.com"
-                        required />
+                    <input id="loginEmail" type="email" class="form-control" [class.is-invalid]="isInvalid('email')" formControlName="email" placeholder="nome@exemplo.com"
+                        autocomplete="email" aria-describedby="loginEmailError" [attr.aria-invalid]="isInvalid('email')" required />
+                    <small id="loginEmailError" class="field-error" *ngIf="hasError('email', 'required')">Preencha o campo E-mail.</small>
+                    <small id="loginEmailError" class="field-error" *ngIf="hasError('email', 'email')">Informe um e-mail válido.</small>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">
-                        <i class="bi bi-lock"></i>Senha
+                    <label class="form-label" for="loginSenha">
+                        <span><i class="bi bi-lock"></i>Senha</span><span class="required-mark" aria-label="obrigatório">*</span>
                     </label>
                     <div class="password-wrapper">
-                        <input [type]="showPassword ? 'text' : 'password'" class="form-control" formControlName="senha"
-                            placeholder="Sua senha" required />
+                        <input id="loginSenha" [type]="showPassword ? 'text' : 'password'" class="form-control" [class.is-invalid]="isInvalid('senha')" formControlName="senha"
+                            placeholder="Sua senha" autocomplete="current-password" aria-describedby="loginSenhaError" [attr.aria-invalid]="isInvalid('senha')" required />
                         <button type="button" class="toggle-password" (click)="togglePasswordVisibility()"
-                            aria-label="Alternar visualização da senha">
+                            [attr.aria-label]="showPassword ? 'Ocultar senha' : 'Mostrar senha'">
                             <i [class]="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                         </button>
                     </div>
+                    <small id="loginSenhaError" class="field-error" *ngIf="hasError('senha', 'required')">Preencha o campo Senha.</small>
                 </div>
 
                 <button type="submit" class="btn-login" [disabled]="loading">
@@ -58,22 +69,23 @@
                     <span *ngIf="loading"><i class="bi bi-hourglass-split"></i>Autenticando...</span>
                 </button>
 
-                <div *ngIf="error" class="alert-error">
-                    <i class="bi bi-exclamation-circle"></i>{{ error }}
+                <div *ngIf="validationSummary.length" class="alert-error" role="alert" aria-live="assertive">
+                    <i class="bi bi-exclamation-circle" aria-hidden="true"></i><div><strong>Opa! Revise os campos abaixo.</strong><ul><li *ngFor="let message of validationSummary">{{ message }}</li></ul></div>
+                </div>
+                <div *ngIf="error" class="alert-error" role="alert" aria-live="assertive">
+                    <i class="bi bi-exclamation-circle" aria-hidden="true"></i><div><strong>Não foi possível entrar.</strong><p>{{ error }}</p></div>
                 </div>
             </form>
 
             <div class="form-links">
-                <a href="#" class="form-link">
+                <a routerLink="/recuperar-senha" class="form-link">
                     <i class="bi bi-question-circle"></i>Esqueceu sua senha?
                 </a>
             </div>
 
             <div class="divider"><span>ou</span></div>
 
-            <button type="button" class="btn-register" routerLink="/cadastro">
-                <i class="bi bi-person-plus"></i>Criar uma Nova Conta
-            </button>
+            <p class="account-prompt">Ainda não tem uma conta? <a routerLink="/cadastro">Criar minha conta</a></p>
         </div>
     </section>
-</main>
+</div>
