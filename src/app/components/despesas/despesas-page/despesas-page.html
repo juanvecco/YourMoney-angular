@@ -83,7 +83,7 @@
                     </div>
                 </div>
 
-                <section class="ym-openfinance-panel" aria-labelledby="openfinance-title">
+                <section *ngIf="regraAtiva('openfinance.visivel')" class="ym-openfinance-panel" aria-labelledby="openfinance-title">
                     <div class="ym-openfinance-toggle-row">
                         <label class="ym-openfinance-toggle" for="mostrarOpenFinance">
                           <input id="mostrarOpenFinance" type="checkbox" role="switch"
@@ -265,7 +265,7 @@
                     </div>
                 </div>
 
-                <div class="ym-card ym-card-pad">
+                <div class="ym-card ym-card-pad" *ngIf="regraAtiva('despesas.recorrencia')">
                     <div class="ym-section-header">
                         <h2 class="ym-section-title">Recorrências</h2>
                         <button class="ym-icon-button" type="button" (click)="abrirModalRecorrencia()"
@@ -414,7 +414,7 @@
                                 <option *ngFor="let cat of categoriasEspecificas" [value]="cat.id">{{ cat.descricao }}</option>
                             </select>
                         </div>
-                        <div class="col-12" *ngIf="!editando">
+                        <div class="col-12" *ngIf="!editando && regraAtiva('despesas.parcelamento')">
                             <label class="ym-check-row accent-danger">
                               <input type="checkbox" [(ngModel)]="parcelamentoAtivo" name="parcelamentoAtivo"
                                     (ngModelChange)="onParcelamentoToggle()" />
@@ -524,7 +524,7 @@
     </div>
 </div>
 
-<div class="modal fade ym-modal accent-danger" id="modalRecorrencia" tabindex="-1" aria-hidden="true">
+<div *ngIf="regraAtiva('despesas.recorrencia')" class="modal fade ym-modal accent-danger" id="modalRecorrencia" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">

@@ -1,12 +1,13 @@
 <div class="ym-shell">
   <div class="ym-container">
     <app-page-header eyebrow="Administração" heading="Configurações"
-      description="Organize categorias, contas e conexões usadas em toda a experiência financeira."></app-page-header>
+      description="Organize contas, categorias, conexões e funções opcionais."></app-page-header>
 
     <nav class="settings-tabs" aria-label="Seções de configurações">
       <button type="button" [class.active]="secao === 'categorias'" [attr.aria-current]="secao === 'categorias' ? 'page' : null" (click)="selecionarSecao('categorias')"><i class="bi bi-tags" aria-hidden="true"></i>Categorias</button>
       <button type="button" [class.active]="secao === 'contas'" [attr.aria-current]="secao === 'contas' ? 'page' : null" (click)="selecionarSecao('contas')"><i class="bi bi-wallet2" aria-hidden="true"></i>Contas</button>
-      <button type="button" [class.active]="secao === 'conexoes'" [attr.aria-current]="secao === 'conexoes' ? 'page' : null" (click)="selecionarSecao('conexoes')"><i class="bi bi-bank" aria-hidden="true"></i>Conexões</button>
+      <button *ngIf="regraAtiva('openfinance.visivel')" type="button" [class.active]="secao === 'conexoes'" [attr.aria-current]="secao === 'conexoes' ? 'page' : null" (click)="selecionarSecao('conexoes')"><i class="bi bi-bank" aria-hidden="true"></i>Conexões</button>
+      <button type="button" [class.active]="secao === 'regras'" [attr.aria-current]="secao === 'regras' ? 'page' : null" (click)="selecionarSecao('regras')"><i class="bi bi-sliders" aria-hidden="true"></i>Regras de negócio</button>
     </nav>
 
     <div class="settings-feedback" aria-live="polite">
@@ -75,11 +76,45 @@
       </section>
     }
 
-    @if (secao === 'conexoes') {
+    @if (secao === 'conexoes' && regraAtiva('openfinance.visivel')) {
       <section class="ym-card ym-card-pad connection-card">
         <i class="bi bi-bank" aria-hidden="true"></i>
         <div><h2>Open Finance</h2><p>Consulte a prontidão do provedor e experimente uma prévia claramente identificada como demonstração.</p></div>
         <a class="ym-button primary" routerLink="/openfinance">Gerenciar conexões</a>
+      </section>
+    }
+
+    @if (secao === 'regras') {
+      <section class="ym-card ym-card-pad settings-rules" aria-labelledby="rulesTitle">
+        <div class="ym-section-header">
+          <div><h2 id="rulesTitle" class="ym-section-title">Regras de negócio</h2><p>Escolha quais funções fazem sentido para sua organização financeira. Seus dados anteriores permanecem salvos.</p></div>
+        </div>
+        <label for="ruleSearch" class="settings-rules__search-label">Buscar regras</label>
+        <input id="ruleSearch" type="search" [(ngModel)]="buscaRegras" placeholder="Nome ou descrição" autocomplete="off">
+        @if (erroRegras) { <p class="ym-chip ym-negative" role="alert">{{ erroRegras }} <button type="button" (click)="carregarRegras()">Tentar novamente</button></p> }
+        @if (carregandoRegras) { <app-view-state state="loading" message="Carregando regras..."></app-view-state> }
+        @else if (!regrasFiltradas.length && !erroRegras) { <p class="settings-rules__empty">Nenhuma regra encontrada.</p> }
+        @else {
+          @for (grupo of gruposRegras; track grupo.nome) {
+            <div class="settings-rules__group">
+              <h3>{{ grupo.nome }}</h3>
+              @for (regra of grupo.regras; track regra.codigo) {
+                <label class="settings-rule" [attr.for]="'rule-' + regra.codigo">
+                  <span class="settings-rule__copy">
+                    <strong>{{ regra.nome }}</strong>
+                    <span>{{ regra.descricao }}</span>
+                    @if (regra.ativa && !regra.efetiva && dependenciaDescricao(regra)) {
+                      <small>Disponível após ativar: {{ dependenciaDescricao(regra) }}.</small>
+                    }
+                  </span>
+                  <input type="checkbox" [id]="'rule-' + regra.codigo" [checked]="regra.ativa"
+                    [disabled]="!!salvandoRegraCodigo" (change)="alterarRegra(regra, $any($event.target).checked)"
+                    [attr.aria-label]="(regra.ativa ? 'Desativar ' : 'Ativar ') + regra.nome">
+                </label>
+              }
+            </div>
+          }
+        }
       </section>
     }
 

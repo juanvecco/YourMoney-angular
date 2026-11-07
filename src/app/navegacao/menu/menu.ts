@@ -1,10 +1,11 @@
-import { Component, DestroyRef, ElementRef, HostListener, ViewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, HostListener, Optional, ViewChild } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { ThemeToggleComponent } from '../../components/shared/theme-toggle/theme-toggle';
 import { FinancialVisibilityService } from '../../services/financial-visibility.service';
+import { RegraNegocioService } from '../../services/regra-negocio.service';
 
 @Component({
   selector: 'app-menu',
@@ -24,8 +25,10 @@ export class MenuComponent {
     private readonly router: Router,
     readonly financialVisibility: FinancialVisibilityService,
     destroyRef: DestroyRef,
+    @Optional() private readonly regras: RegraNegocioService | null = null,
   ) {
     this.wasLoggedIn = this.isLoggedIn();
+    if (this.wasLoggedIn) this.regras?.carregar().subscribe({ error: () => {} });
     this.menuOpen = this.wasLoggedIn && !!this.desktopViewport?.matches;
     const onViewportChange = (event: MediaQueryListEvent) => {
       this.menuOpen = this.isLoggedIn() && event.matches;
@@ -39,11 +42,13 @@ export class MenuComponent {
       if (loggedIn !== this.wasLoggedIn) {
         this.menuOpen = loggedIn && !!this.desktopViewport?.matches;
         this.wasLoggedIn = loggedIn;
+        if (loggedIn) this.regras?.carregar().subscribe({ error: () => {} });
       }
     });
   }
 
   isLoggedIn(): boolean { return this.authService.isLoggedIn(); }
+  regraAtiva(codigo: string): boolean { return this.regras?.estaAtiva(codigo) ?? true; }
   closeMenu(restoreFocus = false): void {
     const focusTarget = restoreFocus ? this.menuTrigger?.nativeElement : undefined;
     this.menuOpen = false;

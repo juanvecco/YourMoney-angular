@@ -17,6 +17,9 @@ import {
 } from '../../../models/pluggy.model';
 import { Despesa, Categoria, ContaFinanceira } from '../../../models/despesa.model';
 import { DespesaService } from '../../../services/despesa';
+import { CarteiraService } from '../../../services/carteira';
+import { ContaFinanceiraService } from '../../../services/conta';
+import { Carteira } from '../../../models/carteira.model';
 
 type ViewState = 'idle' | 'loading' | 'loaded' | 'empty' | 'error';
 
@@ -25,9 +28,26 @@ type ViewState = 'idle' | 'loading' | 'loaded' | 'empty' | 'error';
   standalone: true,
   imports: [CommonModule, FormsModule, FinancialValuePipe, RouterLink, PageHeaderComponent, ViewStateComponent],
   templateUrl: './openfinance-page.html',
-  styleUrls: ['./openfinance-page.css'],
+  styleUrls: ['./openfinance-page.css', './openfinance-connections.css'],
 })
 export class OpenFinancePageComponent implements OnInit {
+  carteiras: Carteira[] = [];
+  carteiraSelecionadaId = '';
+  carregandoCarteiras = false;
+  erroCarteiras = '';
+  mostrarEditorCarteira = false;
+  carteiraEmEdicao: Carteira | null = null;
+  nomeCarteira = '';
+  salvandoCarteira = false;
+  erroSalvarCarteira = '';
+  contasFinanceiras: ContaFinanceira[] = [];
+  contasEmOutrasCarteiras: ContaFinanceira[] = [];
+  carregandoContasFinanceiras = false;
+  mostrandoCadastroConta = false;
+  novaContaBancaria = '';
+  salvandoContaBancaria = false;
+  contaFinanceiraErro = '';
+  contaParaMoverId = '';
   fontes: OpenFinanceSource[] = [];
   readiness: OpenFinanceReadiness | null = null;
   transacoes: OpenFinanceTransactionPreview[] = [];
@@ -88,7 +108,7 @@ export class OpenFinancePageComponent implements OnInit {
   clientIdPluggy = '';
   clientSecretPluggy = '';
   mensagemConfiguracaoPluggy = '';
-  configuracaoPluggyVisivel = true;
+  configuracaoPluggyVisivel = false;
   mostrarDemonstracao = false;
   fonteSelecionada = 'mock-transactions';
   private fontesRevision = 0;
@@ -98,23 +118,159 @@ export class OpenFinancePageComponent implements OnInit {
   constructor(
     private readonly openFinanceService: OpenFinanceService,
     private readonly despesaService: DespesaService,
+    private readonly carteiraService: CarteiraService,
+    private readonly contaFinanceiraService: ContaFinanceiraService,
   ) {}
 
   ngOnInit(): void {
     this.carregarFontes();
+    this.carregarCarteiras();
+  }
+
+  private carregarCarteiras(): void {
+    this.carregandoCarteiras = true;
+    this.erroCarteiras = '';
+    this.carteiraService.listar().subscribe({
+      next: carteiras => {
+        this.carteiras = carteiras;
+        const savedId = localStorage.getItem('yourmoney.openfinance.carteira');
+        this.carteiraSelecionadaId = carteiras.some(wallet => wallet.id === savedId)
+          ? savedId!
+          : carteiras.find(wallet => wallet.principal)?.id ?? carteiras[0]?.id ?? '';
+        this.carregandoCarteiras = false;
+        if (this.carteiraSelecionadaId) this.selecionarCarteira(this.carteiraSelecionadaId);
+      },
+      error: () => {
+        this.carregandoCarteiras = false;
+        this.erroCarteiras = 'Não foi possível carregar suas carteiras. Atualize a página e tente novamente.';
+      },
+    });
+  }
+
+  selecionarCarteira(carteiraId: string): void {
+    if (!this.carteiras.some(wallet => wallet.id === carteiraId)) return;
+    this.carteiraSelecionadaId = carteiraId;
+    localStorage.setItem('yourmoney.openfinance.carteira', carteiraId);
+    this.configuracaoCredenciaisPluggy = null;
+    this.contaFinanceiraErro = '';
+    this.mostrandoCadastroConta = false;
+    this.novaContaBancaria = '';
+    this.conexoesPluggy = [];
+    this.contasPluggy = [];
+    this.contasDisponiveisPluggy = [];
+    this.contasFinanceirasImportacao = [];
+    this.visaoGeralPluggy = null;
+    this.configuracaoPluggyVisivel = false;
+    this.conexoesPluggyCarregadas = false;
+    this.erroCarregamentoConexoesPluggy = '';
     this.carregarConfiguracaoCredenciaisPluggy();
+    this.carregarContasFinanceiras();
     this.carregarDadosPluggy();
   }
 
-  carregarConfiguracaoCredenciaisPluggy(): void {
-    this.carregandoConfiguracaoPluggy = true;
-    this.mensagemConfiguracaoPluggy = '';
-    this.openFinanceService.obterConfiguracaoCredenciaisPluggy().subscribe({
-      next: status => {
-        this.configuracaoCredenciaisPluggy = status;
-        this.carregandoConfiguracaoPluggy = false;
+  abrirEditorCarteira(carteira?: Carteira): void {
+    this.carteiraEmEdicao = carteira ?? null;
+    this.nomeCarteira = carteira?.nome ?? '';
+    this.erroSalvarCarteira = '';
+    this.mostrarEditorCarteira = true;
+  }
+
+  salvarCarteira(): void {
+    const name = this.nomeCarteira.trim();
+    if (!name || this.salvandoCarteira) return;
+    this.salvandoCarteira = true;
+    this.erroSalvarCarteira = '';
+    const request = { nome: name };
+    const operation = this.carteiraEmEdicao
+      ? this.carteiraService.renomear(this.carteiraEmEdicao.id, request)
+      : this.carteiraService.criar(request);
+    operation.subscribe({
+      next: wallet => {
+        this.salvandoCarteira = false;
+        this.mostrarEditorCarteira = false;
+        this.carteiraEmEdicao = null;
+        this.carteiraService.listar().subscribe(wallets => {
+          this.carteiras = wallets;
+          this.selecionarCarteira(wallet.id);
+        });
       },
       error: error => {
+        this.salvandoCarteira = false;
+        this.erroSalvarCarteira = error?.error?.detail ?? error?.error?.message ?? 'Não foi possível salvar a carteira.';
+      },
+    });
+  }
+
+  removerCarteira(): void {
+    const wallet = this.carteiraSelecionada;
+    if (!wallet || wallet.principal || !window.confirm(`Excluir a carteira “${wallet.nome}”? A exclusão só funciona quando ela estiver sem contas e conexões.`)) return;
+    this.carteiraService.remover(wallet.id).subscribe({
+      next: () => this.carregarCarteiras(),
+      error: error => window.alert(error?.error?.detail ?? 'Remova as contas e conexões desta carteira antes de excluí-la.'),
+    });
+  }
+
+  private carregarContasFinanceiras(): void {
+    if (!this.carteiraSelecionadaId) return;
+    const walletId = this.carteiraSelecionadaId;
+    this.carregandoContasFinanceiras = true;
+    this.contaFinanceiraService.listarContas(walletId).subscribe({
+      next: contas => { if (walletId === this.carteiraSelecionadaId) { this.contasFinanceiras = contas; this.carregandoContasFinanceiras = false; } },
+      error: () => { if (walletId === this.carteiraSelecionadaId) { this.contasFinanceiras = []; this.carregandoContasFinanceiras = false; this.contaFinanceiraErro = 'Não foi possível carregar as contas desta carteira.'; } },
+    });
+    this.contaFinanceiraService.listarContas().subscribe({
+      next: todas => this.contasEmOutrasCarteiras = todas.filter(account => account.carteiraId !== this.carteiraSelecionadaId),
+      error: () => this.contasEmOutrasCarteiras = [],
+    });
+  }
+
+  cadastrarContaBancaria(): void {
+    const name = this.novaContaBancaria.trim();
+    if (!name || !this.carteiraSelecionadaId || this.salvandoContaBancaria) return;
+    this.salvandoContaBancaria = true;
+    this.contaFinanceiraErro = '';
+    this.contaFinanceiraService.criarConta({ descricao: name, carteiraId: this.carteiraSelecionadaId }).subscribe({
+      next: account => {
+        this.contasFinanceiras = [...this.contasFinanceiras, account].sort((a, b) => a.descricao.localeCompare(b.descricao));
+        this.novaContaBancaria = '';
+        this.mostrandoCadastroConta = false;
+        this.salvandoContaBancaria = false;
+      },
+      error: error => {
+        this.salvandoContaBancaria = false;
+        this.contaFinanceiraErro = error?.error?.detail ?? error?.error?.message ?? 'Não foi possível cadastrar a conta bancária.';
+      },
+    });
+  }
+
+  moverContaBancaria(): void {
+    const account = this.contasEmOutrasCarteiras.find(item => item.id === this.contaParaMoverId);
+    if (!account || !this.carteiraSelecionadaId) return;
+    if (!window.confirm(`Mover “${account.descricao}” para “${this.carteiraSelecionada?.nome}”? Os lançamentos vinculados serão preservados.`)) return;
+    this.contaFinanceiraService.moverConta(account.id, this.carteiraSelecionadaId).subscribe({
+      next: () => { this.contaParaMoverId = ''; this.carregarContasFinanceiras(); },
+      error: error => this.contaFinanceiraErro = error?.error?.detail ?? 'Não foi possível mover esta conta.',
+    });
+  }
+
+  get carteiraSelecionada(): Carteira | null {
+    return this.carteiras.find(wallet => wallet.id === this.carteiraSelecionadaId) ?? null;
+  }
+
+  carregarConfiguracaoCredenciaisPluggy(): void {
+    const walletId = this.carteiraSelecionadaId;
+    if (!walletId) return;
+    this.carregandoConfiguracaoPluggy = true;
+    this.mensagemConfiguracaoPluggy = '';
+    this.openFinanceService.obterConfiguracaoCredenciaisPluggy(walletId).subscribe({
+      next: status => {
+        if (walletId !== this.carteiraSelecionadaId) return;
+        this.configuracaoCredenciaisPluggy = status;
+        this.carregandoConfiguracaoPluggy = false;
+        this.configuracaoPluggyVisivel = !status.configured && status.canSave;
+      },
+      error: error => {
+        if (walletId !== this.carteiraSelecionadaId) return;
         this.carregandoConfiguracaoPluggy = false;
         if (error?.status === 403) {
           this.configuracaoPluggyVisivel = false;
@@ -134,19 +290,24 @@ export class OpenFinancePageComponent implements OnInit {
     if (this.salvandoCredenciaisPluggy || !this.clientIdPluggy.trim() || !this.clientSecretPluggy) return;
     this.salvandoCredenciaisPluggy = true;
     this.mensagemConfiguracaoPluggy = '';
+    const walletId = this.carteiraSelecionadaId;
     this.openFinanceService.salvarConfiguracaoCredenciaisPluggy(
       this.clientIdPluggy.trim(),
       this.clientSecretPluggy,
+      walletId,
     ).subscribe({
       next: status => {
+        if (walletId !== this.carteiraSelecionadaId) return;
         this.configuracaoCredenciaisPluggy = status;
         this.clientIdPluggy = '';
         this.clientSecretPluggy = '';
         this.salvandoCredenciaisPluggy = false;
         this.mensagemConfiguracaoPluggy = 'Credenciais validadas e salvas com proteção no servidor.';
+        this.configuracaoPluggyVisivel = false;
         this.carregarDadosPluggy();
       },
       error: error => {
+        if (walletId !== this.carteiraSelecionadaId) return;
         this.salvandoCredenciaisPluggy = false;
         this.mensagemConfiguracaoPluggy = error?.error?.message
           ?? 'Não foi possível validar e salvar as credenciais. Confira os dados e tente novamente.';
@@ -197,7 +358,7 @@ export class OpenFinancePageComponent implements OnInit {
     if (this.verificandoProvedor) return;
     this.verificandoProvedor = true;
     this.mensagemProvedor = '';
-    this.openFinanceService.verificarProvedor().subscribe({
+    this.openFinanceService.verificarProvedor(this.carteiraSelecionadaId).subscribe({
       next: () => {
         this.verificandoProvedor = false;
         this.provedorDisponivel = true;
@@ -222,10 +383,11 @@ export class OpenFinancePageComponent implements OnInit {
       return;
     }
     if (!conexao && this.limiteConexoesAtingido) return;
+    const walletId = this.carteiraSelecionadaId;
     this.conectandoBanco = true;
     this.mensagemProvedor = '';
-    this.openFinanceService.obterConnectToken(conexao?.id).subscribe({
-      next: token => void this.abrirWidgetPluggy(token.accessToken, token.connectionId),
+    this.openFinanceService.obterConnectToken(conexao?.id, walletId).subscribe({
+      next: token => void this.abrirWidgetPluggy(token.accessToken, token.connectionId, walletId),
       error: error => {
         this.conectandoBanco = false;
         this.provedorDisponivel = false;
@@ -236,7 +398,7 @@ export class OpenFinancePageComponent implements OnInit {
           : status === 409
             ? 'O limite gratuito de cinco conexões foi atingido.'
             : status === 403
-              ? 'Esta integração pessoal está disponível somente para o titular configurado.'
+                ? 'A integração não está autorizada para esta carteira. Confira o titular e as credenciais configuradas.'
               : status === 401
                 ? 'Sua sessão não foi aceita pela API. Entre novamente no YourMoney e tente de novo.'
                 : status === 0
@@ -252,7 +414,7 @@ export class OpenFinancePageComponent implements OnInit {
     });
   }
 
-  private async abrirWidgetPluggy(connectToken: string, connectionId?: string | null): Promise<void> {
+  private async abrirWidgetPluggy(connectToken: string, connectionId: string | null | undefined, walletId: string): Promise<void> {
     try {
       const { PluggyConnect } = await import('pluggy-connect-sdk');
       const widget = new PluggyConnect({
@@ -266,7 +428,7 @@ export class OpenFinancePageComponent implements OnInit {
           this.salvandoConexao = true;
           this.mensagemProvedor = 'Autorização concluída. Salvando conexão Meu Pluggy...';
           try {
-            await firstValueFrom(this.openFinanceService.registrarConexao(data.item.id, connectionId));
+            await firstValueFrom(this.openFinanceService.registrarConexao(data.item.id, connectionId, walletId));
             this.provedorDisponivel = true;
             this.mensagemProvedor = 'Conexão Meu Pluggy salva com segurança.';
             this.carregarDadosPluggy();
@@ -295,15 +457,17 @@ export class OpenFinancePageComponent implements OnInit {
   }
 
   carregarDadosPluggy(): void {
+    if (!this.carteiraSelecionadaId) return;
     this.carregarConexoesPluggy();
     this.carregarContasDisponiveisPluggy();
     this.carregarVisaoGeralPluggy();
   }
 
   private carregarContasDisponiveisPluggy(): void {
-    this.openFinanceService.obterContasPluggy().subscribe({
-      next: contas => this.contasDisponiveisPluggy = contas,
-      error: () => this.contasDisponiveisPluggy = this.visaoGeralPluggy?.accounts ?? [],
+    const walletId = this.carteiraSelecionadaId;
+    this.openFinanceService.obterContasPluggy(walletId).subscribe({
+      next: contas => { if (walletId === this.carteiraSelecionadaId) this.contasDisponiveisPluggy = contas; },
+      error: () => { if (walletId === this.carteiraSelecionadaId) this.contasDisponiveisPluggy = this.visaoGeralPluggy?.accounts ?? []; },
     });
   }
 
@@ -319,16 +483,19 @@ export class OpenFinancePageComponent implements OnInit {
   }
 
   private carregarConexoesPluggy(): void {
+    const walletId = this.carteiraSelecionadaId;
     this.carregandoConexoesPluggy = true;
     this.erroCarregamentoConexoesPluggy = '';
-    this.openFinanceService.obterConexoes().subscribe({
+    this.openFinanceService.obterConexoes(walletId).subscribe({
       next: conexoes => {
+        if (walletId !== this.carteiraSelecionadaId) return;
         this.conexoesPluggy = conexoes;
         this.conexoesPluggyCarregadas = true;
         this.configuracaoServidorPluggyPendente = false;
         this.carregandoConexoesPluggy = false;
       },
       error: error => {
+        if (walletId !== this.carteiraSelecionadaId) return;
         this.carregandoConexoesPluggy = false;
         this.conexoesPluggy = [];
         this.conexoesPluggyCarregadas = false;
@@ -343,6 +510,8 @@ export class OpenFinancePageComponent implements OnInit {
   }
 
   carregarVisaoGeralPluggy(): void {
+    const walletId = this.carteiraSelecionadaId;
+    if (!walletId) return;
     const revision = ++this.overviewRevision;
     this.carregandoContasPluggy = true;
     this.carregandoTransacoesPluggy = true;
@@ -354,7 +523,7 @@ export class OpenFinancePageComponent implements OnInit {
       accountId: this.filtroContaPluggy || undefined,
       from: this.filtroDataInicioPluggy || undefined,
       to: this.filtroDataFimPluggy || undefined,
-    }).subscribe({
+    }, walletId).subscribe({
       next: overview => {
         if (revision !== this.overviewRevision) return;
         this.visaoGeralPluggy = overview;
@@ -386,7 +555,7 @@ export class OpenFinancePageComponent implements OnInit {
   desconectarBanco(conexao: PluggyConnection): void {
     if (!window.confirm(`Remover a referência de ${conexao.institutionName} do YourMoney? Isso não revoga os consentimentos bancários no Meu Pluggy.`)) return;
     this.conexaoSendoRemovida = conexao.id;
-    this.openFinanceService.removerConexao(conexao.id).subscribe({
+    this.openFinanceService.removerConexao(conexao.id, this.carteiraSelecionadaId).subscribe({
       next: () => {
         this.conexaoSendoRemovida = null;
         this.carregarDadosPluggy();
@@ -425,7 +594,7 @@ export class OpenFinancePageComponent implements OnInit {
 
     try {
       const [contas, categorias] = await Promise.all([
-        firstValueFrom(this.despesaService.listarContas()),
+        firstValueFrom(this.contaFinanceiraService.listarContas(this.carteiraSelecionadaId)),
         firstValueFrom(this.despesaService.listarCategorias()),
       ]);
       this.contasFinanceirasImportacao = contas;
@@ -527,7 +696,7 @@ export class OpenFinancePageComponent implements OnInit {
 
     this.salvandoImportacao = true;
     this.erroImportacao = '';
-    this.openFinanceService.importarTransacaoPluggy(request).subscribe({
+    this.openFinanceService.importarTransacaoPluggy(request, this.carteiraSelecionadaId).subscribe({
       next: result => {
         this.marcarTransacaoCadastrada(transacao, result);
         this.transacaoEmRevisao = null;
@@ -681,9 +850,19 @@ export class OpenFinancePageComponent implements OnInit {
     if (this.configuracaoPluggyAusente) return 'Configure as credenciais Pluggy';
     if (this.erroCarregamentoConexoesPluggy) return 'Recarregue as conexões';
     if (this.limiteConexoesAtingido) return 'Limite de 5 bancos atingido';
-    return this.conexoesPluggy.length > 0
-      ? `Adicionar outro banco (${this.conexoesPluggy.length}/5)`
-      : 'Conectar Meu Pluggy';
+    return this.conexoesPluggy.length > 0 ? 'Adicionar banco' : 'Conectar banco';
+  }
+
+  rotuloStatusConexao(conexao: PluggyConnection): string {
+    if (this.autorizacaoExpirada(conexao)) return 'Autorização expirada';
+    return {
+      UPDATED: 'Atualizada',
+      UPDATING: 'Atualizando',
+      OUTDATED: 'Aguardando atualização',
+      LOGIN_ERROR: 'Atenção necessária',
+      WAITING_USER_INPUT: 'Atenção necessária',
+      CREATED: 'Conectando',
+    }[conexao.status] ?? 'Verificar conexão';
   }
 
   autorizacaoExpirada(conexao: PluggyConnection): boolean {

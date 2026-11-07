@@ -6,6 +6,7 @@ import { ContaFinanceira } from '../models/despesa.model';
 
 export interface ContaFinanceiraRequest {
   descricao: string;
+  carteiraId?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -18,8 +19,10 @@ export class ContaFinanceiraService {
     return this.http.post<ContaFinanceira>(this.baseUrl, request);
   }
 
-  listarContas(): Observable<ContaFinanceira[]> {
-    return this.http.get<ContaFinanceira[]>(this.baseUrl);
+  listarContas(carteiraId?: string): Observable<ContaFinanceira[]> {
+    return this.http.get<ContaFinanceira[]>(this.baseUrl, {
+      params: carteiraId ? { carteiraId } : {},
+    });
   }
 
   listarInstituicoesBancarias(): Observable<string[]> {
@@ -32,5 +35,12 @@ export class ContaFinanceiraService {
 
   removerConta(id: string): Observable<void> {
     return this.http.delete<void>(this.baseUrl + '/' + id);
+  }
+
+  moverConta(id: string, carteiraId: string): Observable<ContaFinanceira> {
+    return this.http.put<ContaFinanceira>(this.baseUrl + '/' + id + '/carteira', {
+      carteiraId,
+      confirmarTransferencia: true,
+    });
   }
 }

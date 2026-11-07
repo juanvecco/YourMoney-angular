@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Optional } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Categoria, ContaFinanceira } from '../../../models/despesa.model';
 import { CategoriaPayload, CategoriaService } from '../../../services/categoria';
 import { ContaFinanceiraService } from '../../../services/conta';
@@ -10,8 +10,10 @@ import { FeedbackService } from '../../../services/feedback.service';
 import { CriarCategoriaComponent } from '../../categoria/criar-categoria/criar-categoria';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { ViewStateComponent } from '../../shared/view-state/view-state';
+import { RegraNegocio } from '../../../models/regra-negocio.model';
+import { RegraNegocioService } from '../../../services/regra-negocio.service';
 
-type SecaoConfiguracao = 'categorias' | 'contas' | 'conexoes';
+type SecaoConfiguracao = 'categorias' | 'contas' | 'conexoes' | 'regras';
 
 @Component({
   selector: 'app-configuracao-page',
@@ -40,22 +42,99 @@ export class ConfiguracaoPageComponent implements OnInit {
   mensagemSucesso = '';
   contaDescricao = '';
   contaEditando: ContaFinanceira | null = null;
+  regras: RegraNegocio[] = [];
+  buscaRegras = '';
+  carregandoRegras = false;
+  erroRegras = '';
+  salvandoRegraCodigo = '';
 
   constructor(
     private readonly categoriaService: CategoriaService,
     private readonly contaService: ContaFinanceiraService,
     private readonly feedback: FeedbackService,
+    private readonly regraNegocioService: RegraNegocioService,
+    @Optional() private readonly route: ActivatedRoute | null = null,
   ) {}
 
   ngOnInit(): void {
+    if (this.route?.snapshot.queryParamMap.get('secao') === 'regras') this.secao = 'regras';
     this.carregarCategorias();
     this.carregarContas();
     this.carregarInstituicoesBancarias();
+    this.carregarRegras();
+  }
+
+  regraAtiva(codigo: string): boolean {
+    return this.regraNegocioService.estaAtiva(codigo);
   }
 
   selecionarSecao(secao: SecaoConfiguracao): void {
     this.secao = secao;
     this.limparMensagens();
+    if (secao === 'regras') this.carregarRegras();
+  }
+
+  carregarRegras(): void {
+    this.carregandoRegras = true;
+    this.erroRegras = '';
+    this.regraNegocioService.carregar(true).subscribe({
+      next: regras => {
+        this.regras = regras;
+        this.carregandoRegras = false;
+      },
+      error: () => {
+        this.erroRegras = 'Não foi possível carregar as regras. Tente novamente.';
+        this.carregandoRegras = false;
+      },
+    });
+  }
+
+  get regrasFiltradas(): RegraNegocio[] {
+    const termo = this.normalizarBusca(this.buscaRegras);
+    if (!termo) return this.regras;
+    return this.regras.filter(regra =>
+      this.normalizarBusca(`${regra.nome} ${regra.descricao} ${regra.grupo}`).includes(termo));
+  }
+
+  get gruposRegras(): { nome: string; regras: RegraNegocio[] }[] {
+    const grupos = new Map<string, RegraNegocio[]>();
+    for (const regra of this.regrasFiltradas) {
+      const grupo = grupos.get(regra.grupo) ?? [];
+      grupo.push(regra);
+      grupos.set(regra.grupo, grupo);
+    }
+    return Array.from(grupos, ([nome, regras]) => ({ nome, regras }));
+  }
+
+  dependenciaDescricao(regra: RegraNegocio): string {
+    const pendentes = regra.dependencias.filter(codigo =>
+      !this.regras.find(item => item.codigo === codigo)?.efetiva);
+    return pendentes.map(codigo => this.regras.find(item => item.codigo === codigo)?.nome ?? codigo).join(', ');
+  }
+
+  alterarRegra(regra: RegraNegocio, ativa: boolean): void {
+    if (this.salvandoRegraCodigo) return;
+    const anterior = regra.ativa;
+    regra.ativa = ativa;
+    this.salvandoRegraCodigo = regra.codigo;
+    this.erroRegras = '';
+    this.regraNegocioService.atualizar(regra.codigo, ativa).subscribe({
+      next: atualizada => {
+        regra.ativa = atualizada.ativa;
+        regra.efetiva = atualizada.efetiva;
+        this.regras = [...(this.regraNegocioService.regras() ?? this.regras)];
+        this.salvandoRegraCodigo = '';
+      },
+      error: () => {
+        regra.ativa = anterior;
+        this.erroRegras = `Não foi possível salvar “${regra.nome}”. Tente novamente.`;
+        this.salvandoRegraCodigo = '';
+      },
+    });
+  }
+
+  private normalizarBusca(valor: string): string {
+    return valor.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim();
   }
 
   carregarCategorias(): void {

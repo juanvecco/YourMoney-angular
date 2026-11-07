@@ -16,7 +16,7 @@
                     <p class="ym-kpi-meta">Referência: {{ mesAtual | date:'MMMM yyyy':'pt-BR' }}</p>
                 </article>
 
-                <section class="ym-recurring-band" aria-labelledby="tituloSugestoesReceita">
+                <section *ngIf="regraAtiva('receitas.recorrencia')" class="ym-recurring-band" aria-labelledby="tituloSugestoesReceita">
                     <div class="ym-section-header ym-section-header-compact">
                         <div>
                             <h2 class="ym-section-title" id="tituloSugestoesReceita">Sugestões recorrentes</h2>
@@ -154,7 +154,7 @@
                 </section>
             </div>
 
-            <aside class="ym-card ym-card-pad">
+            <aside *ngIf="regraAtiva('receitas.recorrencia')" class="ym-card ym-card-pad">
                 <div class="ym-section-header">
                     <h2 class="ym-section-title">Receitas recorrentes</h2>
                     <button class="ym-icon-button" type="button" (click)="abrirModalRecorrencia()"
@@ -181,8 +181,8 @@
                                 <span class="ym-chip" [ngClass]="recorrencia.ativa ? 'ym-status-confirmada' : 'ym-status-ignorada'">
                                     {{ recorrencia.ativa ? 'Ativa' : 'Inativa' }}
                                 </span>
-                                <span class="ym-chip" *ngIf="recorrencia.ehSalario">Salário</span>
-                                <span class="ym-chip" *ngIf="recorrencia.consideraReservaEmergencia">Base da reserva</span>
+                                <span class="ym-chip" *ngIf="regraAtiva('investimentos.renda-salarial') && recorrencia.ehSalario">Salário</span>
+                                <span class="ym-chip" *ngIf="regraAtiva('receitas.reserva-emergencia') && recorrencia.consideraReservaEmergencia">Base da reserva</span>
                             </div>
                         </div>
                         <div class="ym-recurring-config-footer accent-success">
@@ -209,10 +209,10 @@
             </aside>
         </section>
 
-        <section class="ym-reserve-band" aria-labelledby="tituloReservaEmergencia">
+        <section *ngIf="regraAtiva('receitas.reserva-emergencia')" class="ym-reserve-band" aria-labelledby="tituloReservaEmergencia">
             <div class="ym-section-header">
                 <div>
-                    <p class="ym-eyebrow">Planejamento familiar</p>
+                    <p class="ym-eyebrow">Planejamento</p>
                     <h2 class="ym-section-title" id="tituloReservaEmergencia">Reserva de emergência</h2>
                 </div>
                 <button class="ym-icon-button" type="button" (click)="carregarProjecaoReserva()"
@@ -341,7 +341,7 @@
     </div>
 </div>
 
-<div class="modal fade ym-modal accent-success" id="modalReceitaRecorrente" tabindex="-1" aria-hidden="true">
+<div *ngIf="regraAtiva('receitas.recorrencia')" class="modal fade ym-modal accent-success" id="modalReceitaRecorrente" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -397,14 +397,14 @@
                                 [(ngModel)]="novaRecorrencia.dataTermino" name="recorrenciaTermino">
                         </div>
                         <div class="col-md-6">
-                            <label class="ym-check-row accent-success" for="recorrenciaSalario">
+                            <label *ngIf="regraAtiva('investimentos.renda-salarial')" class="ym-check-row accent-success" for="recorrenciaSalario">
                               <input id="recorrenciaSalario" type="checkbox" [(ngModel)]="novaRecorrencia.ehSalario"
                                     name="recorrenciaSalario">
                                 <span>Identificar como salário</span>
                             </label>
                         </div>
                         <div class="col-md-6">
-                            <label class="ym-check-row accent-success" for="recorrenciaReserva">
+                            <label *ngIf="regraAtiva('receitas.reserva-emergencia')" class="ym-check-row accent-success" for="recorrenciaReserva">
                               <input id="recorrenciaReserva" type="checkbox"
                                     [(ngModel)]="novaRecorrencia.consideraReservaEmergencia" name="recorrenciaReserva">
                                 <span>Usar como base da reserva</span>

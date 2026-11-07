@@ -84,10 +84,30 @@ export function financialActivityFixture(): Record<string, unknown> {
 }
 
 function responseFor(url: string): unknown {
-  const path = new URL(url).pathname.toLowerCase();
+  const parsed = new URL(url);
+  const path = parsed.pathname.toLowerCase();
   if (path.includes('/movimentacoes')) return financialActivityFixture();
-  if (path.includes('/contafinanceira')) return [
-    { id: 'conta-e2e', descricao: 'Conta principal', dataCriacao: '2026-01-01', podeRemover: false }
+  if (path.endsWith('/carteiras')) return [
+    { id: 'wallet-principal', nome: 'Minha carteira', principal: true },
+    { id: 'wallet-esposa', nome: 'Carteira da esposa', principal: false },
+  ];
+  if (path.endsWith('/openfinance/sources')) return {
+    readiness: { mode: 'preview-only', realDataEnabled: false, summary: 'Teste', nextSteps: [] },
+    sources: [],
+  };
+  if (path.endsWith('/openfinance/pluggy-configuration')) return {
+    configured: true, source: 'database', clientIdHint: 'cl••••d', updatedAt: null, canSave: true,
+  };
+  if (path.endsWith('/openfinance/connections')) return parsed.searchParams.get('carteiraId') === 'wallet-esposa'
+    ? [{ id: 'connection-wife', institutionName: 'Banco da esposa', status: 'UPDATED', isSandbox: false,
+        lastUpdatedAt: '2026-10-30T12:00:00Z', consentExpiresAt: null, connectedAt: '2026-10-01T12:00:00Z' }]
+    : [];
+  if (path.includes('/openfinance/real-transactions/overview')) return {
+    generatedAt: '2026-10-30T12:00:00Z', sourceUpdatedAt: null,
+    accounts: [], balancesByCurrencyAndType: [], transactions: [],
+  };
+  if (path.includes('/contafinanceira')) return parsed.searchParams.get('carteiraId') === 'wallet-esposa' ? [] : [
+    { id: 'conta-e2e', descricao: 'Conta principal', dataCriacao: '2026-01-01', podeRemover: false, carteiraId: 'wallet-principal' }
   ];
   if (path.includes('/metas/resumo')) return {
     mesReferencia: '2026-07-01', receitaTotal: 0, receitaTotalBruta: 0, receitaElegivelMetas: 0,
@@ -112,6 +132,38 @@ function responseFor(url: string): unknown {
 }
 
 async function fulfillApi(route: Route): Promise<void> {
+  const url = new URL(route.request().url());
+  if (url.pathname.toLowerCase().endsWith('/openfinance/connect-token') && route.request().method() === 'POST') {
+    await route.fulfill({ status: 503, contentType: 'application/json', json: { message: 'Credenciais desta carteira precisam ser atualizadas.' } });
+    return;
+  }
+  if (url.pathname.toLowerCase().endsWith('/carteiras') && route.request().method() === 'GET') {
+    const isUserB = route.request().headers()['authorization'] === 'Bearer e2e-token-bruno';
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(isUserB
+        ? [{ id: 'wallet-bruno', nome: 'Minha carteira', principal: true }]
+        : [
+            { id: 'wallet-principal', nome: 'Minha carteira', principal: true },
+            { id: 'wallet-esposa', nome: 'Carteira da esposa', principal: false },
+          ]),
+    });
+    return;
+  }
+  if (url.pathname.toLowerCase().endsWith('/contafinanceira') && route.request().method() === 'POST') {
+    const body = route.request().postDataJSON() as Record<string, unknown>;
+    await route.fulfill({ json: {
+      id: 'conta-manual-e2e', descricao: body['descricao'], carteiraId: body['carteiraId'],
+      dataCriacao: '2026-10-30', podeRemover: true,
+    } });
+    return;
+  }
+  if (url.pathname.toLowerCase().endsWith('/carteira') && route.request().method() === 'PUT') {
+    const body = route.request().postDataJSON() as Record<string, unknown>;
+    await route.fulfill({ json: { id: 'conta-e2e', descricao: 'Conta principal', carteiraId: body['carteiraId'], podeRemover: false } });
+    return;
+  }
   if (route.request().method() === 'DELETE') {
     await route.fulfill({ status: 204 });
     return;
@@ -121,7 +173,13 @@ async function fulfillApi(route: Route): Promise<void> {
 
 export const test = authTest.extend<ApiFixtures>({
   mockApi: async ({ page }: { page: Page }, use) => {
-    await use(async () => page.route('**/api/**', fulfillApi));
+    await use(async () => page.route(url => {
+      try {
+        return new URL(url).pathname.toLowerCase().includes('/api/');
+      } catch {
+        return false;
+      }
+    }, fulfillApi));
   },
 });
 

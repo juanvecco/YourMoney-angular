@@ -52,3 +52,6 @@ Thumbs.db
 # Ambiente
 .env
 .env.local
+.env.*
+*.tmp
+*.swp

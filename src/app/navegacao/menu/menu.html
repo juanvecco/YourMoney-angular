@@ -66,12 +66,12 @@
         <a routerLink="/investimento" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="onNavigate()">
           <i class="bi bi-graph-up-arrow" aria-hidden="true"></i><span>Investimentos</span>
         </a>
-        <a routerLink="/metas" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="onNavigate()">
+        @if (regraAtiva('metas.mensais')) { <a routerLink="/metas" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="onNavigate()">
           <i class="bi bi-bullseye" aria-hidden="true"></i><span>Metas</span>
-        </a>
-        <a routerLink="/openfinance" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="onNavigate()">
+        </a> }
+        @if (regraAtiva('openfinance.visivel')) { <a routerLink="/openfinance" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="onNavigate()">
           <i class="bi bi-bank" aria-hidden="true"></i><span>Conexões</span>
-        </a>
+        </a> }
       </nav>
     </aside>
   }

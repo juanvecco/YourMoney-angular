@@ -1,20 +1,97 @@
 <div class="ym-shell">
   <div class="ym-container">
-    <app-page-header eyebrow="Conexão pessoal gratuita" heading="Meu Pluggy"
-      description="Veja suas contas e transações; revise cada lançamento antes de cadastrar no histórico financeiro.">
+    <app-page-header eyebrow="Open Finance" heading="Conexões"
+      description="Gerencie seus bancos e revise as transações antes de cadastrá-las.">
       <a pageHeaderActions class="ym-button secondary" routerLink="/configuracao">Voltar às configurações</a>
     </app-page-header>
+
+    <section class="of-section ym-card of-wallet-section" aria-labelledby="walletSectionTitle">
+      <div class="of-section-header">
+        <div>
+          <p class="of-eyebrow">Espaço de trabalho</p>
+          <h2 id="walletSectionTitle">Sua carteira</h2>
+        </div>
+        @if (carteiraSelecionada; as wallet) {
+          <div class="of-wallet-actions">
+            <label for="walletSelect">Carteira selecionada</label>
+            <select id="walletSelect" name="walletSelect" [ngModel]="carteiraSelecionadaId" (ngModelChange)="selecionarCarteira($event)">
+              @for (carteira of carteiras; track carteira.id) {
+                <option [value]="carteira.id">{{ carteira.nome }}{{ carteira.principal ? ' · principal' : '' }}</option>
+              }
+            </select>
+            <div class="of-wallet-buttons">
+              <button type="button" class="ym-button secondary" (click)="abrirEditorCarteira()">Nova carteira</button>
+              <button type="button" class="ym-button secondary" (click)="abrirEditorCarteira(wallet)">Renomear</button>
+              @if (!wallet.principal) { <button type="button" class="ym-button secondary" (click)="removerCarteira()">Excluir carteira</button> }
+            </div>
+          </div>
+        }
+      </div>
+      @if (carregandoCarteiras) { <app-view-state state="loading" message="Carregando suas carteiras..."></app-view-state> }
+      @if (erroCarteiras) { <p class="of-import-error" role="alert">{{ erroCarteiras }}</p> }
+      @if (mostrarEditorCarteira) {
+        <div class="of-wallet-editor" role="group" aria-label="Editar carteira">
+          <label><span>Nome da carteira <span class="ym-required" aria-hidden="true">*</span></span>
+            <input type="text" name="walletName" [(ngModel)]="nomeCarteira" required maxlength="80" placeholder="Ex.: Carteira da família">
+          </label>
+          <div class="of-wallet-buttons">
+            <button type="button" class="ym-button primary" (click)="salvarCarteira()" [disabled]="!nomeCarteira.trim() || salvandoCarteira">{{ salvandoCarteira ? 'Salvando...' : 'Salvar carteira' }}</button>
+            <button type="button" class="ym-button secondary" (click)="mostrarEditorCarteira = false">Cancelar</button>
+          </div>
+          @if (erroSalvarCarteira) { <p class="of-import-error" role="alert">{{ erroSalvarCarteira }}</p> }
+        </div>
+      }
+      @if (carteiraSelecionada) {
+        <details class="of-disclosure of-manual-accounts">
+          <summary>Contas da carteira <span class="of-disclosure-count">{{ contasFinanceiras.length }}</span></summary>
+          <div class="of-transactions-heading">
+            <div><h3>Contas manuais</h3><p>Organize as contas usadas nos lançamentos desta carteira.</p></div>
+            <button type="button" class="ym-button secondary" (click)="mostrandoCadastroConta = !mostrandoCadastroConta">Adicionar conta</button>
+          </div>
+          @if (mostrandoCadastroConta) {
+            <div class="of-wallet-editor">
+              <label><span>Nome da conta <span class="ym-required" aria-hidden="true">*</span></span>
+                <input type="text" name="manualAccountName" [(ngModel)]="novaContaBancaria" required maxlength="255" placeholder="Ex.: Banco Inter, conta conjunta">
+              </label>
+              <button type="button" class="ym-button primary" (click)="cadastrarContaBancaria()" [disabled]="!novaContaBancaria.trim() || salvandoContaBancaria">{{ salvandoContaBancaria ? 'Cadastrando...' : 'Salvar conta bancária' }}</button>
+            </div>
+          }
+          @if (contaFinanceiraErro) { <p class="of-import-error" role="alert">{{ contaFinanceiraErro }}</p> }
+          @if (carregandoContasFinanceiras) { <app-view-state state="loading" message="Carregando contas da carteira..."></app-view-state> }
+          @if (!carregandoContasFinanceiras && contasFinanceiras.length) {
+            <div class="of-manual-account-list">
+              @for (conta of contasFinanceiras; track conta.id) { <span class="of-manual-account"><i class="bi bi-bank" aria-hidden="true"></i>{{ conta.descricao }}</span> }
+            </div>
+          } @else if (!carregandoContasFinanceiras) { <p class="of-empty-wallet">Nenhuma conta bancária cadastrada nesta carteira.</p> }
+          @if (contasEmOutrasCarteiras.length) {
+            <div class="of-move-account">
+              <label>Associar conta de outra carteira
+                <select name="accountToMove" [(ngModel)]="contaParaMoverId">
+                  <option value="">Selecione uma conta</option>
+                  @for (conta of contasEmOutrasCarteiras; track conta.id) { <option [value]="conta.id">{{ conta.descricao }}</option> }
+                </select>
+              </label>
+              <button type="button" class="ym-button secondary" (click)="moverContaBancaria()" [disabled]="!contaParaMoverId">Mover conta</button>
+            </div>
+          }
+        </details>
+      }
+    </section>
 
     @if (configuracaoPluggyVisivel) {
       <section class="of-section ym-card of-credential-section" aria-labelledby="pluggyCredentialsTitle">
         <div class="of-section-header">
           <div>
-            <p class="of-eyebrow">Configuração segura</p>
-            <h2 id="pluggyCredentialsTitle">Credenciais da aplicação Pluggy</h2>
-            <p>O Client ID e o Client Secret são criados no Dashboard da Pluggy. O Meu Pluggy autoriza os bancos, mas não gera essas credenciais.</p>
-            <p>O YourMoney valida as credenciais antes de salvar e protege o segredo no servidor. O segredo não será exibido novamente nem enviado de volta para esta tela.</p>
+            <p class="of-eyebrow">Configuração</p>
+            <h2 id="pluggyCredentialsTitle">Credenciais Pluggy</h2>
+            <p>Valide as credenciais da sua aplicação para conectar bancos. O segredo fica protegido no servidor.</p>
           </div>
+          <button type="button" class="ym-button secondary" (click)="configuracaoPluggyVisivel = false">Fechar</button>
         </div>
+        <details class="of-disclosure of-help-disclosure">
+          <summary>Onde encontro o Client ID e o Client Secret?</summary>
+          <p>Copie os dois valores no Dashboard da Pluggy. O Meu Pluggy autoriza seus bancos, mas não fornece essas credenciais.</p>
+        </details>
         @if (carregandoConfiguracaoPluggy) {
           <app-view-state state="loading" message="Consultando a configuração Pluggy..."></app-view-state>
         }
@@ -34,7 +111,7 @@
           }
           @if (credenciais.canSave) {
             @if (credenciais.source === 'server' && credenciais.configured) {
-              <p>Você também pode informar as credenciais da sua aplicação abaixo. Depois de validadas, elas serão guardadas com proteção e usadas nesta integração pessoal, no lugar das credenciais padrão.</p>
+              <p>Você pode substituir as credenciais padrão por credenciais próprias.</p>
             }
             <div class="of-credential-form">
               <p class="ym-form-hint">Campos com * são obrigatórios.</p>
@@ -58,17 +135,25 @@
 
     <section class="of-section ym-card" aria-labelledby="pluggyConnectionsTitle">
       <div class="of-section-header">
-        <div><p class="of-eyebrow">Até cinco conexões · uso pessoal</p><h2 id="pluggyConnectionsTitle">Conexões Meu Pluggy</h2>
-          <p>Conecte os bancos primeiro em <a href="https://meu.pluggy.ai/" target="_blank" rel="noopener noreferrer">meu.pluggy.ai</a>. Depois autorize cada banco aqui, um por vez. Cada autorização adiciona uma conexão e mantém as anteriores. Na visão geral, escolha “Todas as instituições” para reunir os dados dos bancos conectados. Esta opção gratuita é para uso pessoal e não permite conectar diretamente outros bancos neste fluxo.</p>
-          <p>As transações ficam como prévia até você confirmar cada cadastro. O Meu Pluggy atualiza os bancos aproximadamente a cada 24 horas; recarregar esta tela busca os dados mais recentes já recebidos.</p>
+        <div><p class="of-eyebrow">Meu Pluggy</p><h2 id="pluggyConnectionsTitle">Bancos conectados <span class="of-count">{{ conexoesPluggy.length }}/5</span></h2>
+          <p>Autorize bancos nesta carteira e acompanhe o estado de cada conexão.</p>
         </div>
         <div class="of-connect-actions">
-          <button type="button" class="ym-button primary" (click)="conectarBanco()" [disabled]="!podeAdicionarConexao">
-            {{ textoBotaoConexaoPluggy }}
-          </button>
-          <button type="button" class="ym-button secondary" (click)="carregarDadosPluggy()" [disabled]="carregandoConexoesPluggy || carregandoContasPluggy || carregandoTransacoesPluggy">Recarregar dados</button>
+          @if (configuracaoPluggyAusente && configuracaoCredenciaisPluggy?.canSave) {
+            <button type="button" class="ym-button primary" (click)="configuracaoPluggyVisivel = true">Configurar Pluggy</button>
+          } @else {
+            <button type="button" class="ym-button primary" (click)="conectarBanco()" [disabled]="!podeAdicionarConexao">{{ textoBotaoConexaoPluggy }}</button>
+          }
+          <button type="button" class="ym-button secondary" (click)="carregarDadosPluggy()" [disabled]="carregandoConexoesPluggy || carregandoContasPluggy || carregandoTransacoesPluggy">Atualizar dados</button>
+          @if (configuracaoCredenciaisPluggy?.canSave && !configuracaoPluggyVisivel) {
+            <button type="button" class="ym-button secondary" (click)="configuracaoPluggyVisivel = true">Credenciais</button>
+          }
         </div>
       </div>
+      <details class="of-disclosure of-help-disclosure">
+        <summary>Como funciona a conexão?</summary>
+        <p>Conecte seus bancos em <a href="https://meu.pluggy.ai/" target="_blank" rel="noopener noreferrer">meu.pluggy.ai</a> e autorize cada um aqui. Os dados são atualizados pelo Meu Pluggy; as transações só entram no YourMoney após sua confirmação.</p>
+      </details>
       @if (mensagemProvedor) { <p class="of-provider-message" [class.available]="provedorDisponivel" role="status">{{ mensagemProvedor }}</p> }
       @if (carregandoConexoesPluggy) { <app-view-state state="loading" message="Carregando conexões Pluggy..."></app-view-state> }
       @if (!carregandoConexoesPluggy && erroCarregamentoConexoesPluggy) {
@@ -78,26 +163,26 @@
         <app-view-state state="emptyPeriod" message="Configure as credenciais da aplicação Pluggy antes de carregar ou autorizar conexões bancárias."></app-view-state>
       }
       @if (mostrarSemConexoesPluggy) {
-        <app-view-state state="emptyPeriod" message="Nenhuma conexão Meu Pluggy. Conecte seus bancos primeiro em meu.pluggy.ai e depois autorize o acesso por aqui."></app-view-state>
+        <app-view-state state="emptyPeriod" message="Nenhum banco conectado. Use ‘Conectar banco’ para começar."></app-view-state>
       }
       @if (conexoesPluggy.length > 0) {
-        <div class="of-source-grid">
+        <div class="of-source-grid of-connections-grid">
           @for (conexao of conexoesPluggy; track conexao.id) {
             <article class="of-source-card">
               <div class="of-card-topline">
-                <span class="of-badge">Meu Pluggy</span>
-                <span class="of-status" [class.available]="conexao.status === 'UPDATED'" [class.expired]="autorizacaoExpirada(conexao)">{{ autorizacaoExpirada(conexao) ? 'Autorização expirada' : conexao.status }}</span>
+                <span class="of-bank-icon" aria-hidden="true"><i class="bi bi-bank"></i></span>
+                <span class="of-status" [class.available]="conexao.status === 'UPDATED'" [class.expired]="autorizacaoExpirada(conexao)">{{ rotuloStatusConexao(conexao) }}</span>
               </div>
               <h3>{{ conexao.institutionName }}</h3>
-              <p>Conectada em {{ conexao.connectedAt | date:'dd/MM/yyyy HH:mm' }}</p>
-              @if (conexao.lastUpdatedAt) { <p>Dados recebidos em {{ conexao.lastUpdatedAt | date:'dd/MM/yyyy HH:mm' }}</p> }
-              @if (conexao.consentExpiresAt) { <p>Autorização válida até {{ conexao.consentExpiresAt | date:'dd/MM/yyyy' }}</p> }
+              @if (conexao.lastUpdatedAt) { <p>Dados em {{ conexao.lastUpdatedAt | date:'dd/MM/yyyy' }}</p> }
+              @if (conexao.consentExpiresAt) { <p>Autorização até {{ conexao.consentExpiresAt | date:'dd/MM/yyyy' }}</p> }
               @if (autorizacaoExpirada(conexao)) { <p class="of-warning">Autorize o Meu Pluggy novamente para voltar a consultar os dados.</p> }
               @else if (autorizacaoExpiraEmBreve(conexao)) { <p class="of-warning">A autorização vence em breve. Renove para manter o acesso.</p> }
+              <details class="of-disclosure of-connection-detail"><summary>Detalhes</summary><p>Conectado em {{ conexao.connectedAt | date:'dd/MM/yyyy HH:mm' }}</p></details>
               <div class="of-connection-actions">
-                <button type="button" class="ym-button secondary" (click)="conectarBanco(conexao)" [disabled]="!podeConectarBanco">Renovar autorização</button>
+                <button type="button" class="ym-button secondary" (click)="conectarBanco(conexao)" [disabled]="!podeConectarBanco">Renovar</button>
                 <button type="button" class="ym-button secondary" (click)="desconectarBanco(conexao)" [disabled]="conexaoSendoRemovida === conexao.id">
-                  {{ conexaoSendoRemovida === conexao.id ? 'Removendo...' : 'Remover do YourMoney' }}
+                  {{ conexaoSendoRemovida === conexao.id ? 'Removendo...' : 'Remover' }}
                 </button>
               </div>
             </article>
@@ -109,11 +194,9 @@
     @if (podeMostrarVisaoGeralPluggy) {
     <section class="of-section ym-card" aria-labelledby="pluggyAccountsTitle">
       <div class="of-overview-heading">
-        <div><p class="of-eyebrow">Resumo pessoal · últimos 30 dias</p><h2 id="pluggyAccountsTitle">Visão geral</h2>
-          <p>Confira os saldos e decida quais transações cadastrar no histórico financeiro.</p>
+        <div><p class="of-eyebrow">Seus dados</p><h2 id="pluggyAccountsTitle">Saldos e transações</h2>
           @if (visaoGeralPluggy?.sourceUpdatedAt) { <small class="of-source-updated">Dados da origem atualizados em {{ visaoGeralPluggy?.sourceUpdatedAt | date:'dd/MM/yyyy HH:mm' }}</small> }
         </div>
-        <button type="button" class="ym-button secondary" (click)="carregarDadosPluggy()" [disabled]="carregandoContasPluggy">Atualizar</button>
       </div>
 
       <div class="of-overview-filters" aria-label="Filtros das transações Meu Pluggy">
@@ -125,7 +208,7 @@
             }
           </select>
         </label>
-        <label>Conta ou instituição
+        <label>Conta
           <select name="filtroContaPluggy" [(ngModel)]="filtroContaPluggy" (ngModelChange)="carregarVisaoGeralPluggy()">
             <option value="">Todas as contas</option>
             @for (conta of contasFiltradasFiltroPluggy; track conta.accountId) {
@@ -143,7 +226,7 @@
 
       @if (mensagemContasPluggy) { <app-view-state state="loadError" [message]="mensagemContasPluggy" [retryAvailable]="true" (retry)="carregarDadosPluggy()"></app-view-state> }
       @if (carregandoContasPluggy && !visaoGeralPluggy) { <app-view-state state="loading" message="Carregando sua visão financeira..."></app-view-state> }
-      @if (!carregandoContasPluggy && !mensagemContasPluggy && contasPluggy.length === 0) { <app-view-state state="emptyPeriod" message="Conecte o Meu Pluggy para visualizar suas contas e transações nesta tela."></app-view-state> }
+      @if (!carregandoContasPluggy && !mensagemContasPluggy && contasPluggy.length === 0) { <app-view-state state="emptyPeriod" message="Ainda não há dados de contas para esta carteira."></app-view-state> }
 
       @if (saldosPluggy.length > 0) {
         <div class="of-balance-grid" aria-label="Saldos agrupados por moeda e tipo de conta">
@@ -172,8 +255,8 @@
       }
 
       <div class="of-transactions-heading">
-        <div><p class="of-eyebrow">Prévia bancária</p><h3 id="pluggyTransactionsTitle">Transações recentes</h3>
-          <p>Somente as transações que você confirmar serão incluídas nas despesas ou receitas.</p>
+        <div><p class="of-eyebrow">Para revisar</p><h3 id="pluggyTransactionsTitle">Transações recentes</h3>
+          <p>Cadastre apenas o que você confirmar.</p>
         </div>
         @if (mensagemSucessoImportacao) { <span class="of-success-message" role="status">{{ mensagemSucessoImportacao }}</span> }
       </div>
@@ -320,8 +403,10 @@
       </div>
     }
 
-    <section class="of-section ym-card">
-      <div class="of-section-header"><div><p class="of-eyebrow">Demonstração independente</p><h2>Outras fontes disponíveis</h2><p>Estas fontes não fazem parte das conexões pessoais do Meu Pluggy.</p></div>
+    <details class="of-section ym-card of-demo-disclosure">
+      <summary><span>Demonstração</span><small>Dados simulados, separados dos seus bancos</small></summary>
+      <div class="of-demo-content">
+      <div class="of-section-header"><div><h2>Fontes de demonstração</h2></div>
         <button type="button" class="ym-button secondary" (click)="carregarFontes()">Atualizar</button>
       </div>
       @if (estadoFontes === 'loading') { <app-view-state state="loading" message="Verificando fontes Open Finance..."></app-view-state> }
@@ -338,11 +423,10 @@
           }
         </div>
       }
-    </section>
 
     @if (mostrarDemonstracao) {
-    <section class="of-section ym-card">
-      <div class="of-section-header"><div><p class="of-eyebrow">Demonstração</p><h2>Prévia de transações</h2><p>Classificações editadas aqui ficam somente nesta tela e não são importadas.</p></div>
+    <div class="of-demo-preview">
+      <div class="of-section-header"><div><h2>Prévia de transações</h2><p>As alterações desta prévia não são cadastradas.</p></div>
         <button type="button" class="ym-button secondary" (click)="carregarPreview()">Recarregar</button>
       </div>
       @if (estadoPreview === 'loading') { <app-view-state state="loading" message="Carregando transações simuladas..."></app-view-state> }
@@ -365,7 +449,9 @@
           }
         </div>
       }
-    </section>
+    </div>
     }
+      </div>
+    </details>
   </div>
 </div>

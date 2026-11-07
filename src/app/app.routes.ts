@@ -1,4 +1,5 @@
 import { AuthGuard } from './guards/auth.guard';
+import { regraNegocioGuard } from './guards/regra-negocio.guard';
 import { Routes } from '@angular/router';
 import { HomeComponent } from './navegacao/home/home';
 import { DespesasComponent } from './components/despesas/despesas-page/despesas-page';
@@ -50,7 +51,7 @@ export const routes: Routes = [
     {
         path: 'metas',
         component: MetasPageComponent,
-        canActivate: [AuthGuard]
+        canActivate: [AuthGuard, regraNegocioGuard('metas.mensais')]
     },
     {
         path: 'movimentacoes',
@@ -61,7 +62,7 @@ export const routes: Routes = [
         path: 'openfinance',
         loadComponent: () => import('./components/openfinance/openfinance-page/openfinance-page')
             .then(module => module.OpenFinancePageComponent),
-        canActivate: [AuthGuard]
+        canActivate: [AuthGuard, regraNegocioGuard('openfinance.visivel')]
     },
     {
         path: 'configuracao',

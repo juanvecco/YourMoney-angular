@@ -61,6 +61,36 @@ describe('OpenFinanceService', () => {
     request.flush({ sourceId: 'mock-transactions', mode: 'preview-only', items: [] });
   });
 
+  it('scopes Pluggy credentials and Connect token to the selected wallet', () => {
+    service.obterConfiguracaoCredenciaisPluggy('wallet-2').subscribe();
+    const credentials = httpTesting.expectOne(req => req.url === `${environment.apiUrl}/OpenFinance/pluggy-configuration`
+      && req.params.get('carteiraId') === 'wallet-2');
+    expect(credentials.request.method).toBe('GET');
+    credentials.flush({ configured: true, source: 'database', canSave: true });
+
+    service.obterConnectToken(undefined, 'wallet-2').subscribe();
+    const connect = httpTesting.expectOne(req => req.url === `${environment.apiUrl}/OpenFinance/connect-token`
+      && req.params.get('carteiraId') === 'wallet-2');
+    expect(connect.request.method).toBe('POST');
+    connect.flush({ accessToken: 'temporary', expiresAt: '2026-10-30T21:00:00Z' });
+  });
+
+  it('scopes connection listing and transaction preview to the selected wallet', () => {
+    service.obterConexoes('wallet-2').subscribe(result => expect(result).toEqual([]));
+    const connections = httpTesting.expectOne(req => req.url === `${environment.apiUrl}/OpenFinance/connections`
+      && req.params.get('carteiraId') === 'wallet-2');
+    expect(connections.request.method).toBe('GET');
+    connections.flush([]);
+
+    service.obterVisaoGeralPluggy({ from: '2026-10-01', to: '2026-10-30' }, 'wallet-2').subscribe();
+    const overview = httpTesting.expectOne(req => req.url === `${environment.apiUrl}/OpenFinance/real-transactions/overview`
+      && req.params.get('carteiraId') === 'wallet-2'
+      && req.params.get('from') === '2026-10-01'
+      && req.params.get('to') === '2026-10-30');
+    expect(overview.request.method).toBe('GET');
+    overview.flush({ generatedAt: '2026-10-30T12:00:00Z', accounts: [], balancesByCurrencyAndType: [], transactions: [] });
+  });
+
   it('posts a reviewed expense reconciliation to the typed endpoint', () => {
     const payload = {
       transactionId: 'source-transaction-1',

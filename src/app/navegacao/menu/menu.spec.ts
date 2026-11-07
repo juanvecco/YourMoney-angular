@@ -4,6 +4,8 @@ import { Router } from '@angular/router';
 import { Component } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { MenuComponent } from './menu';
+import { RegraNegocioService } from '../../services/regra-negocio.service';
+import { of } from 'rxjs';
 
 @Component({ template: '' })
 class MenuTestPage {}
@@ -21,7 +23,8 @@ describe('MenuComponent', () => {
       imports: [MenuComponent],
       providers: [provideRouter([
         { path: 'login', component: MenuTestPage }, { path: 'dashboard', component: MenuTestPage },
-      ]), { provide: AuthService, useValue: auth }],
+      ]), { provide: AuthService, useValue: auth },
+      { provide: RegraNegocioService, useValue: { carregar: () => of([]), estaAtiva: () => true } }],
     }).compileComponents();
     fixture = TestBed.createComponent(MenuComponent);
     fixture.detectChanges();

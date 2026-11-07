@@ -20,6 +20,7 @@ export interface ContaFinanceira {
   descricao: string;
   dataCriacao?: string;
   podeRemover?: boolean;
+  carteiraId?: string;
 }
 
 export interface Categoria {

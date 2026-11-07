@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, Optional, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -13,6 +13,7 @@ import {
   TipoDefinicaoMeta
 } from '../../../models/meta-mensal.model';
 import { AuthService } from '../../../services/auth.service';
+import { RegraNegocioService } from '../../../services/regra-negocio.service';
 import { MetaMensalService } from '../../../services/meta-mensal';
 import { FinancialNavigationContextService } from '../../../services/financial-navigation-context.service';
 import { MonthPickerComponent } from '../../shared/month-picker/month-picker';
@@ -76,7 +77,8 @@ export class MetasPageComponent implements OnInit, OnDestroy {
     private router: Router,
     private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService(),
     private grupoService: InvestimentoGrupoService = undefined!,
-    private investimentoService: InvestimentoService = undefined!
+    private investimentoService: InvestimentoService = undefined!,
+    @Optional() private readonly regras: RegraNegocioService | null = null
   ) {
     this.mesAtual = this.financialContext.period().date;
   }
@@ -84,6 +86,10 @@ export class MetasPageComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.carregarResumo();
     this.carregarApoio();
+  }
+
+  regraAtiva(codigo: string): boolean {
+    return this.regras?.estaAtiva(codigo) ?? true;
   }
 
   ngOnDestroy(): void {
@@ -363,6 +369,7 @@ export class MetasPageComponent implements OnInit, OnDestroy {
   confirmarAporte(meta: MetaMensal): void { this.aporteDialog?.abrir(meta); }
 
   private carregarApoio(): void {
+    if (!this.regraAtiva('investimentos.objetivos')) return;
     if (this.grupoService)
       this.grupoService.listar().pipe(takeUntil(this.destroy$)).subscribe({ next: grupos => this.grupos = grupos });
     if (this.investimentoService)

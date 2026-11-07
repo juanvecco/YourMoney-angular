@@ -1,0 +1,40 @@
+.of-wallet-section .of-section-header { align-items: center; }
+.of-wallet-actions label { color: var(--ym-muted); font-size: .78rem; font-weight: 800; }
+.of-wallet-buttons .ym-button { min-height: 36px; padding: .35rem .65rem; font-size: .8rem; }
+.of-count { display: inline-flex; vertical-align: middle; margin-left: .3rem; padding: .16rem .5rem; border-radius: 999px; color: var(--ym-primary); background: color-mix(in srgb, var(--ym-primary) 10%, var(--ym-surface-strong)); font-size: .78rem; font-weight: 800; }
+.of-disclosure { border-top: 1px solid var(--ym-border); }
+.of-disclosure > summary { display: flex; align-items: center; gap: .5rem; padding: .8rem 0; color: var(--ym-text); font-weight: 800; cursor: pointer; list-style: none; }
+.of-disclosure > summary::-webkit-details-marker, .of-demo-disclosure > summary::-webkit-details-marker { display: none; }
+.of-disclosure > summary::after, .of-demo-disclosure > summary::after { content: '⌄'; margin-left: auto; color: var(--ym-muted); font-size: 1.15rem; line-height: 1; transition: transform .15s ease; }
+.of-disclosure[open] > summary::after, .of-demo-disclosure[open] > summary::after { transform: rotate(180deg); }
+.of-disclosure > summary:focus-visible, .of-demo-disclosure > summary:focus-visible { outline: 2px solid var(--ym-primary); outline-offset: 3px; border-radius: .2rem; }
+.of-disclosure-count { padding: .1rem .45rem; border-radius: 999px; color: var(--ym-muted); background: var(--ym-surface-interactive); font-size: .75rem; }
+.of-manual-accounts .of-transactions-heading { margin-top: .5rem; }
+.of-help-disclosure { margin: -.25rem 0 1rem; }
+.of-help-disclosure > summary { color: var(--ym-primary); font-size: .84rem; }
+.of-help-disclosure > p { margin: 0 0 .8rem; font-size: .88rem; line-height: 1.5; }
+.of-source-card { min-width: 0; }
+.of-connections-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr)); }
+.of-bank-icon { display: grid; width: 2rem; height: 2rem; place-items: center; border-radius: .6rem; color: var(--ym-primary); background: color-mix(in srgb, var(--ym-primary) 10%, var(--ym-surface-strong)); }
+.of-source-card p { margin: .25rem 0; font-size: .84rem; }
+.of-connection-detail { margin-top: .55rem; }
+.of-connection-detail > summary { padding: .3rem 0; font-size: .78rem; }
+.of-connection-detail > p { margin: 0; }
+.of-connection-actions { padding-top: .7rem; border-top: 1px solid var(--ym-border); }
+.of-connection-actions .ym-button { min-height: 36px; padding: .35rem .65rem; font-size: .8rem; }
+.of-demo-disclosure > summary { display: flex; align-items: center; gap: 1rem; cursor: pointer; list-style: none; }
+.of-demo-disclosure > summary span { color: var(--ym-text); font-size: 1rem; font-weight: 800; }
+.of-demo-disclosure > summary small { color: var(--ym-muted); font-size: .8rem; }
+.of-demo-content { padding-top: 1.2rem; }
+.of-demo-preview { margin-top: 1.2rem; padding-top: 1.2rem; border-top: 1px solid var(--ym-border); }
+@media (max-width: 480px) {
+  .of-section { padding: 1rem; }
+  .of-wallet-actions { width: 100%; min-width: 0; }
+  .of-overview-filters { grid-template-columns: 1fr; }
+  .of-overview-filters label:nth-child(2) { grid-column: auto; }
+  .of-connect-actions .ym-button:first-child { flex-basis: 100%; }
+  .of-account-tile { flex-wrap: wrap; }
+  .of-account-tile > strong { width: 100%; padding-left: 3.25rem; }
+  .of-demo-disclosure > summary { flex-wrap: wrap; gap: .25rem .5rem; }
+  .of-demo-disclosure > summary small { flex-basis: calc(100% - 2rem); }
+}

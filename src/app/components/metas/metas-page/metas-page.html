@@ -93,7 +93,7 @@
             required />
         </label>
 
-        <label>
+        <label *ngIf="regraAtiva('investimentos.objetivos')">
           Objetivo financeiro (opcional)
           <select name="grupoObjetivo" [(ngModel)]="formulario.grupoObjetivoInvestimentoId">
             <option [ngValue]="null">Sem objetivo</option>
@@ -101,7 +101,7 @@
           </select>
         </label>
 
-        <fieldset class="metas-inline-objective">
+        <fieldset *ngIf="regraAtiva('investimentos.objetivos')" class="metas-inline-objective">
           <legend>Criar objetivo sem sair da meta</legend>
           <label for="novoObjetivoNome">Nome do novo objetivo (obrigatório para criar)</label>
             <input id="novoObjetivoNome" name="novoObjetivoNome" maxlength="100" placeholder="Ex.: Aluguel para nós mesmos" [(ngModel)]="novoObjetivo.nome" />
@@ -143,15 +143,15 @@
             <h3>{{ meta.nome }}</h3>
             <span class="metas-mode">{{ meta.tipoDefinicao === 'Valor' ? 'Definida por valor' : 'Definida por percentual' }}</span>
             <p>{{ formatarPercentual(meta.percentualReceita) }} da receita</p>
-            <p *ngIf="meta.objetivoNome"><i class="bi bi-bullseye"></i> {{ meta.objetivoNome }}</p>
-            <p *ngIf="meta.grupoObjetivoInvestimentoId">
+            <p *ngIf="regraAtiva('investimentos.objetivos') && meta.objetivoNome"><i class="bi bi-bullseye"></i> {{ meta.objetivoNome }}</p>
+            <p *ngIf="regraAtiva('investimentos.objetivos') && meta.grupoObjetivoInvestimentoId">
               Confirmado {{ formatarMoeda(meta.valorConfirmado) | financialValue }} · restante {{ formatarMoeda(meta.valorRestante) | financialValue }}
               <span class="metas-mode">{{ meta.statusPlanejamento === 'PlanejadoAtingido' ? 'Planejado atingido' : meta.statusPlanejamento === 'AcimaPlanejado' ? 'Acima do planejado' : 'Abaixo do planejado' }}</span>
             </p>
           </div>
           <strong>{{ formatarMoeda(meta.valorCalculado) | financialValue }}</strong>
           <div class="metas-row-actions">
-            <button *ngIf="meta.grupoObjetivoInvestimentoId" type="button" class="metas-button primary" (click)="confirmarAporte(meta)">Confirmar valor guardado</button>
+            <button *ngIf="regraAtiva('investimentos.objetivos') && meta.grupoObjetivoInvestimentoId" type="button" class="metas-button primary" (click)="confirmarAporte(meta)">Confirmar valor guardado</button>
             <button type="button" class="metas-icon-button" (click)="editarMeta(meta)" aria-label="Editar meta">
               <i class="bi bi-pencil"></i>
             </button>
@@ -163,6 +163,6 @@
       </div>
     </article>
   </section>
-  <app-confirmar-aporte-dialog [investimentos]="investimentos" (confirmado)="carregarResumo()"></app-confirmar-aporte-dialog>
+  <app-confirmar-aporte-dialog *ngIf="regraAtiva('investimentos.objetivos')" [investimentos]="investimentos" (confirmado)="carregarResumo()"></app-confirmar-aporte-dialog>
   </div>
 </div>

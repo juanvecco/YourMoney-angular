@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Optional } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -25,6 +25,7 @@ import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { ViewStateComponent } from '../../shared/view-state/view-state';
 import { FinancialValuePipe } from '../../../pipes/financial-value.pipe';
 import { FinancialValueInputDirective } from '../../../directives/financial-value-input.directive';
+import { RegraNegocioService } from '../../../services/regra-negocio.service';
 
 type ReceitaRecorrenteForm = {
     descricao: string;
@@ -108,13 +109,22 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         private receitaRecorrenteService: ReceitaRecorrenteService,
         private authService: AuthService,
         private router: Router,
-        private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService()
+        private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService(),
+        @Optional() private readonly regras: RegraNegocioService | null = null
     ) {
         this.mesAtual = this.financialContext.period().date;
     }
 
     ngOnInit() {
         this.carregarDadosIniciais();
+        this.regras?.carregar().pipe(takeUntil(this.destroy$)).subscribe({
+            next: () => {
+                this.carregarRecorrencias();
+                this.carregarSugestoesRecorrentes();
+                this.carregarProjecaoReserva();
+            },
+            error: () => {},
+        });
     }
 
     ngOnDestroy() {
@@ -131,6 +141,10 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         this.carregarProjecaoReserva();
     }
 
+    regraAtiva(codigo: string): boolean {
+        return this.regras?.estaAtiva(codigo) ?? true;
+    }
+
     carregarContas() {
         this.despesaService.listarContas()
             .pipe(takeUntil(this.destroy$))
@@ -141,6 +155,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     }
 
     carregarRecorrencias() {
+        if (!this.regraAtiva('receitas.recorrencia')) return;
         this.carregandoRecorrencias = true;
         this.erroRecorrencias = false;
         this.receitaRecorrenteService.listar()
@@ -159,6 +174,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     }
 
     carregarSugestoesRecorrentes() {
+        if (!this.regraAtiva('receitas.recorrencia')) return;
         const mes = this.mesAtual.getMonth() + 1;
         const ano = this.mesAtual.getFullYear();
         this.carregandoSugestoesRecorrentes = true;
@@ -180,6 +196,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     }
 
     carregarProjecaoReserva() {
+        if (!this.regraAtiva('receitas.reserva-emergencia')) return;
         this.carregandoProjecaoReserva = true;
         this.erroProjecaoReserva = false;
         this.receitaRecorrenteService.obterProjecaoReserva()

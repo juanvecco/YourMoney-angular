@@ -21,6 +21,7 @@ import { ViewStateComponent } from '../../shared/view-state/view-state';
 import { FinancialValuePipe } from '../../../pipes/financial-value.pipe';
 import { FinancialValueInputDirective } from '../../../directives/financial-value-input.directive';
 import { OpenFinanceService } from '../../../services/openfinance';
+import { RegraNegocioService } from '../../../services/regra-negocio.service';
 import {
     PluggyDuplicateCandidate,
     PluggyExpenseReconciliationRequest,
@@ -156,7 +157,8 @@ export class DespesasComponent implements OnInit, OnDestroy {
         private authService: AuthService,
         private router: Router,
         private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService(),
-        @Optional() private openFinanceService: OpenFinanceService | null = null
+        @Optional() private openFinanceService: OpenFinanceService | null = null,
+        @Optional() private readonly regras: RegraNegocioService | null = null
     ) {
         this.mesAtual = this.financialContext.period().date;
     }
@@ -164,6 +166,13 @@ export class DespesasComponent implements OnInit, OnDestroy {
     ngOnInit() {
         this.filtrosTransacoes = { ...this.financialContext.expenseFilters() };
         this.carregarDadosIniciais();
+        this.regras?.carregar().pipe(takeUntil(this.destroy$)).subscribe({
+            next: () => {
+                this.carregarRecorrencias();
+                this.carregarSugestoesRecorrentes();
+            },
+            error: () => {},
+        });
     }
 
     ngOnDestroy() {
@@ -182,6 +191,10 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.carregarDespesas();
         this.carregarRecorrencias();
         this.carregarSugestoesRecorrentes();
+    }
+
+    regraAtiva(codigo: string): boolean {
+        return this.regras?.estaAtiva(codigo) ?? true;
     }
 
     carregarContas() {
@@ -548,6 +561,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     }
 
     carregarRecorrencias() {
+        if (!this.regraAtiva('despesas.recorrencia')) return;
         this.carregandoRecorrencias = true;
 
         this.despesaRecorrenteService.listar()
@@ -566,6 +580,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     }
 
     carregarSugestoesRecorrentes() {
+        if (!this.regraAtiva('despesas.recorrencia')) return;
         const mes = this.mesAtual.getMonth() + 1;
         const ano = this.mesAtual.getFullYear();
         this.carregandoSugestoesRecorrentes = true;

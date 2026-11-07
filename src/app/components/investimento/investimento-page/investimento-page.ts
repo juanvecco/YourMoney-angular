@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, Optional, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -26,6 +26,7 @@ import { GrupoObjetivoDialogComponent } from '../grupo-objetivo-dialog/grupo-obj
 import { FinancialValuePipe } from '../../../pipes/financial-value.pipe';
 import { FinancialValueInputDirective } from '../../../directives/financial-value-input.directive';
 import { OpenFinanceService } from '../../../services/openfinance';
+import { RegraNegocioService } from '../../../services/regra-negocio.service';
 import {
   PluggyDuplicateCandidate,
   PluggyTransactionPreview,
@@ -66,7 +67,7 @@ interface OpcaoReserva extends SalarioElegivelInvestimento {
   templateUrl: './investimento-page.html',
   styleUrls: ['./investimento-page.scss']
 })
-export class InvestimentoPageComponent implements OnDestroy {
+export class InvestimentoPageComponent implements OnInit, OnDestroy {
   @ViewChild(GrupoObjetivoDialogComponent) grupoDialog?: GrupoObjetivoDialogComponent;
   private destroy$ = new Subject<void>();
   private revisaoConsulta = 0;
@@ -129,11 +130,26 @@ export class InvestimentoPageComponent implements OnDestroy {
     private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService(),
     private investimentoGrupoService: InvestimentoGrupoService = undefined!,
     private feedbackService: FeedbackService = new FeedbackService(),
-    private openFinanceService: OpenFinanceService = undefined!
+    private openFinanceService: OpenFinanceService = undefined!,
+    @Optional() private readonly regras: RegraNegocioService | null = null
   ) {
     this.carregarGrupos();
     this.carregarResumoObjetivos();
     this.carregarInvestimentos();
+  }
+
+  ngOnInit(): void {
+    this.regras?.carregar().pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => {
+        this.carregarGrupos();
+        this.carregarResumoObjetivos();
+      },
+      error: () => {},
+    });
+  }
+
+  regraAtiva(codigo: string): boolean {
+    return this.regras?.estaAtiva(codigo) ?? true;
   }
 
   ngOnDestroy(): void {
@@ -168,6 +184,7 @@ export class InvestimentoPageComponent implements OnDestroy {
   }
 
   alternarOpenFinance(ativo: boolean): void {
+    if (ativo && !this.regraAtiva('openfinance.visivel')) return;
     this.mostrarTransacoesOpenFinance = ativo;
     if (ativo) {
       this.carregarTransacoesOpenFinance();
@@ -184,6 +201,7 @@ export class InvestimentoPageComponent implements OnDestroy {
   }
 
   alternarAtivosOpenFinance(ativo: boolean): void {
+    if (ativo && !this.regraAtiva('investimentos.ativos-openfinance')) return;
     this.mostrarAtivosOpenFinance = ativo;
     if (ativo) {
       this.carregarAtivosOpenFinance();
@@ -338,6 +356,7 @@ export class InvestimentoPageComponent implements OnDestroy {
             this.fecharModal();
           }
           this.carregarInvestimentos();
+          if (request.action !== 'link') this.carregarResumoObjetivos();
           this.carregarAtivosOpenFinance();
           void this.feedbackService.success(
             request.action === 'link' ? 'Ativo vinculado'
@@ -541,7 +560,10 @@ export class InvestimentoPageComponent implements OnDestroy {
           this.confirmarDuplicidadeOpenFinance = false;
           this.erroReconciliacaoOpenFinance = null;
           if (request.action === 'create') this.fecharModal();
-          if (request.action !== 'link') this.carregarInvestimentos();
+          if (request.action !== 'link') {
+            this.carregarInvestimentos();
+            this.carregarResumoObjetivos();
+          }
           this.carregarTransacoesOpenFinance();
           void this.feedbackService.success(
             request.action === 'link' ? 'Investimento vinculado' : request.action === 'replace' ? 'Investimento atualizado' : 'Investimento cadastrado',
@@ -668,6 +690,7 @@ export class InvestimentoPageComponent implements OnDestroy {
         next: () => {
           this.fecharModal();
           this.carregarInvestimentos();
+          this.carregarResumoObjetivos();
           this.mostrarSucesso();
         },
         error: erro => {
@@ -686,6 +709,7 @@ export class InvestimentoPageComponent implements OnDestroy {
         .subscribe({
           next: () => {
             this.carregarInvestimentos();
+            this.carregarResumoObjetivos();
             void this.feedbackService.success('Investimento excluído');
           },
           error: () => void this.feedbackService.error('Não foi possível excluir o investimento')
@@ -853,6 +877,7 @@ export class InvestimentoPageComponent implements OnDestroy {
   }
 
   private carregarSalariosElegiveis(investimentoHistorico?: Investimento): void {
+    if (!this.regraAtiva('investimentos.renda-salarial')) return;
     this.carregandoSalarios = true;
     this.salariosElegiveis = [];
     this.receitaRecorrenteService.listarElegiveisParaInvestimento()
@@ -982,6 +1007,7 @@ export class InvestimentoPageComponent implements OnDestroy {
   }
 
   private carregarGrupos(): void {
+    if (!this.regraAtiva('investimentos.objetivos')) return;
     if (!this.investimentoGrupoService) return;
     this.investimentoGrupoService.listar(true).pipe(takeUntil(this.destroy$)).subscribe({
       next: grupos => this.grupos = grupos,
@@ -990,6 +1016,7 @@ export class InvestimentoPageComponent implements OnDestroy {
   }
 
   private carregarResumoObjetivos(): void {
+    if (!this.regraAtiva('investimentos.objetivos')) return;
     if (!this.investimentoGrupoService) return;
     const periodo = this.financialContext.period().date;
     this.investimentoGrupoService.resumo(periodo.getMonth() + 1, periodo.getFullYear())
