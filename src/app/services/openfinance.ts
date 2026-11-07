@@ -9,6 +9,7 @@ import {
 import {
   PluggyAccount,
   PluggyConnection,
+  PluggyConnectionStatus,
   PluggyConnectToken,
   PluggyCredentialStatus,
   PluggyExpenseReconciliationRequest,
@@ -30,6 +31,10 @@ export class OpenFinanceService {
   private readonly baseUrl = environment.apiUrl;
 
   constructor(private readonly http: HttpClient) {}
+
+  obterStatusConexao(): Observable<PluggyConnectionStatus> {
+    return this.http.get<PluggyConnectionStatus>(`${this.baseUrl}/OpenFinance/connection-status`);
+  }
 
   reconciliarDespesaPluggy(request: PluggyExpenseReconciliationRequest, carteiraId?: string): Observable<PluggyExpenseReconciliationResult> {
     return this.http.post<PluggyExpenseReconciliationResult>(`${this.baseUrl}/OpenFinance/real-transactions/reconcile`, request, {

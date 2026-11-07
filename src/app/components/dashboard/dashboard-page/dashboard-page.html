@@ -5,6 +5,18 @@
             <app-month-picker pageHeaderActions [period]="mesAtual" (periodChange)="selecionarMes($event)"></app-month-picker>
         </app-page-header>
 
+        @if (mostrarConviteOpenFinance) {
+            <section class="ym-open-finance-invite" aria-labelledby="openFinanceInviteTitle">
+                <div class="ym-open-finance-invite-icon" aria-hidden="true"><i class="bi bi-bank"></i></div>
+                <div class="ym-open-finance-invite-copy">
+                    <p class="ym-open-finance-invite-eyebrow">Uma visão mais completa</p>
+                    <h2 id="openFinanceInviteTitle">Suas contas, em uma só visão.</h2>
+                    <p>Reúna saldos e transações das instituições que você escolher. Você revisa cada lançamento antes de incluí-lo no seu controle.</p>
+                </div>
+                <button type="button" class="ym-button primary" (click)="conhecerOpenFinance()">Entender como conectar</button>
+            </section>
+        }
+
         @if (estadoResumo !== 'loadedWithData') {
             <app-view-state [state]="estadoResumo" [message]="mensagemResumo"
                 [retryAvailable]="estadoResumo === 'loadError'" (retry)="carregarDadosMesAtual()"></app-view-state>

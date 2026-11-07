@@ -162,3 +162,38 @@
         margin-top: 0.5rem;
     }
 }
+.ym-open-finance-invite {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid color-mix(in srgb, var(--ym-primary) 35%, var(--ym-border));
+    border-radius: var(--ym-radius-lg);
+    background: linear-gradient(110deg, color-mix(in srgb, var(--ym-primary) 12%, var(--ym-surface)), var(--ym-surface));
+}
+
+.ym-open-finance-invite-icon {
+    display: grid;
+    flex: 0 0 2.75rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    place-items: center;
+    border-radius: var(--ym-radius-sm);
+    color: var(--ym-primary);
+    background: var(--ym-surface-strong);
+    font-size: 1.2rem;
+}
+
+.ym-open-finance-invite-copy { flex: 1; min-width: 0; }
+.ym-open-finance-invite-copy h2 { margin: .1rem 0 .25rem; font-size: 1.15rem; }
+.ym-open-finance-invite-copy p { margin: 0; color: var(--ym-muted); font-size: .88rem; }
+.ym-open-finance-invite-copy .ym-open-finance-invite-eyebrow { color: var(--ym-primary); font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.ym-open-finance-invite .ym-button { flex: 0 0 auto; }
+
+@media (max-width: 760px) {
+    .ym-open-finance-invite { align-items: flex-start; flex-wrap: wrap; }
+    .ym-open-finance-invite-copy { flex-basis: calc(100% - 3.75rem); }
+    .ym-open-finance-invite .ym-button { width: 100%; }
+}
+

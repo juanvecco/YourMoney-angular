@@ -18,6 +18,7 @@ import { ViewStateComponent } from '../../shared/view-state/view-state';
 import { FinancialValuePipe } from '../../../pipes/financial-value.pipe';
 import { FinancialVisibilityService } from '../../../services/financial-visibility.service';
 import { ResumoFinanceiroMensal } from '../../../models/movimentacao.model';
+import { OpenFinanceService } from '../../../services/openfinance';
 
 interface HistoricoFinanceiroItem extends ResumoFinanceiroMensal {
     rotulo: string;
@@ -44,6 +45,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     historicoFinanceiro: HistoricoFinanceiroItem[] = [];
     estadoHistorico: FinancialViewState = 'loading';
     mensagemHistorico = '';
+    mostrarConviteOpenFinance = false;
 
     private graficoFinanceiro?: Chart;
     private graficoHistorico?: Chart;
@@ -80,7 +82,8 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
         private themeService: ThemeService,
         private financialContext: FinancialNavigationContextService,
         private movimentacaoService: MovimentacaoService,
-        private readonly financialVisibility: FinancialVisibilityService
+        private readonly financialVisibility: FinancialVisibilityService,
+        private readonly openFinanceService: OpenFinanceService
     ) {
         this.mesAtual = this.financialContext.period().date;
         effect(() => {
@@ -95,6 +98,14 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
 
     ngOnInit(): void {
         this.carregarDadosMesAtual();
+        this.openFinanceService.obterStatusConexao().subscribe({
+            next: status => this.mostrarConviteOpenFinance = !status.hasConnections,
+            error: () => this.mostrarConviteOpenFinance = false,
+        });
+    }
+
+    conhecerOpenFinance(): void {
+        void this.router.navigate(['/openfinance']);
     }
 
     ngAfterViewInit(): void {

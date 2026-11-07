@@ -23,6 +23,10 @@ export interface PluggyConnection {
   connectedAt: string;
 }
 
+export interface PluggyConnectionStatus {
+  hasConnections: boolean;
+}
+
 export interface PluggyAccount {
   connectionId: string;
   institutionName: string;

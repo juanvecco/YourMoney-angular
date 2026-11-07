@@ -7,6 +7,7 @@ import { DespesaService } from '../../../services/despesa';
 import { InvestimentoService } from '../../../services/investimento';
 import { AuthService } from '../../../services/auth.service';
 import { MovimentacaoService } from '../../../services/movimentacao';
+import { OpenFinanceService } from '../../../services/openfinance';
 
 describe('DashboardPageComponent', () => {
   let fixture: ComponentFixture<DashboardPageComponent>;
@@ -17,6 +18,7 @@ describe('DashboardPageComponent', () => {
   let authService: jasmine.SpyObj<AuthService>;
   let router: jasmine.SpyObj<Router>;
   let movimentacaoService: jasmine.SpyObj<MovimentacaoService>;
+  let openFinanceService: jasmine.SpyObj<OpenFinanceService>;
 
   beforeEach(async () => {
     receitaService = jasmine.createSpyObj<ReceitaService>('ReceitaService', ['obterPorReferencia']);
@@ -27,6 +29,8 @@ describe('DashboardPageComponent', () => {
     router.createUrlTree.and.returnValue({} as ReturnType<Router['createUrlTree']>);
     router.serializeUrl.and.returnValue('/');
     movimentacaoService = jasmine.createSpyObj<MovimentacaoService>('MovimentacaoService', ['consultar']);
+    openFinanceService = jasmine.createSpyObj<OpenFinanceService>('OpenFinanceService', ['obterStatusConexao']);
+    openFinanceService.obterStatusConexao.and.returnValue(of({ hasConnections: true }));
     movimentacaoService.consultar.and.returnValue(of({
       itens: [], pagina: 1, tamanhoPagina: 10, totalItens: 0, totalPaginas: 0,
       totais: { receitas: 0, despesas: 0, investimentos: 0, saldo: 0 },
@@ -46,12 +50,35 @@ describe('DashboardPageComponent', () => {
         { provide: DespesaService, useValue: despesaService },
         { provide: InvestimentoService, useValue: investimentoService },
         { provide: MovimentacaoService, useValue: movimentacaoService },
+        { provide: OpenFinanceService, useValue: openFinanceService },
         { provide: AuthService, useValue: authService }
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(DashboardPageComponent);
     component = fixture.componentInstance;
+  });
+
+  it('invites only users without a connected institution', () => {
+    openFinanceService.obterStatusConexao.and.returnValue(of({ hasConnections: false }));
+    fixture.detectChanges();
+
+    const invite = fixture.nativeElement.querySelector('.ym-open-finance-invite') as HTMLElement;
+    expect(invite?.textContent).toContain('Suas contas, em uma só visão');
+    expect(invite?.textContent).not.toContain('Pluggy');
+    invite.querySelector('button')?.click();
+    expect(router.navigate).toHaveBeenCalledWith(['/openfinance']);
+  });
+
+  it('hides the invitation when a bank is already connected', () => {
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.ym-open-finance-invite')).toBeNull();
+  });
+
+  it('hides the invitation when connection status cannot be checked', () => {
+    openFinanceService.obterStatusConexao.and.returnValue(throwError(() => new Error('offline')));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.ym-open-finance-invite')).toBeNull();
   });
 
   it('maps positive monthly totals without adding the positive balance to the chart', () => {
