@@ -34,6 +34,14 @@ interface HistoricoFinanceiroItem extends ResumoFinanceiroMensal {
 export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy {
     @ViewChild('graficoFinanceiroCanvas') graficoFinanceiroCanvas?: ElementRef<HTMLCanvasElement>;
     @ViewChild('graficoHistoricoCanvas') graficoHistoricoCanvas?: ElementRef<HTMLCanvasElement>;
+    @ViewChild('openFinanceInviteDialog') openFinanceInviteDialog?: ElementRef<HTMLDialogElement>;
+
+    readonly slidesOpenFinance = [
+        { titulo: 'Bancos em um só lugar', descricao: 'Acompanhe as instituições que você escolher em uma visão mais clara.', icone: 'bi-bank' },
+        { titulo: 'Movimentos organizados', descricao: 'Consulte saldos e transações sem montar planilhas de extratos.', icone: 'bi-arrow-left-right' },
+        { titulo: 'Você decide o que entra', descricao: 'Revise cada lançamento antes de incluí-lo no seu controle.', icone: 'bi-check2-circle' },
+    ] as const;
+    slideOpenFinanceAtual = 0;
 
     receitas: Receita[] = [];
     despesas: Despesa[] = [];
@@ -99,17 +107,45 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     ngOnInit(): void {
         this.carregarDadosMesAtual();
         this.openFinanceService.obterStatusConexao().subscribe({
-            next: status => this.mostrarConviteOpenFinance = !status.hasConnections,
+            next: status => {
+                this.mostrarConviteOpenFinance = !status.hasConnections && !this.conviteOpenFinanceDispensado();
+                this.abrirConviteOpenFinance();
+            },
             error: () => this.mostrarConviteOpenFinance = false,
         });
     }
 
-    conhecerOpenFinance(): void {
-        void this.router.navigate(['/openfinance']);
+    selecionarSlideOpenFinance(indice: number): void {
+        if (indice >= 0 && indice < this.slidesOpenFinance.length) this.slideOpenFinanceAtual = indice;
+    }
+
+    fecharConviteOpenFinance(): void {
+        this.openFinanceInviteDialog?.nativeElement.close();
+        this.conviteOpenFinanceFechado();
+    }
+
+    conviteOpenFinanceFechado(): void {
+        this.mostrarConviteOpenFinance = false;
+        try { sessionStorage.setItem(this.chaveConviteOpenFinance(), '1'); } catch { /* Navegação privada pode bloquear armazenamento. */ }
+    }
+
+    private conviteOpenFinanceDispensado(): boolean {
+        try { return sessionStorage.getItem(this.chaveConviteOpenFinance()) === '1'; } catch { return false; }
+    }
+
+    private chaveConviteOpenFinance(): string {
+        const email = localStorage.getItem('user_email') ?? '';
+        return `yourmoney.openfinance.invite.dismissed:${email}`;
+    }
+
+    private abrirConviteOpenFinance(): void {
+        const dialog = this.openFinanceInviteDialog?.nativeElement;
+        if (this.mostrarConviteOpenFinance && dialog && !dialog.open) dialog.showModal();
     }
 
     ngAfterViewInit(): void {
         this.viewInicializada = true;
+        this.abrirConviteOpenFinance();
         this.atualizarGraficoFinanceiro();
         this.atualizarGraficoHistorico();
     }

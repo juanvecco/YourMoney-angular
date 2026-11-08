@@ -162,38 +162,98 @@
         margin-top: 0.5rem;
     }
 }
-.ym-open-finance-invite {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    padding: 1.1rem 1.25rem;
-    border: 1px solid color-mix(in srgb, var(--ym-primary) 35%, var(--ym-border));
+.ym-open-finance-dialog {
+    position: fixed;
+    width: min(850px, calc(100vw - 1.5rem));
+    max-width: none;
+    max-height: min(90dvh, 760px);
+    padding: 0;
+    border: 1px solid var(--ym-border);
     border-radius: var(--ym-radius-lg);
-    background: linear-gradient(110deg, color-mix(in srgb, var(--ym-primary) 12%, var(--ym-surface)), var(--ym-surface));
+    color: var(--ym-text);
+    background: var(--ym-surface);
+    box-shadow: 0 28px 80px rgba(0, 0, 0, .35);
+    overflow: auto;
 }
 
-.ym-open-finance-invite-icon {
+.ym-open-finance-dialog::backdrop {
+    background: rgba(5, 14, 32, .72);
+    backdrop-filter: blur(4px);
+}
+
+.ym-open-finance-dialog-layout {
     display: grid;
-    flex: 0 0 2.75rem;
-    width: 2.75rem;
-    height: 2.75rem;
-    place-items: center;
-    border-radius: var(--ym-radius-sm);
-    color: var(--ym-primary);
-    background: var(--ym-surface-strong);
-    font-size: 1.2rem;
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+    min-height: 470px;
 }
 
-.ym-open-finance-invite-copy { flex: 1; min-width: 0; }
-.ym-open-finance-invite-copy h2 { margin: .1rem 0 .25rem; font-size: 1.15rem; }
-.ym-open-finance-invite-copy p { margin: 0; color: var(--ym-muted); font-size: .88rem; }
-.ym-open-finance-invite-copy .ym-open-finance-invite-eyebrow { color: var(--ym-primary); font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-.ym-open-finance-invite .ym-button { flex: 0 0 auto; }
+.ym-open-finance-slide {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 2rem;
+    color: #fff;
+    background: radial-gradient(circle at 15% 15%, rgba(43, 215, 214, .38), transparent 38%),
+        linear-gradient(145deg, #12336d, #081a3a 75%);
+}
+
+.ym-open-finance-slide-art {
+    position: relative;
+    display: grid;
+    flex: 1;
+    min-height: 190px;
+    place-items: center;
+}
+
+.ym-open-finance-slide-art span {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, .3);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .14);
+    box-shadow: 0 18px 38px rgba(0, 0, 0, .12);
+    backdrop-filter: blur(8px);
+}
+
+.ym-open-finance-art-bank { width: 135px; height: 104px; transform: translate(-48px, -16px) rotate(-10deg); font-size: 2.4rem; }
+.ym-open-finance-art-transfer { width: 115px; height: 105px; transform: translate(70px, 25px) rotate(10deg); font-size: 2.1rem; }
+.ym-open-finance-art-check { width: 48px; height: 48px; transform: translate(22px, -73px); color: #0a3458; background: #7be7d4 !important; font-size: 1.45rem; }
+.ym-open-finance-slide-step { color: #a5f3e8; font-size: .72rem; font-weight: 800; letter-spacing: .12em; }
+.ym-open-finance-slide-content h3 { margin: .5rem 0; font-size: 1.45rem; line-height: 1.15; }
+.ym-open-finance-slide-content p { max-width: 28ch; margin: 0; color: #d2e8fb; font-size: .9rem; }
+.ym-open-finance-slide-controls { display: flex; gap: .55rem; margin-top: 1.6rem; }
+.ym-open-finance-slide-controls button { width: 10px; height: 10px; padding: 0; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .42); cursor: pointer; }
+.ym-open-finance-slide-controls button.active { width: 28px; background: #81ead8; }
+.ym-open-finance-slide-controls button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+.ym-open-finance-dialog-content { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 2.5rem 2.25rem 2rem; }
+.ym-open-finance-dialog-close { position: absolute; z-index: 1; top: 1rem; right: 1rem; display: grid; width: 36px; height: 36px; place-items: center; border: 0; border-radius: 50%; color: var(--ym-muted); background: var(--ym-surface-strong); cursor: pointer; }
+.ym-open-finance-dialog-eyebrow { margin: 0 0 .7rem; color: var(--ym-primary); font-size: .72rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.ym-open-finance-dialog-content h2 { max-width: 15ch; margin: 0 0 1rem; font-size: clamp(1.65rem, 3vw, 2.1rem); line-height: 1.13; }
+.ym-open-finance-dialog-content > p:not(.ym-open-finance-dialog-eyebrow) { margin: 0; color: var(--ym-muted); font-size: .93rem; line-height: 1.55; }
+.ym-open-finance-dialog-benefits { display: grid; gap: .6rem; margin: 1.4rem 0; }
+.ym-open-finance-dialog-benefits p { display: flex; align-items: start; gap: .55rem; margin: 0; font-size: .88rem; }
+.ym-open-finance-dialog-benefits i { color: var(--ym-primary); font-size: 1rem; }
+.ym-open-finance-dialog-actions { margin-top: auto; }
+.ym-open-finance-dialog-actions p { margin: 0 0 .85rem; color: var(--ym-muted); font-size: .78rem; line-height: 1.45; }
+.ym-open-finance-dialog-actions .ym-button { display: flex; justify-content: center; align-items: center; gap: .6rem; width: 100%; text-align: center; }
+.ym-open-finance-dialog-later { display: block; margin: .85rem auto 0; padding: .25rem .5rem; border: 0; color: var(--ym-muted); background: none; cursor: pointer; font-size: .84rem; }
+.ym-open-finance-dialog-later:hover { color: var(--ym-text); }
 
 @media (max-width: 760px) {
-    .ym-open-finance-invite { align-items: flex-start; flex-wrap: wrap; }
-    .ym-open-finance-invite-copy { flex-basis: calc(100% - 3.75rem); }
-    .ym-open-finance-invite .ym-button { width: 100%; }
+    .ym-open-finance-dialog-layout { grid-template-columns: 1fr; }
+    .ym-open-finance-slide { min-height: 220px; padding: 1.2rem 1.5rem; }
+    .ym-open-finance-slide-art { min-height: 95px; }
+    .ym-open-finance-slide-art span { border-radius: 12px; }
+    .ym-open-finance-art-bank { width: 80px; height: 62px; transform: translate(-38px, 2px) rotate(-10deg); font-size: 1.45rem; }
+    .ym-open-finance-art-transfer { width: 70px; height: 62px; transform: translate(44px, 17px) rotate(10deg); font-size: 1.35rem; }
+    .ym-open-finance-art-check { width: 32px; height: 32px; transform: translate(15px, -35px); font-size: 1rem; }
+    .ym-open-finance-slide-content h3 { font-size: 1.15rem; }
+    .ym-open-finance-slide-content p { max-width: none; font-size: .82rem; }
+    .ym-open-finance-slide-controls { margin-top: .9rem; }
+    .ym-open-finance-dialog-content { padding: 1.5rem; }
+    .ym-open-finance-dialog-content h2 { max-width: 20ch; }
+    .ym-open-finance-dialog-close { color: #fff; background: rgba(255, 255, 255, .2); }
 }
 

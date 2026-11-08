@@ -21,6 +21,8 @@ describe('DashboardPageComponent', () => {
   let openFinanceService: jasmine.SpyObj<OpenFinanceService>;
 
   beforeEach(async () => {
+    localStorage.setItem('user_email', 'dashboard-test@example.com');
+    sessionStorage.removeItem('yourmoney.openfinance.invite.dismissed:dashboard-test@example.com');
     receitaService = jasmine.createSpyObj<ReceitaService>('ReceitaService', ['obterPorReferencia']);
     despesaService = jasmine.createSpyObj<DespesaService>('DespesaService', ['obterPorReferencia', 'listarCategorias']);
     investimentoService = jasmine.createSpyObj<InvestimentoService>('InvestimentoService', ['obterPorReferencia']);
@@ -59,26 +61,49 @@ describe('DashboardPageComponent', () => {
     component = fixture.componentInstance;
   });
 
-  it('invites only users without a connected institution', () => {
+  afterEach(() => {
+    localStorage.removeItem('user_email');
+    sessionStorage.removeItem('yourmoney.openfinance.invite.dismissed:dashboard-test@example.com');
+  });
+
+  it('shows the modal only to users without a connected institution', () => {
     openFinanceService.obterStatusConexao.and.returnValue(of({ hasConnections: false }));
     fixture.detectChanges();
 
-    const invite = fixture.nativeElement.querySelector('.ym-open-finance-invite') as HTMLElement;
-    expect(invite?.textContent).toContain('Suas contas, em uma só visão');
-    expect(invite?.textContent).not.toContain('Pluggy');
-    invite.querySelector('button')?.click();
-    expect(router.navigate).toHaveBeenCalledWith(['/openfinance']);
+    const dialog = fixture.nativeElement.querySelector('.ym-open-finance-dialog') as HTMLDialogElement;
+    expect(dialog.open).toBeTrue();
+    expect(dialog.textContent).toContain('Suas contas, em uma só visão');
+    const signup = dialog.querySelector<HTMLAnchorElement>('a[href="https://meu.pluggy.ai/"]');
+    expect(signup?.target).toBe('_blank');
+    expect(signup?.rel).toContain('noopener');
+    expect(router.navigate).not.toHaveBeenCalledWith(['/openfinance']);
+  });
+
+  it('cycles through benefits and remembers dismissal for the current user session', () => {
+    openFinanceService.obterStatusConexao.and.returnValue(of({ hasConnections: false }));
+    fixture.detectChanges();
+    const dialog = fixture.nativeElement.querySelector('.ym-open-finance-dialog') as HTMLDialogElement;
+    const secondSlide = dialog.querySelector<HTMLButtonElement>('[aria-label="Mostrar benefício 2"]');
+    secondSlide?.click();
+    fixture.detectChanges();
+    expect(dialog.textContent).toContain('Movimentos organizados');
+
+    dialog.querySelector<HTMLButtonElement>('.ym-open-finance-dialog-later')?.click();
+    expect(dialog.open).toBeFalse();
+    expect(sessionStorage.getItem('yourmoney.openfinance.invite.dismissed:dashboard-test@example.com')).toBe('1');
+    component.ngOnInit();
+    expect(dialog.open).toBeFalse();
   });
 
   it('hides the invitation when a bank is already connected', () => {
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.ym-open-finance-invite')).toBeNull();
+    expect((fixture.nativeElement.querySelector('.ym-open-finance-dialog') as HTMLDialogElement).open).toBeFalse();
   });
 
   it('hides the invitation when connection status cannot be checked', () => {
     openFinanceService.obterStatusConexao.and.returnValue(throwError(() => new Error('offline')));
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.ym-open-finance-invite')).toBeNull();
+    expect((fixture.nativeElement.querySelector('.ym-open-finance-dialog') as HTMLDialogElement).open).toBeFalse();
   });
 
   it('maps positive monthly totals without adding the positive balance to the chart', () => {

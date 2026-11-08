@@ -5,17 +5,48 @@
             <app-month-picker pageHeaderActions [period]="mesAtual" (periodChange)="selecionarMes($event)"></app-month-picker>
         </app-page-header>
 
-        @if (mostrarConviteOpenFinance) {
-            <section class="ym-open-finance-invite" aria-labelledby="openFinanceInviteTitle">
-                <div class="ym-open-finance-invite-icon" aria-hidden="true"><i class="bi bi-bank"></i></div>
-                <div class="ym-open-finance-invite-copy">
-                    <p class="ym-open-finance-invite-eyebrow">Uma visão mais completa</p>
-                    <h2 id="openFinanceInviteTitle">Suas contas, em uma só visão.</h2>
-                    <p>Reúna saldos e transações das instituições que você escolher. Você revisa cada lançamento antes de incluí-lo no seu controle.</p>
+        <dialog #openFinanceInviteDialog class="ym-open-finance-dialog" aria-labelledby="openFinanceInviteTitle"
+            aria-describedby="openFinanceInviteDescription" (close)="conviteOpenFinanceFechado()">
+            <button type="button" class="ym-open-finance-dialog-close" aria-label="Fechar convite" autofocus
+                (click)="fecharConviteOpenFinance()"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+            <div class="ym-open-finance-dialog-layout">
+                <div class="ym-open-finance-slide" aria-label="Benefícios da conexão bancária">
+                    <div class="ym-open-finance-slide-art" aria-hidden="true">
+                        <span class="ym-open-finance-art-bank"><i class="bi bi-bank"></i></span>
+                        <span class="ym-open-finance-art-transfer"><i class="bi" [ngClass]="slidesOpenFinance[slideOpenFinanceAtual].icone"></i></span>
+                        <span class="ym-open-finance-art-check"><i class="bi bi-check-lg"></i></span>
+                    </div>
+                    <div class="ym-open-finance-slide-content" aria-live="polite">
+                        <span class="ym-open-finance-slide-step">0{{ slideOpenFinanceAtual + 1 }} / 0{{ slidesOpenFinance.length }}</span>
+                        <h3>{{ slidesOpenFinance[slideOpenFinanceAtual].titulo }}</h3>
+                        <p>{{ slidesOpenFinance[slideOpenFinanceAtual].descricao }}</p>
+                    </div>
+                    <div class="ym-open-finance-slide-controls" aria-label="Escolher benefício">
+                        @for (slide of slidesOpenFinance; track slide.titulo; let indice = $index) {
+                            <button type="button" [class.active]="slideOpenFinanceAtual === indice"
+                                [attr.aria-label]="'Mostrar benefício ' + (indice + 1)"
+                                [attr.aria-current]="slideOpenFinanceAtual === indice ? 'true' : null"
+                                (click)="selecionarSlideOpenFinance(indice)"></button>
+                        }
+                    </div>
                 </div>
-                <button type="button" class="ym-button primary" (click)="conhecerOpenFinance()">Entender como conectar</button>
-            </section>
-        }
+                <div class="ym-open-finance-dialog-content">
+                    <p class="ym-open-finance-dialog-eyebrow">Uma visão mais completa</p>
+                    <h2 id="openFinanceInviteTitle">Suas contas, em uma só visão.</h2>
+                    <p id="openFinanceInviteDescription">Reúna saldos e transações das instituições que você escolher. No YourMoney, cada lançamento só entra depois da sua revisão.</p>
+                    <div class="ym-open-finance-dialog-benefits">
+                        <p><i class="bi bi-shield-check" aria-hidden="true"></i> Você escolhe quais bancos autorizar.</p>
+                        <p><i class="bi bi-check2-square" aria-hidden="true"></i> Você confirma o que entra no seu controle.</p>
+                    </div>
+                    <div class="ym-open-finance-dialog-actions">
+                        <p>Este piloto usa uma conta pessoal no Meu Pluggy, gratuita para até 5 conexões. Depois do cadastro, volte ao YourMoney para configurar o acesso.</p>
+                        <a class="ym-button primary" href="https://meu.pluggy.ai/" target="_blank" rel="noopener noreferrer"
+                            (click)="fecharConviteOpenFinance()">Criar conta no Meu Pluggy <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+                        <button type="button" class="ym-open-finance-dialog-later" (click)="fecharConviteOpenFinance()">Agora não</button>
+                    </div>
+                </div>
+            </div>
+        </dialog>
 
         @if (estadoResumo !== 'loadedWithData') {
             <app-view-state [state]="estadoResumo" [message]="mensagemResumo"
