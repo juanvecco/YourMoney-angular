@@ -1,4 +1,4 @@
-import { NEVER, of, throwError } from 'rxjs';
+import { NEVER, of, Subject, throwError } from 'rxjs';
 import Swal from 'sweetalert2';
 import { DespesasComponent } from './despesas-page';
 import { ConsultaDespesasResponse, Despesa, DespesaService } from '../../../services/despesa';
@@ -6,6 +6,9 @@ import { DespesaRecorrenteService } from '../../../services/despesa-recorrente';
 import { DespesaRecorrenteResponse, SugestaoDespesaRecorrenteResponse } from '../../../models/despesa-recorrente.model';
 import { AuthService } from '../../../services/auth.service';
 import { Router } from '@angular/router';
+import { ConciliacaoFaturaService } from '../../../services/conciliacao-fatura';
+import { ResumoFatura } from '../../../models/conciliacao-fatura.model';
+import { FinancialNavigationContextService } from '../../../services/financial-navigation-context.service';
 
 describe('DespesasComponent', () => {
   let component: DespesasComponent;
@@ -62,6 +65,7 @@ describe('DespesasComponent', () => {
         'criarDespesa',
         'criarParcelamento',
         'atualizarDespesa',
+        'definirConferencia',
         'deletarDespesa',
         'setCategorias'
       ],
@@ -188,6 +192,33 @@ describe('DespesasComponent', () => {
       idCategoriaEspecifica: ''
     };
   }
+
+  it('discards stale bill responses after changing month', () => {
+    const fatura = jasmine.createSpyObj<ConciliacaoFaturaService>('ConciliacaoFaturaService', ['obter', 'salvar']);
+    const primeira = new Subject<ResumoFatura>();
+    const segunda: ResumoFatura = { idContaFinanceira: 'conta-1', mes: 12, ano: 2026,
+      valorInformado: 500, totalCadastrado: 320, diferenca: 180, quantidadeDespesas: 2, quantidadePendentes: 1 };
+    fatura.obter.and.returnValues(primeira.asObservable(), of(segunda));
+    component = new DespesasComponent(despesaService, despesaRecorrenteService, authService, router,
+      new FinancialNavigationContextService(), null, null, fatura);
+    component.contaConciliacaoId = 'conta-1';
+    component.mesAtual = new Date(2026, 10, 1);
+    component.carregarResumoFatura();
+    component.mesAtual = new Date(2026, 11, 1);
+    component.carregarResumoFatura();
+    primeira.next({ ...segunda, mes: 11, valorInformado: 100 });
+    expect(component.resumoFatura).toEqual(segunda);
+    expect(component.valorFaturaInput).toBe(500);
+  });
+
+  it('keeps the last saved review state when the write fails', () => {
+    const despesa: Despesa = { id: 'd1', descricao: 'Compra', valor: 10, data: '2026-11-01',
+      idContaFinanceira: 'c1', idCategoria: 'cat1', conferida: false };
+    despesaService.definirConferencia.and.returnValue(throwError(() => new Error('offline')));
+    component.alternarConferencia(despesa);
+    expect(despesa.conferida).toBeFalse();
+    expect(component.erroConferencia).toContain('Não foi possível');
+  });
 
   function criarSugestao(overrides: Partial<SugestaoDespesaRecorrenteResponse> = {}): SugestaoDespesaRecorrenteResponse {
     return {

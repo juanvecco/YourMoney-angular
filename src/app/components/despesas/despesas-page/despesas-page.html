@@ -28,6 +28,45 @@
             </article>
         </section>
 
+        <section class="ym-card ym-card-pad ym-bill-reconcile" aria-labelledby="bill-reconcile-title">
+            <div class="ym-section-header">
+                <div>
+                    <h2 id="bill-reconcile-title" class="ym-section-title">Conferir fatura do cartão</h2>
+                    <p class="ym-subtitle">Compare o valor do cartão com as despesas brutas cadastradas neste mês.</p>
+                </div>
+            </div>
+            <div class="ym-bill-reconcile__form">
+                <label for="conta-conciliacao">Conta do cartão
+                    <select id="conta-conciliacao" class="form-select" name="contaConciliacao"
+                        [(ngModel)]="contaConciliacaoId" (change)="selecionarContaConciliacao()">
+                        <option value="">Selecione uma conta</option>
+                        <option *ngFor="let conta of contas" [value]="conta.id">{{ conta.descricao }}</option>
+                    </select>
+                </label>
+                <label for="valor-fatura">Valor atual da fatura (R$)
+                    <input id="valor-fatura" class="form-control" type="number" min="0" step="0.01"
+                        financialValueInput name="valorFatura" [(ngModel)]="valorFaturaInput"
+                        [disabled]="!contaConciliacaoId || carregandoResumoFatura">
+                </label>
+                <button type="button" class="ym-button primary" (click)="salvarValorFatura()"
+                    [disabled]="!contaConciliacaoId || carregandoResumoFatura || salvandoValorFatura">
+                    {{ salvandoValorFatura ? 'Salvando...' : 'Salvar valor' }}
+                </button>
+            </div>
+            <p *ngIf="!contaConciliacaoId" class="ym-subtitle">Escolha a conta para comparar a fatura deste mês.</p>
+            <p *ngIf="carregandoResumoFatura" class="ym-subtitle" role="status">Carregando comparação...</p>
+            <p *ngIf="erroResumoFatura" class="ym-bill-reconcile__error" role="alert">{{ erroResumoFatura }}</p>
+            <div *ngIf="resumoFatura as resumo" class="ym-bill-reconcile__results" aria-live="polite">
+                <div><span>Valor informado</span><strong>{{ resumo.valorInformado === null ? 'Ainda não informado' : (resumo.valorInformado | financialValue) }}</strong></div>
+                <div><span>Despesas cadastradas (bruto)</span><strong>{{ resumo.totalCadastrado | financialValue }}</strong></div>
+                <div *ngIf="resumo.diferenca !== null" class="ym-bill-reconcile__difference">
+                    <span>{{ resumo.diferenca >= 0 ? 'Falta cadastrar' : 'Excedente cadastrado' }}</span>
+                    <strong>{{ (resumo.diferenca >= 0 ? resumo.diferenca : -resumo.diferenca) | financialValue }}</strong>
+                </div>
+                <p>{{ resumo.quantidadePendentes }} de {{ resumo.quantidadeDespesas }} despesas ainda não conferidas.</p>
+            </div>
+        </section>
+
         <section class="ym-grid">
             <div class="ym-card ym-card-pad">
                 <div class="ym-section-header">
@@ -205,6 +244,7 @@
                     <p>{{ mensagemCarregamento }}</p>
                 </div>
 
+                <p *ngIf="erroConferencia" class="ym-bill-reconcile__error" role="alert">{{ erroConferencia }}</p>
                 <div class="ym-list" *ngIf="estadoCarregamento === 'loadedWithData'">
                     <article *ngFor="let despesa of despesas" class="ym-list-item">
                         <div class="ym-list-main">
@@ -216,6 +256,12 @@
                                     <i class="bi bi-layers"></i>{{ obterRotuloParcela(despesa) }}
                                 </span>
                                 <span class="ym-chip">{{ obterNomeCategoria(despesa.idCategoria) }}</span>
+                                <button type="button" class="ym-review-button" [class.ym-review-button--done]="despesa.conferida"
+                                    [attr.aria-pressed]="!!despesa.conferida" [disabled]="!!marcandoConferenciaId"
+                                    (click)="alternarConferencia(despesa)">
+                                    <i class="bi" [ngClass]="despesa.conferida ? 'bi-check-circle-fill' : 'bi-circle'"></i>
+                                    {{ despesa.conferida ? 'Conferida' : 'Marcar conferida' }}
+                                </button>
                             </div>
                         </div>
                         <div class="ym-list-actions accent-danger">

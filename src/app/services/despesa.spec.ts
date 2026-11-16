@@ -25,6 +25,14 @@ describe('DespesaService', () => {
     httpMock.verify();
   });
 
+  it('sends the reviewed state to the expense endpoint', () => {
+    service.definirConferencia('despesa-1', true).subscribe(result => expect(result.conferida).toBeTrue());
+    const req = httpMock.expectOne(`${environment.apiUrl}/Despesas/despesa-1/conferencia`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ conferida: true });
+    req.flush({ id: 'despesa-1', conferida: true });
+  });
+
   it('should post parcelamento requests to the typed endpoint', () => {
     const request = {
       descricao: 'Notebook',

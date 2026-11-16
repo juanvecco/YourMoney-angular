@@ -22,6 +22,8 @@ import { FinancialValuePipe } from '../../../pipes/financial-value.pipe';
 import { FinancialValueInputDirective } from '../../../directives/financial-value-input.directive';
 import { OpenFinanceService } from '../../../services/openfinance';
 import { RegraNegocioService } from '../../../services/regra-negocio.service';
+import { ConciliacaoFaturaService } from '../../../services/conciliacao-fatura';
+import { ResumoFatura } from '../../../models/conciliacao-fatura.model';
 import {
     PluggyDuplicateCandidate,
     PluggyExpenseReconciliationRequest,
@@ -72,6 +74,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     private destroy$ = new Subject<void>();
     private loadRevision = 0;
     private openFinanceRevision = 0;
+    private resumoFaturaRevision = 0;
 
     // === FORMULÁRIO ===
     novaDespesa = {
@@ -96,6 +99,14 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
     // === DADOS ===
     contas: any[] = [];
+    contaConciliacaoId = '';
+    resumoFatura: ResumoFatura | null = null;
+    valorFaturaInput: number | null = null;
+    carregandoResumoFatura = false;
+    salvandoValorFatura = false;
+    erroResumoFatura = '';
+    erroConferencia = '';
+    marcandoConferenciaId = '';
     tiposDespesa: Categoria[] = [];
     naturezasDespesa: Categoria[] = [];
     categoriasEspecificas: Categoria[] = [];
@@ -158,7 +169,8 @@ export class DespesasComponent implements OnInit, OnDestroy {
         private router: Router,
         private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService(),
         @Optional() private openFinanceService: OpenFinanceService | null = null,
-        @Optional() private readonly regras: RegraNegocioService | null = null
+        @Optional() private readonly regras: RegraNegocioService | null = null,
+        @Optional() private readonly conciliacaoFaturaService: ConciliacaoFaturaService | null = null
     ) {
         this.mesAtual = this.financialContext.period().date;
     }
@@ -201,7 +213,15 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.despesaService.listarContas()
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: (contas) => this.contas = contas,
+                next: (contas) => {
+                    this.contas = contas;
+                    if (!this.contaConciliacaoId) {
+                        this.contaConciliacaoId = this.filtrosTransacoes.idContaFinanceira || (contas.length === 1 ? contas[0].id : '');
+                    }
+                    if (this.contaConciliacaoId && !contas.some(conta => conta.id === this.contaConciliacaoId))
+                        this.contaConciliacaoId = '';
+                    this.carregarResumoFatura();
+                },
                 error: (erro) => console.error('Erro ao carregar contas', erro)
             });
     }
@@ -225,6 +245,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     }
 
     carregarDespesas() {
+        this.carregarResumoFatura();
         const revision = ++this.loadRevision;
         const mes = this.mesAtual.getMonth() + 1;
         const ano = this.mesAtual.getFullYear();
@@ -763,6 +784,81 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.carregarDespesas();
         this.carregarTransacoesOpenFinance();
         this.carregarSugestoesRecorrentes();
+    }
+
+    selecionarContaConciliacao(): void { this.carregarResumoFatura(); }
+
+    carregarResumoFatura(): void {
+        const revision = ++this.resumoFaturaRevision;
+        this.resumoFatura = null;
+        this.valorFaturaInput = null;
+        this.erroResumoFatura = '';
+        this.carregandoResumoFatura = false;
+        if (!this.contaConciliacaoId || !this.conciliacaoFaturaService) return;
+        this.carregandoResumoFatura = true;
+        const contaId = this.contaConciliacaoId;
+        const mes = this.mesAtual.getMonth() + 1;
+        const ano = this.mesAtual.getFullYear();
+        this.conciliacaoFaturaService.obter(contaId, mes, ano).pipe(takeUntil(this.destroy$)).subscribe({
+            next: resumo => {
+                if (revision !== this.resumoFaturaRevision) return;
+                this.resumoFatura = resumo;
+                this.valorFaturaInput = resumo.valorInformado;
+                this.carregandoResumoFatura = false;
+            },
+            error: () => {
+                if (revision !== this.resumoFaturaRevision) return;
+                this.erroResumoFatura = 'Não foi possível consultar a fatura. Tente novamente.';
+                this.carregandoResumoFatura = false;
+            }
+        });
+    }
+
+    salvarValorFatura(): void {
+        if (!this.contaConciliacaoId || !this.conciliacaoFaturaService || this.salvandoValorFatura) return;
+        const valor = this.valorFaturaInput;
+        if (valor === null || !Number.isFinite(valor) || valor < 0 || Math.abs(Math.round(valor * 100) - valor * 100) > 1e-7) {
+            this.erroResumoFatura = 'Informe um valor não negativo com até dois centavos.';
+            return;
+        }
+        const revision = ++this.resumoFaturaRevision;
+        this.erroResumoFatura = '';
+        this.salvandoValorFatura = true;
+        this.conciliacaoFaturaService.salvar(this.contaConciliacaoId, {
+            mes: this.mesAtual.getMonth() + 1,
+            ano: this.mesAtual.getFullYear(),
+            valorInformado: valor
+        }).pipe(takeUntil(this.destroy$)).subscribe({
+            next: resumo => {
+                this.salvandoValorFatura = false;
+                if (revision !== this.resumoFaturaRevision) return;
+                this.resumoFatura = resumo;
+                this.valorFaturaInput = resumo.valorInformado;
+            },
+            error: () => {
+                this.salvandoValorFatura = false;
+                if (revision !== this.resumoFaturaRevision) return;
+                this.erroResumoFatura = 'Não foi possível salvar o valor da fatura. Tente novamente.';
+            }
+        });
+    }
+
+    alternarConferencia(despesa: Despesa): void {
+        if (this.marcandoConferenciaId) return;
+        this.marcandoConferenciaId = despesa.id;
+        this.erroConferencia = '';
+        this.despesaService.definirConferencia(despesa.id, !despesa.conferida)
+            .pipe(takeUntil(this.destroy$)).subscribe({
+                next: atualizada => {
+                    despesa.conferida = atualizada.conferida;
+                    this.marcandoConferenciaId = '';
+                    this.carregarResumoFatura();
+                },
+                error: () => {
+                    this.marcandoConferenciaId = '';
+                    this.erroConferencia = 'Não foi possível salvar a conferência. Tente novamente.';
+                }
+            });
     }
 
     public abrirCalendario() {

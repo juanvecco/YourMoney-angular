@@ -87,6 +87,10 @@ export class DespesaService {
     return this.http.put<Despesa>(`${this.baseUrl}/Despesas/${despesa.id}`, despesa);
   }
 
+  definirConferencia(id: string, conferida: boolean): Observable<Despesa> {
+    return this.http.put<Despesa>(`${this.baseUrl}/Despesas/${id}/conferencia`, { conferida });
+  }
+
   deletarDespesa(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/Despesas/${id}`);
   }

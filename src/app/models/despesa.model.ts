@@ -13,6 +13,7 @@ export interface Despesa {
   valorReembolsado?: number;
   valorLiquido?: number;
   possuiReembolso?: boolean;
+  conferida?: boolean;
 }
 
 export interface ContaFinanceira {

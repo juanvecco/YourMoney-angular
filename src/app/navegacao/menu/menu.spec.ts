@@ -61,7 +61,7 @@ describe('MenuComponent', () => {
 
   it('has one explicit logout action', () => {
     expect(fixture.nativeElement.querySelectorAll('[data-testid="logout"]')).toHaveSize(1);
-    expect(fixture.nativeElement.querySelectorAll('[data-testid="mobile-logout"]')).toHaveSize(0);
+    expect(fixture.nativeElement.querySelectorAll('[data-testid="mobile-logout"]')).toHaveSize(1);
   });
 
   it('keeps global actions in the top bar and out of the destination drawer', () => {
@@ -71,8 +71,8 @@ describe('MenuComponent', () => {
     expect(actions.querySelector('.ym-theme-toggle--icon-only')).not.toBeNull();
     expect(actions.querySelector('a[href="/configuracao"]')?.textContent).toContain('Configurações');
     expect(actions.querySelector('[data-testid="logout"]')?.textContent).toContain('Sair');
-    expect(drawer.querySelector('a[href="/configuracao"]')).toBeNull();
-    expect(drawer.querySelector('[data-testid="logout"]')).toBeNull();
+    expect(drawer.querySelector('a[href="/configuracao"]')).not.toBeNull();
+    expect(drawer.querySelector('[data-testid="mobile-logout"]')).not.toBeNull();
   });
 
   it('exposes the primary mobile destinations', () => {
@@ -96,4 +96,17 @@ describe('MenuComponent', () => {
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
     expect(focusSpy).toHaveBeenCalled();
   }));
+
+  it('opens a focusable mobile drawer and closes it from the backdrop', () => {
+    const trigger = fixture.nativeElement.querySelector('.ym-menu-trigger') as HTMLButtonElement;
+    const menu = fixture.nativeElement.querySelector('#main-menu') as HTMLElement;
+    expect(menu.hasAttribute('inert')).toBeTrue();
+    trigger.click();
+    fixture.detectChanges();
+    expect(menu.hasAttribute('inert')).toBeFalse();
+    expect(menu.getAttribute('aria-hidden')).toBe('false');
+    (fixture.nativeElement.querySelector('.ym-app-drawer-backdrop') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(menu.getAttribute('aria-hidden')).toBe('true');
+  });
 });
