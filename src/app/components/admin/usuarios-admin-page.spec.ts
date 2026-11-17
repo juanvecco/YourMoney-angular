@@ -30,6 +30,7 @@ describe('UsuariosAdminPageComponent', () => {
     const page = fixture.nativeElement as HTMLElement;
     expect(page.textContent).toContain('Maria');
     expect(page.textContent).toContain('maria@example.com');
+    expect(page.textContent).toContain('1 conta');
     expect(page.querySelector('input[type="password"]')).toBeNull();
     page.querySelector<HTMLButtonElement>('[aria-label="Enviar redefinição de senha para maria@example.com"]')?.click();
     fixture.detectChanges();

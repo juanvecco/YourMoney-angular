@@ -9,7 +9,7 @@
           <h2 id="admin-users-title">Contas cadastradas</h2>
           <p>Nome e e-mail informados no cadastro. Senhas não ficam disponíveis para consulta.</p>
         </div>
-        @if (resultado) { <span class="ym-chip">{{ resultado.total }} contas</span> }
+        @if (resultado) { <span class="ym-chip">{{ resultado.total }} {{ resultado.total === 1 ? 'conta' : 'contas' }}</span> }
       </div>
 
       <form class="admin-users__search" (ngSubmit)="pesquisar()">

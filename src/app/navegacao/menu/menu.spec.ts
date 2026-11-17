@@ -64,7 +64,7 @@ describe('MenuComponent', () => {
     expect(fixture.nativeElement.querySelector('a[href="/admin/usuarios"]')).toBeNull();
     auth.isAdmin.and.returnValue(true);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('a[href="/admin/usuarios"]')?.textContent).toContain('Usuários');
+    expect(fixture.nativeElement.querySelector('#main-menu .ym-app-drawer__nav a[href="/admin/usuarios"]')?.textContent).toContain('Usuários');
   });
 
   it('has one explicit logout action', () => {
