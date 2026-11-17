@@ -271,17 +271,7 @@
 
   .ym-mobile-nav i { font-size: 20px; }
   .ym-mobile-nav .active { color: var(--ym-primary); }
-  .ym-mobile-nav__primary i {
-    display: grid;
-    width: 40px;
-    height: 40px;
-    place-items: center;
-    margin-top: -20px;
-    border-radius: 50%;
-    color: #fff;
-    background: linear-gradient(135deg, var(--ym-danger), #d9465f);
-    box-shadow: 0 8px 22px rgba(255, 107, 107, .35);
-  }
+  .ym-mobile-nav .active { background: color-mix(in srgb, var(--ym-primary) 10%, transparent); }
 }
 
 @media (max-width: 420px) {

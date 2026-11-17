@@ -242,6 +242,13 @@ describe('DespesasComponent', () => {
     expect(despesa.conferida).toBeFalse();
   });
 
+  it('keeps a different reference month visible in the compact expense list', () => {
+    const despesa: Despesa = { id: 'd1', descricao: 'Compra', valor: 10, data: '2026-11-25',
+      mesReferencia: '2026-12-01', idContaFinanceira: 'c1', idCategoria: 'cat1' };
+    expect(component.mesReferenciaDiferente(despesa)).toBeTrue();
+    expect(component.mesReferenciaDiferente({ ...despesa, mesReferencia: '2026-11-01' })).toBeFalse();
+  });
+
   function criarSugestao(overrides: Partial<SugestaoDespesaRecorrenteResponse> = {}): SugestaoDespesaRecorrenteResponse {
     return {
       ocorrenciaId: 'ocorrencia-1',

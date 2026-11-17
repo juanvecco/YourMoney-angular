@@ -100,6 +100,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     // === DADOS ===
     contas: any[] = [];
     contaConciliacaoId = '';
+    conciliacaoMobileAberta = false;
     resumoFatura: ResumoFatura | null = null;
     valorFaturaInput: number | null = null;
     carregandoResumoFatura = false;
@@ -125,6 +126,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         idTipoDespesa: '',
         idNaturezaDespesa: ''
     };
+    filtrosMobileAbertos = false;
     totalPorConta: { descricao: string; valor: number }[] = [];
     estadoCarregamento: FinancialViewState = 'loading';
     mensagemCarregamento = '';
@@ -1854,6 +1856,10 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
         const data = new Date(`${this.obterMesReferenciaInput(mesReferencia)}-01T00:00:00`);
         return data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    }
+
+    mesReferenciaDiferente(despesa: Despesa): boolean {
+        return !!despesa.mesReferencia && despesa.mesReferencia.substring(0, 7) !== despesa.data.substring(0, 7);
     }
 
     formatarData(data: string): string {

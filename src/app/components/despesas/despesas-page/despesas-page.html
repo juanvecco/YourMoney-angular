@@ -34,7 +34,15 @@
                     <h2 id="bill-reconcile-title" class="ym-section-title">Conferir fatura do cartão</h2>
                     <p class="ym-subtitle">Compare o valor do cartão com as despesas brutas cadastradas neste mês.</p>
                 </div>
+                <button class="ym-button secondary ym-bill-reconcile__toggle" type="button"
+                    [attr.aria-expanded]="conciliacaoMobileAberta" aria-controls="bill-reconcile-body"
+                    (click)="conciliacaoMobileAberta = !conciliacaoMobileAberta">
+                    {{ conciliacaoMobileAberta ? 'Ocultar' : 'Conferir' }}
+                    <i class="bi" [ngClass]="conciliacaoMobileAberta ? 'bi-chevron-up' : 'bi-chevron-down'" aria-hidden="true"></i>
+                </button>
             </div>
+            <div id="bill-reconcile-body" class="ym-bill-reconcile__body"
+                [class.ym-bill-reconcile__body--open]="conciliacaoMobileAberta">
             <div class="ym-bill-reconcile__form">
                 <label for="conta-conciliacao">Conta do cartão
                     <select id="conta-conciliacao" class="form-select" name="contaConciliacao"
@@ -65,6 +73,7 @@
                 </div>
                 <p>{{ resumo.quantidadePendentes }} de {{ resumo.quantidadeDespesas }} despesas ainda não conferidas.</p>
             </div>
+            </div>
         </section>
 
         <section class="ym-grid">
@@ -76,7 +85,18 @@
                     </button>
                 </div>
 
-                <div class="ym-expense-query">
+                <div class="ym-expense-toolbar">
+                    <button class="ym-button secondary ym-expense-toolbar__toggle" type="button"
+                        [attr.aria-expanded]="filtrosMobileAbertos" aria-controls="expense-filters"
+                        (click)="filtrosMobileAbertos = !filtrosMobileAbertos">
+                        <i class="bi bi-funnel" aria-hidden="true"></i>
+                        Filtros{{ temFiltrosTransacoesAtivos() ? ' ativos' : '' }}
+                    </button>
+                    <span class="ym-expense-toolbar__summary">
+                        {{ estadoCarregamento === 'loading' ? 'Carregando...' : totalResultadosDespesas + (totalResultadosDespesas === 1 ? ' lançamento' : ' lançamentos') }}
+                    </span>
+                </div>
+                <div id="expense-filters" class="ym-expense-query" [class.ym-expense-query--open]="filtrosMobileAbertos">
                     <div class="ym-filter-grid">
                         <label class="ym-filter-field">
                             <span>Conta</span>
@@ -109,6 +129,7 @@
                         <button class="ym-icon-button ym-filter-clear" type="button" (click)="limparFiltrosTransacoes()"
                             [disabled]="!temFiltrosTransacoesAtivos()" aria-label="Limpar filtros">
                             <i class="bi bi-x-lg"></i>
+                            <span class="ym-filter-clear__label">Limpar filtros</span>
                         </button>
                     </div>
 
@@ -246,37 +267,41 @@
 
                 <p *ngIf="erroConferencia" class="ym-bill-reconcile__error" role="alert">{{ erroConferencia }}</p>
                 <div class="ym-list" *ngIf="estadoCarregamento === 'loadedWithData'">
-                    <article *ngFor="let despesa of despesas" class="ym-list-item">
+                    <article *ngFor="let despesa of despesas" class="ym-list-item ym-expense-item">
                         <div class="ym-list-main">
-                            <h3 class="ym-list-title">{{ despesa.descricao }}</h3>
+                            <div class="ym-expense-item__headline">
+                                <h3 class="ym-list-title">{{ despesa.descricao }}</h3>
+                                <span class="ym-amount">{{ obterValorLiquidoDespesa(despesa) | financialValue }}</span>
+                            </div>
                             <div class="ym-list-meta">
                                 <span><i class="bi bi-calendar3"></i> {{ formatarData(despesa.data) }}</span>
-                                <span><i class="bi bi-calendar-month"></i> Ref. {{ obterMesReferenciaTexto(despesa.mesReferencia || despesa.data) }}</span>
+                                <span class="ym-expense-item__reference" [class.ym-expense-item__reference--different]="mesReferenciaDiferente(despesa)"><i class="bi bi-calendar-month"></i> Ref. {{ obterMesReferenciaTexto(despesa.mesReferencia || despesa.data) }}</span>
                                 <span class="ym-chip ym-installment-chip" *ngIf="temParcelamento(despesa)">
                                     <i class="bi bi-layers"></i>{{ obterRotuloParcela(despesa) }}
                                 </span>
                                 <span class="ym-chip">{{ obterNomeCategoria(despesa.idCategoria) }}</span>
-                                <button *ngIf="regraAtiva('despesas.conciliacao-fatura-cartao')" type="button" class="ym-review-button" [class.ym-review-button--done]="despesa.conferida"
-                                    [attr.aria-pressed]="!!despesa.conferida" [disabled]="!!marcandoConferenciaId"
-                                    (click)="alternarConferencia(despesa)">
-                                    <i class="bi" [ngClass]="despesa.conferida ? 'bi-check-circle-fill' : 'bi-circle'"></i>
-                                    {{ despesa.conferida ? 'Conferida' : 'Marcar conferida' }}
-                                </button>
                             </div>
-                        </div>
-                        <div class="ym-list-actions accent-danger">
-                            <span class="ym-amount">{{ obterValorLiquidoDespesa(despesa) | financialValue }}</span>
-                            <small *ngIf="despesa.possuiReembolso">
+                            <small *ngIf="despesa.possuiReembolso" class="ym-expense-item__reimbursement">
                                 Bruto {{ despesa.valor | financialValue }} · Reembolso {{ despesa.valorReembolsado | financialValue }}
                             </small>
-                            <button class="ym-icon-button" type="button" (click)="abrirModalEditar(despesa)"
-                                aria-label="Editar despesa">
-                                <i class="bi bi-pencil"></i>
+                        </div>
+                        <div class="ym-expense-item__actions accent-danger">
+                            <button *ngIf="regraAtiva('despesas.conciliacao-fatura-cartao')" type="button" class="ym-review-button" [class.ym-review-button--done]="despesa.conferida"
+                                [attr.aria-pressed]="!!despesa.conferida" [disabled]="!!marcandoConferenciaId"
+                                (click)="alternarConferencia(despesa)">
+                                <i class="bi" [ngClass]="despesa.conferida ? 'bi-check-circle-fill' : 'bi-circle'"></i>
+                                {{ despesa.conferida ? 'Conferida' : 'Marcar conferida' }}
                             </button>
-                            <button class="ym-icon-button" type="button" (click)="deletarDespesa(despesa.id)"
-                                aria-label="Excluir despesa">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <div class="ym-expense-item__icon-actions">
+                                <button class="ym-icon-button" type="button" (click)="abrirModalEditar(despesa)"
+                                    [attr.aria-label]="'Editar ' + despesa.descricao">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="ym-icon-button" type="button" (click)="deletarDespesa(despesa.id)"
+                                    [attr.aria-label]="'Excluir ' + despesa.descricao">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
                         </div>
                     </article>
                 </div>
@@ -379,7 +404,7 @@
                     </div>
                 </div>
 
-                <div class="ym-card ym-card-pad" *ngIf="despesas.length > 0">
+                <div class="ym-card ym-card-pad ym-expense-insights" *ngIf="despesas.length > 0">
                     <h2 class="ym-section-title">Insights</h2>
                     <div class="ym-metric-row">
                         <span>Total de transações</span>

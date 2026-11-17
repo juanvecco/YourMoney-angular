@@ -4,6 +4,15 @@
   .ym-route-content.ym-route-content--auth { min-height: 100vh; padding: 0; }
   .ym-grid, .row { min-width: 0; }
 }
+@media (max-width: 700px) {
+  app-despesas-page .ym-page-header { gap: .65rem; margin-bottom: .75rem; }
+  app-despesas-page .ym-page-header__eyebrow,
+  app-despesas-page .ym-page-header__description { display: none; }
+  app-despesas-page .ym-page-header h1 { font-size: 1.5rem; }
+  app-despesas-page .ym-page-header__actions,
+  app-despesas-page .ym-month-picker { width: 100%; }
+  app-despesas-page .ym-month-picker { grid-template-columns: 44px minmax(0, 1fr) 44px; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     scroll-behavior: auto !important; animation-duration: .01ms !important;
