@@ -11,7 +11,11 @@
   app-despesas-page .ym-page-header h1 { font-size: 1.5rem; }
   app-despesas-page .ym-page-header__actions,
   app-despesas-page .ym-month-picker { width: 100%; }
-  app-despesas-page .ym-month-picker { grid-template-columns: 44px minmax(0, 1fr) 44px; }
+  app-despesas-page .ym-page-header__actions > app-month-picker { min-width: 0; }
+  app-despesas-page .ym-page-header .ym-month-picker {
+    min-width: 0;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
