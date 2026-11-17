@@ -30,6 +30,7 @@
 .ym-expense-item__reimbursement { display: block; margin-top: 6px; color: var(--ym-muted); }
 .ym-expense-item__actions, .ym-expense-item__icon-actions { display: flex; align-items: center; gap: 8px; }
 .ym-expense-item__actions { flex: none; }
+.ym-openfinance-title-mobile { display: none; }
 .ym-review-button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 3px 9px; border: 1px solid var(--ym-border); border-radius: 999px; background: var(--ym-surface); color: var(--ym-muted); font: inherit; font-size: 12px; cursor: pointer; }
 .ym-review-button--done { color: var(--ym-primary); border-color: var(--ym-primary); }
 .ym-review-button:focus-visible { outline: 2px solid var(--ym-primary); outline-offset: 2px; }
@@ -74,6 +75,8 @@
   .ym-expense-item__icon-actions .ym-icon-button { width: 40px; height: 40px; }
   .ym-openfinance-toggle-row { padding: 12px; }
   .ym-openfinance-toggle small, .ym-openfinance-origin { display: none; }
+  .ym-openfinance-title-desktop { display: none; }
+  .ym-openfinance-title-mobile { display: inline; }
   .ym-expense-insights { display: none; }
 }
 
