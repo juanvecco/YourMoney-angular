@@ -154,6 +154,14 @@ describe('AuthService', () => {
     expect(service.isAdmin()).toBeFalse();
   });
 
+  it('recognizes the administrator claim in a session created by an older client', () => {
+    const payload = btoa(JSON.stringify({ sub: 'admin-id', role: 'Admin' }))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    localStorage.setItem('access_token', `header.${payload}.signature`);
+    localStorage.setItem('expires_at', String(Date.now() + 10000));
+    expect(service.isAdmin()).toBeTrue();
+  });
+
   it('replaces stale authentication data returned by a previous user on login', () => {
     localStorage.setItem('access_token', 'old-token');
     localStorage.setItem('expires_at', String(Date.now() + 10000));

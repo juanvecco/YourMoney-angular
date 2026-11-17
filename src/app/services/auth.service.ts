@@ -67,7 +67,13 @@ export class AuthService {
         if (!this.isLoggedIn()) return false;
         try {
             const roles = JSON.parse(localStorage.getItem('user_roles') ?? '[]');
-            return Array.isArray(roles) && roles.includes('Admin');
+            if (Array.isArray(roles) && roles.includes('Admin')) return true;
+            const payload = localStorage.getItem('access_token')?.split('.')[1];
+            if (!payload) return false;
+            const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+            const claims = JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '=')));
+            const tokenRoles = claims.role;
+            return tokenRoles === 'Admin' || (Array.isArray(tokenRoles) && tokenRoles.includes('Admin'));
         } catch {
             return false;
         }
