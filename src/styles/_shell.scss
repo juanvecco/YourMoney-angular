@@ -191,7 +191,15 @@
 }
 
 @media (max-width: 980px) {
-  .ym-topbar:not(.ym-topbar--app) .ym-nav { position: relative; }
+  .ym-topbar:not(.ym-topbar--app) .ym-nav {
+    position: relative;
+    min-height: 64px;
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 0;
+  }
   .ym-topbar:not(.ym-topbar--app) .ym-menu-trigger { display: inline-flex; order: 2; margin-left: auto; }
   .ym-topbar:not(.ym-topbar--app) .ym-menu {
     position: absolute;

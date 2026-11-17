@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './home.html',
   styleUrls: ['./home.css']
 })
@@ -25,15 +25,4 @@ export class HomeComponent implements OnInit {
     }
   }
 
-  goToLogin(): void {
-    this.router.navigate(['/login']);
-  }
-
-  goTo(route: string): void {
-    this.router.navigate([route]);
-  }
-
-  navegarPara(rota: string) {
-    this.router.navigate([rota]);
-  }
 }

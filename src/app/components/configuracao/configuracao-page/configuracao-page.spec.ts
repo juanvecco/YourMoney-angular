@@ -5,8 +5,26 @@ import { FeedbackService } from '../../../services/feedback.service';
 import { ContaFinanceiraService } from '../../../services/conta';
 import { ConfiguracaoPageComponent } from './configuracao-page';
 import { RegraNegocioService } from '../../../services/regra-negocio.service';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 
 describe('ConfiguracaoPageComponent', () => {
+  it('opens the accounts section from the getting started link', async () => {
+    await TestBed.configureTestingModule({
+      imports: [ConfiguracaoPageComponent],
+      providers: [
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({ secao: 'contas' }) } } },
+        { provide: CategoriaService, useValue: { listarCategorias: () => of([]) } },
+        { provide: ContaFinanceiraService, useValue: { listarContas: () => of([]) } },
+        { provide: FeedbackService, useValue: { confirm: () => Promise.resolve(false) } },
+        { provide: RegraNegocioService, useValue: { carregar: () => of([]), estaAtiva: () => true, regras: () => [] } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(ConfiguracaoPageComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.secao).toBe('contas');
+    expect(fixture.nativeElement.textContent).toContain('Esta conta organiza seus lançamentos');
+  });
+
   it('searches revenue and expense recurrence separately and restores a failed toggle', async () => {
     const regras = [
       { codigo: 'despesas.recorrencia', nome: 'Recorrência de despesas', descricao: 'Despesas mensais', grupo: 'Despesas', ativa: true, efetiva: true, dependencias: [] },

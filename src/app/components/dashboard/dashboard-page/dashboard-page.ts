@@ -54,6 +54,7 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     estadoHistorico: FinancialViewState = 'loading';
     mensagemHistorico = '';
     mostrarConviteOpenFinance = false;
+    mostrarGuia = true;
 
     private graficoFinanceiro?: Chart;
     private graficoHistorico?: Chart;
@@ -105,11 +106,11 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     }
 
     ngOnInit(): void {
+        this.mostrarGuia = !this.guiaDispensado();
         this.carregarDadosMesAtual();
         this.openFinanceService.obterStatusConexao().subscribe({
             next: status => {
                 this.mostrarConviteOpenFinance = !status.hasConnections && !this.conviteOpenFinanceDispensado();
-                this.abrirConviteOpenFinance();
             },
             error: () => this.mostrarConviteOpenFinance = false,
         });
@@ -138,14 +139,35 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
         return `yourmoney.openfinance.invite.dismissed:${email}`;
     }
 
-    private abrirConviteOpenFinance(): void {
+    abrirConviteOpenFinance(): void {
         const dialog = this.openFinanceInviteDialog?.nativeElement;
         if (this.mostrarConviteOpenFinance && dialog && !dialog.open) dialog.showModal();
     }
 
+    fecharGuia(): void {
+        this.mostrarGuia = false;
+        try { localStorage.setItem(this.chaveGuia(), '1'); } catch { /* O guia pode ser reaberto nesta sessão. */ }
+    }
+
+    reabrirGuia(): void {
+        this.mostrarGuia = true;
+    }
+
+    abrirContas(): void {
+        this.router.navigate(['/configuracao'], { queryParams: { secao: 'contas' } });
+    }
+
+    private guiaDispensado(): boolean {
+        try { return localStorage.getItem(this.chaveGuia()) === '1'; } catch { return false; }
+    }
+
+    private chaveGuia(): string {
+        const email = localStorage.getItem('user_email') ?? '';
+        return `yourmoney.guia.inicial:${email}`;
+    }
+
     ngAfterViewInit(): void {
         this.viewInicializada = true;
-        this.abrirConviteOpenFinance();
         this.atualizarGraficoFinanceiro();
         this.atualizarGraficoHistorico();
     }

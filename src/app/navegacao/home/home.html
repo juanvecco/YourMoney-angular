@@ -1,19 +1,18 @@
 <section class="ym-home-hero">
     <div class="ym-home-container ym-home-hero__grid">
         <div class="ym-home-copy">
-            <p class="ym-home-eyebrow"><span aria-hidden="true"></span>Seu financeiro, com direção</p>
-            <h1 class="ym-home-title">Controle total<br />do seu dinheiro.</h1>
-            <p class="ym-home-lead">Acompanhe receitas, despesas e objetivos com uma visão clara do que acontece com cada real.</p>
+            <p class="ym-home-eyebrow"><span aria-hidden="true"></span>Seu dinheiro, explicado</p>
+            <h1 class="ym-home-title">Veja quanto entrou,<br />quanto saiu e onde gastou.</h1>
+            <p class="ym-home-lead">O YourMoney é um controle financeiro pessoal. Registre ganhos e gastos, acompanhe o saldo de cada mês e confira as despesas do cartão em um só lugar.</p>
             <div class="ym-home-actions">
-                <button type="button" class="btn btn-lg ym-home-action" (click)="goToLogin()">
-                    Acessar meu painel <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
-                </button>
-                <span class="ym-home-note"><i class="bi bi-shield-check" aria-hidden="true"></i> Gratuito para começar</span>
+                <a routerLink="/cadastro" class="btn btn-lg ym-home-action">Criar minha conta <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+                <a routerLink="/login" class="ym-home-secondary">Já tenho conta</a>
             </div>
+            <p class="ym-home-note"><i class="bi bi-check-circle" aria-hidden="true"></i> Você pode começar sem conectar seu banco.</p>
             <div class="ym-home-topics" aria-label="Recursos do YourMoney">
-                <span><i class="bi bi-journal-text" aria-hidden="true"></i> Receitas e despesas</span>
-                <span><i class="bi bi-graph-up-arrow" aria-hidden="true"></i> Investimentos</span>
-                <span><i class="bi bi-bullseye" aria-hidden="true"></i> Metas</span>
+                <span><i class="bi bi-journal-text" aria-hidden="true"></i> Lançamentos manuais</span>
+                <span><i class="bi bi-credit-card" aria-hidden="true"></i> Conferência da fatura</span>
+                <span><i class="bi bi-bar-chart-line" aria-hidden="true"></i> Resumo por mês</span>
             </div>
         </div>
 
@@ -35,10 +34,10 @@
                     <div><i class="bi bi-arrow-up-right-circle"></i><span>Despesas</span><b></b></div>
                     <div><i class="bi bi-graph-up-arrow"></i><span>Investimentos</span><b></b></div>
                 </div>
-                <div class="ym-home-preview__bottom"><span>Clareza para decidir melhor</span><i class="bi bi-stars"></i></div>
+                <div class="ym-home-preview__bottom"><span>Entenda seu mês</span><i class="bi bi-stars"></i></div>
             </div>
-            <div class="ym-home-float ym-home-float--top"><i class="bi bi-check2-circle"></i> Tudo em um só lugar</div>
-            <div class="ym-home-float ym-home-float--bottom"><i class="bi bi-shield-lock"></i> Seus dados protegidos</div>
+            <div class="ym-home-float ym-home-float--top"><i class="bi bi-check2-circle"></i> Gastos organizados</div>
+            <div class="ym-home-float ym-home-float--bottom"><i class="bi bi-shield-lock"></i> Conexão bancária opcional</div>
         </div>
     </div>
 </section>
@@ -46,24 +45,24 @@
 <section class="ym-home-features">
     <div class="ym-home-container">
         <div class="ym-home-section-heading">
-            <p class="ym-home-eyebrow"><span aria-hidden="true"></span>Mais clareza no dia a dia</p>
-            <h2>Uma visão melhor das suas finanças.</h2>
+            <p class="ym-home-eyebrow"><span aria-hidden="true"></span>Como funciona</p>
+            <h2>Comece em três passos.</h2>
         </div>
         <div class="ym-home-feature-grid">
             <article class="ym-home-card">
-                <div class="ym-home-icon"><i class="bi bi-bar-chart-line" aria-hidden="true"></i></div>
-                <h3 class="ym-home-card-title">Clareza total</h3>
-                <p>Veja para onde seu dinheiro vai e acompanhe o mês com mais tranquilidade.</p>
+                <div class="ym-home-icon"><i class="bi bi-wallet2" aria-hidden="true"></i></div>
+                <h3 class="ym-home-card-title">1. Crie seu acesso</h3>
+                <p>Cadastre seu e-mail. As categorias básicas já ficam prontas para você começar.</p>
             </article>
             <article class="ym-home-card">
-                <div class="ym-home-icon"><i class="bi bi-compass" aria-hidden="true"></i></div>
-                <h3 class="ym-home-card-title">Decida com confiança</h3>
-                <p>Organize entradas, saídas e investimentos em um só painel fácil de entender.</p>
+                <div class="ym-home-icon"><i class="bi bi-pencil-square" aria-hidden="true"></i></div>
+                <h3 class="ym-home-card-title">2. Registre o mês</h3>
+                <p>Dê um nome ao seu cartão ou banco e cadastre salário, outras entradas e gastos.</p>
             </article>
             <article class="ym-home-card">
-                <div class="ym-home-icon"><i class="bi bi-bullseye" aria-hidden="true"></i></div>
-                <h3 class="ym-home-card-title">Chegue mais longe</h3>
-                <p>Defina objetivos e acompanhe seu progresso ao longo do tempo.</p>
+                <div class="ym-home-icon"><i class="bi bi-graph-up" aria-hidden="true"></i></div>
+                <h3 class="ym-home-card-title">3. Entenda o resultado</h3>
+                <p>Veja o saldo calculado, os gastos por categoria e, se informar a fatura, quanto falta registrar.</p>
             </article>
         </div>
     </div>
@@ -72,12 +71,10 @@
 <section class="ym-home-cta">
     <div class="ym-home-container ym-home-container--narrow">
         <div>
-            <p class="ym-home-eyebrow"><span aria-hidden="true"></span>Seu próximo passo começa aqui</p>
-            <h2 class="ym-home-cta-title">Cuide do seu dinheiro com mais clareza.</h2>
-            <p class="ym-home-lead">Comece hoje. É simples, rápido e gratuito.</p>
+            <p class="ym-home-eyebrow"><span aria-hidden="true"></span>Pronto para começar?</p>
+            <h2 class="ym-home-cta-title">Organize seu próximo mês em um só lugar.</h2>
+            <p class="ym-home-lead">Crie sua conta e registre seus primeiros ganhos e gastos.</p>
         </div>
-        <button type="button" class="btn btn-lg ym-home-action" (click)="goToLogin()">
-            Acessar meu painel <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
-        </button>
+        <a routerLink="/cadastro" class="btn btn-lg ym-home-action">Criar minha conta <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
     </div>
 </section>

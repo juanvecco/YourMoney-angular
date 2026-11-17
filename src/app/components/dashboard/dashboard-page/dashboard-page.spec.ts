@@ -22,6 +22,7 @@ describe('DashboardPageComponent', () => {
 
   beforeEach(async () => {
     localStorage.setItem('user_email', 'dashboard-test@example.com');
+    localStorage.removeItem('yourmoney.guia.inicial:dashboard-test@example.com');
     sessionStorage.removeItem('yourmoney.openfinance.invite.dismissed:dashboard-test@example.com');
     receitaService = jasmine.createSpyObj<ReceitaService>('ReceitaService', ['obterPorReferencia']);
     despesaService = jasmine.createSpyObj<DespesaService>('DespesaService', ['obterPorReferencia', 'listarCategorias']);
@@ -63,14 +64,17 @@ describe('DashboardPageComponent', () => {
 
   afterEach(() => {
     localStorage.removeItem('user_email');
+    localStorage.removeItem('yourmoney.guia.inicial:dashboard-test@example.com');
     sessionStorage.removeItem('yourmoney.openfinance.invite.dismissed:dashboard-test@example.com');
   });
 
-  it('shows the modal only to users without a connected institution', () => {
+  it('opens the optional bank invitation only when requested', () => {
     openFinanceService.obterStatusConexao.and.returnValue(of({ hasConnections: false }));
     fixture.detectChanges();
 
     const dialog = fixture.nativeElement.querySelector('.ym-open-finance-dialog') as HTMLDialogElement;
+    expect(dialog.open).toBeFalse();
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.ym-start-guide__optional button')?.click();
     expect(dialog.open).toBeTrue();
     expect(dialog.textContent).toContain('Suas contas, em uma só visão');
     const signup = dialog.querySelector<HTMLAnchorElement>('a[href="https://meu.pluggy.ai/"]');
@@ -83,6 +87,7 @@ describe('DashboardPageComponent', () => {
     openFinanceService.obterStatusConexao.and.returnValue(of({ hasConnections: false }));
     fixture.detectChanges();
     const dialog = fixture.nativeElement.querySelector('.ym-open-finance-dialog') as HTMLDialogElement;
+    component.abrirConviteOpenFinance();
     const secondSlide = dialog.querySelector<HTMLButtonElement>('[aria-label="Mostrar benefício 2"]');
     secondSlide?.click();
     fixture.detectChanges();
@@ -97,7 +102,23 @@ describe('DashboardPageComponent', () => {
 
   it('hides the invitation when a bank is already connected', () => {
     fixture.detectChanges();
+    component.abrirConviteOpenFinance();
     expect((fixture.nativeElement.querySelector('.ym-open-finance-dialog') as HTMLDialogElement).open).toBeFalse();
+  });
+
+  it('guides the first account setup and lets the user reopen the guide', () => {
+    fixture.detectChanges();
+    const nativeElement = fixture.nativeElement as HTMLElement;
+    expect(nativeElement.textContent).toContain('Comece em 3 passos');
+    nativeElement.querySelector<HTMLButtonElement>('.ym-start-guide__steps li button')?.click();
+    expect(router.navigate).toHaveBeenCalledWith(['/configuracao'], { queryParams: { secao: 'contas' } });
+
+    nativeElement.querySelector<HTMLButtonElement>('.ym-start-guide__dismiss')?.click();
+    fixture.detectChanges();
+    expect(localStorage.getItem('yourmoney.guia.inicial:dashboard-test@example.com')).toBe('1');
+    nativeElement.querySelector<HTMLButtonElement>('.ym-start-guide__reopen')?.click();
+    fixture.detectChanges();
+    expect(nativeElement.textContent).toContain('Comece em 3 passos');
   });
 
   it('hides the invitation when connection status cannot be checked', () => {

@@ -1,7 +1,7 @@
 <div class="ym-shell">
     <div class="ym-container">
         <app-page-header eyebrow="Entradas" heading="Receitas"
-            description="Registre as entradas e acompanhe o motor do crescimento mensal.">
+            description="Registre salário e outras entradas para calcular o saldo do mês.">
             <app-month-picker pageHeaderActions [period]="mesAtual" (periodChange)="selecionarMes($event)"></app-month-picker>
         </app-page-header>
         <app-view-state [state]="estadoCarregamento" [message]="mensagemCarregamento"

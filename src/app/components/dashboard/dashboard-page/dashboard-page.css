@@ -1,3 +1,77 @@
+.ym-start-guide {
+    margin-bottom: 1.25rem;
+    border-color: color-mix(in srgb, var(--ym-primary) 30%, var(--ym-border));
+    background: color-mix(in srgb, var(--ym-primary) 5%, var(--ym-surface));
+}
+
+.ym-start-guide__heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.ym-start-guide__eyebrow {
+    margin: 0 0 .25rem;
+    color: var(--ym-primary-strong);
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+.ym-start-guide__heading h2 {
+    margin: 0 0 .25rem;
+    color: var(--ym-text);
+    font-size: 1.25rem;
+}
+
+.ym-start-guide__heading p:last-child {
+    margin: 0;
+    color: var(--ym-muted);
+}
+
+.ym-start-guide__dismiss,
+.ym-start-guide__reopen,
+.ym-start-guide__steps button,
+.ym-start-guide__optional button {
+    border: 0;
+    color: var(--ym-primary-strong);
+    background: transparent;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ym-start-guide__dismiss { white-space: nowrap; }
+.ym-start-guide__reopen { display: inline-flex; align-items: center; gap: .4rem; margin: 0 0 1rem; padding: .35rem 0; }
+.ym-start-guide__steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .75rem;
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ym-start-guide__steps li {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .3rem;
+    min-width: 0;
+    padding: .85rem;
+    border: 1px solid var(--ym-border);
+    border-radius: var(--ym-radius-sm);
+    background: var(--ym-surface);
+}
+
+.ym-start-guide__steps strong { color: var(--ym-text); }
+.ym-start-guide__steps span { color: var(--ym-muted); font-size: .875rem; line-height: 1.4; }
+.ym-start-guide__steps button { padding: .25rem 0; text-decoration: underline; text-underline-offset: .18em; }
+.ym-start-guide__steps li > div { display: flex; flex-wrap: wrap; gap: .75rem; }
+.ym-start-guide__optional { margin: .9rem 0 0; color: var(--ym-muted); font-size: .875rem; }
+.ym-start-guide__optional button { padding: 0; text-decoration: underline; text-underline-offset: .18em; }
+.ym-start-guide button:focus-visible,
+.ym-start-guide__reopen:focus-visible { outline: 2px solid var(--ym-primary); outline-offset: 3px; }
+
 .ym-chart-card {
     grid-column: 1 / -1;
 }
@@ -132,6 +206,10 @@
 }
 
 @media (max-width: 760px) {
+    .ym-start-guide__heading { align-items: flex-start; }
+    .ym-start-guide__steps { grid-template-columns: 1fr; gap: .5rem; }
+    .ym-start-guide__steps li { padding: .7rem .85rem; }
+    .ym-start-guide__dismiss { font-size: .8rem; }
     .ym-history-chart-wrap {
         height: 260px;
     }

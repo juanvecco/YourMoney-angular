@@ -1,9 +1,32 @@
 <div class="ym-shell">
     <div class="ym-container">
-        <app-page-header eyebrow="Resumo financeiro" heading="Visão geral"
-            description="Acompanhe receitas, despesas, investimentos e saldo do mês.">
+        <app-page-header eyebrow="Seu controle financeiro" heading="Seu mês"
+            description="Registre ganhos e gastos. Aqui você vê o saldo calculado e para onde foi seu dinheiro.">
             <app-month-picker pageHeaderActions [period]="mesAtual" (periodChange)="selecionarMes($event)"></app-month-picker>
         </app-page-header>
+
+        @if (mostrarGuia) {
+            <section class="ym-card ym-card-pad ym-start-guide" aria-labelledby="start-guide-title">
+                <div class="ym-start-guide__heading">
+                    <div>
+                        <p class="ym-start-guide__eyebrow">Novo por aqui?</p>
+                        <h2 id="start-guide-title">Comece em 3 passos</h2>
+                        <p>Você pode usar o YourMoney sem conectar seu banco.</p>
+                    </div>
+                    <button type="button" class="ym-start-guide__dismiss" (click)="fecharGuia()" aria-label="Fechar guia inicial">Entendi <i class="bi bi-x-lg" aria-hidden="true"></i></button>
+                </div>
+                <ol class="ym-start-guide__steps">
+                    <li><strong>1. Adicione uma conta ou cartão</strong><span>Dê um nome ao lugar usado nos lançamentos. Isso não conecta ao banco.</span><button type="button" (click)="abrirContas()">Adicionar conta <i class="bi bi-arrow-right" aria-hidden="true"></i></button></li>
+                    <li><strong>2. Registre o mês</strong><span>Inclua o que recebeu e o que gastou.</span><div><button type="button" (click)="adicionarReceita()">Receitas</button><button type="button" (click)="adicionarDespesa()">Despesas</button></div></li>
+                    <li><strong>3. Entenda o resultado</strong><span>O saldo e os gastos por categoria aparecem aqui automaticamente.</span></li>
+                </ol>
+                @if (mostrarConviteOpenFinance) {
+                    <p class="ym-start-guide__optional">Conexão bancária é opcional. <button type="button" (click)="abrirConviteOpenFinance()">Saiba como funciona</button></p>
+                }
+            </section>
+        } @else {
+            <button type="button" class="ym-start-guide__reopen" (click)="reabrirGuia()"><i class="bi bi-question-circle" aria-hidden="true"></i> Como usar o YourMoney</button>
+        }
 
         <dialog #openFinanceInviteDialog class="ym-open-finance-dialog" aria-labelledby="openFinanceInviteTitle"
             aria-describedby="openFinanceInviteDescription" (close)="conviteOpenFinanceFechado()">
@@ -33,7 +56,7 @@
                 <div class="ym-open-finance-dialog-content">
                     <p class="ym-open-finance-dialog-eyebrow">Uma visão mais completa</p>
                     <h2 id="openFinanceInviteTitle">Suas contas, em uma só visão.</h2>
-                    <p id="openFinanceInviteDescription">Reúna saldos e transações das instituições que você escolher. No YourMoney, cada lançamento só entra depois da sua revisão.</p>
+                    <p id="openFinanceInviteDescription">O YourMoney funciona sem conexão bancária. Se você optar por conectar, poderá consultar saldos e transações e revisar cada lançamento antes de incluí-lo.</p>
                     <div class="ym-open-finance-dialog-benefits">
                         <p><i class="bi bi-shield-check" aria-hidden="true"></i> Você escolhe quais bancos autorizar.</p>
                         <p><i class="bi bi-check2-square" aria-hidden="true"></i> Você confirma o que entra no seu controle.</p>
@@ -58,16 +81,16 @@
                 <i class="ym-kpi-icon bi bi-arrow-up-right"></i>
                 <h2 class="ym-kpi-label">Receitas</h2>
                 <p class="ym-kpi-value">{{ resumo.receitas | financialValue }}</p>
-                <p class="ym-kpi-meta">Entradas do período</p>
-                <button class="ym-button primary" type="button" (click)="adicionarReceita()">Adicionar</button>
+                <p class="ym-kpi-meta">Dinheiro registrado como entrada</p>
+                <button class="ym-button primary" type="button" (click)="adicionarReceita()">Registrar receita</button>
             </article>
 
             <article class="ym-card ym-kpi accent-danger">
                 <i class="ym-kpi-icon bi bi-arrow-down-right"></i>
                 <h2 class="ym-kpi-label">Despesas</h2>
                 <p class="ym-kpi-value">{{ resumo.despesas | financialValue }}</p>
-                <p class="ym-kpi-meta">Saídas do período</p>
-                <button class="ym-button primary" type="button" (click)="adicionarDespesa()">Adicionar</button>
+                <p class="ym-kpi-meta">Gastos registrados no mês</p>
+                <button class="ym-button primary" type="button" (click)="adicionarDespesa()">Registrar despesa</button>
             </article>
 
             <article class="ym-card ym-kpi accent-investment">
@@ -82,7 +105,7 @@
                 <i class="ym-kpi-icon bi bi-wallet2"></i>
                 <h2 class="ym-kpi-label">Saldo do mês</h2>
                 <p class="ym-kpi-value" [class.ym-negative]="resumo.sobrou < 0">{{ resumo.sobrou | financialValue }}</p>
-                <p class="ym-kpi-meta">Receitas menos despesas</p>
+                <p class="ym-kpi-meta">Receitas menos despesas registradas</p>
                 <button class="ym-button primary" type="button" (click)="investir()" [disabled]="resumo.sobrou <= 0">Investir saldo</button>
             </article>
         </section>

@@ -1,7 +1,7 @@
 <div class="ym-shell">
     <div class="ym-container">
         <app-page-header eyebrow="Controle de gastos" heading="Despesas"
-            description="Analise as saídas do mês e mantenha cada transação categorizada.">
+            description="Registre seus gastos, veja quanto saiu por conta e confira a fatura do cartão.">
             <app-month-picker pageHeaderActions [period]="mesAtual" (periodChange)="selecionarMes($event)"></app-month-picker>
         </app-page-header>
         <app-view-state [state]="estadoCarregamento" [message]="mensagemCarregamento"

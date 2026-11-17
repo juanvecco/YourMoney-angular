@@ -57,7 +57,8 @@ export class ConfiguracaoPageComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    if (this.route?.snapshot.queryParamMap.get('secao') === 'regras') this.secao = 'regras';
+    const secaoSolicitada = this.route?.snapshot.queryParamMap.get('secao');
+    if (secaoSolicitada === 'contas' || secaoSolicitada === 'regras') this.secao = secaoSolicitada;
     this.carregarCategorias();
     this.carregarContas();
     this.carregarInstituicoesBancarias();
