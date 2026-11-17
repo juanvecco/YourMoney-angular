@@ -182,6 +182,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
             next: () => {
                 this.carregarRecorrencias();
                 this.carregarSugestoesRecorrentes();
+                this.carregarResumoFatura();
             },
             error: () => {},
         });
@@ -794,7 +795,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.valorFaturaInput = null;
         this.erroResumoFatura = '';
         this.carregandoResumoFatura = false;
-        if (!this.contaConciliacaoId || !this.conciliacaoFaturaService) return;
+        if (!this.regraAtiva('despesas.conciliacao-fatura-cartao') || !this.contaConciliacaoId || !this.conciliacaoFaturaService) return;
         this.carregandoResumoFatura = true;
         const contaId = this.contaConciliacaoId;
         const mes = this.mesAtual.getMonth() + 1;
@@ -815,7 +816,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     }
 
     salvarValorFatura(): void {
-        if (!this.contaConciliacaoId || !this.conciliacaoFaturaService || this.salvandoValorFatura) return;
+        if (!this.regraAtiva('despesas.conciliacao-fatura-cartao') || !this.contaConciliacaoId || !this.conciliacaoFaturaService || this.salvandoValorFatura) return;
         const valor = this.valorFaturaInput;
         if (valor === null || !Number.isFinite(valor) || valor < 0 || Math.abs(Math.round(valor * 100) - valor * 100) > 1e-7) {
             this.erroResumoFatura = 'Informe um valor não negativo com até dois centavos.';
@@ -844,7 +845,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     }
 
     alternarConferencia(despesa: Despesa): void {
-        if (this.marcandoConferenciaId) return;
+        if (!this.regraAtiva('despesas.conciliacao-fatura-cartao') || this.marcandoConferenciaId) return;
         this.marcandoConferenciaId = despesa.id;
         this.erroConferencia = '';
         this.despesaService.definirConferencia(despesa.id, !despesa.conferida)

@@ -9,6 +9,7 @@ import { Router } from '@angular/router';
 import { ConciliacaoFaturaService } from '../../../services/conciliacao-fatura';
 import { ResumoFatura } from '../../../models/conciliacao-fatura.model';
 import { FinancialNavigationContextService } from '../../../services/financial-navigation-context.service';
+import { RegraNegocioService } from '../../../services/regra-negocio.service';
 
 describe('DespesasComponent', () => {
   let component: DespesasComponent;
@@ -218,6 +219,27 @@ describe('DespesasComponent', () => {
     component.alternarConferencia(despesa);
     expect(despesa.conferida).toBeFalse();
     expect(component.erroConferencia).toContain('Não foi possível');
+  });
+
+  it('does not read or change reconciliation when its business rule is disabled', () => {
+    const regras = jasmine.createSpyObj<RegraNegocioService>('RegraNegocioService', ['estaAtiva']);
+    regras.estaAtiva.and.returnValue(false);
+    const fatura = jasmine.createSpyObj<ConciliacaoFaturaService>('ConciliacaoFaturaService', ['obter', 'salvar']);
+    component = new DespesasComponent(despesaService, despesaRecorrenteService, authService, router,
+      new FinancialNavigationContextService(), null, regras, fatura);
+    component.contaConciliacaoId = 'conta-1';
+    component.valorFaturaInput = 200;
+    const despesa: Despesa = { id: 'd1', descricao: 'Compra', valor: 10, data: '2026-11-01',
+      idContaFinanceira: 'conta-1', idCategoria: 'cat1', conferida: false };
+
+    component.carregarResumoFatura();
+    component.salvarValorFatura();
+    component.alternarConferencia(despesa);
+
+    expect(fatura.obter).not.toHaveBeenCalled();
+    expect(fatura.salvar).not.toHaveBeenCalled();
+    expect(despesaService.definirConferencia).not.toHaveBeenCalled();
+    expect(despesa.conferida).toBeFalse();
   });
 
   function criarSugestao(overrides: Partial<SugestaoDespesaRecorrenteResponse> = {}): SugestaoDespesaRecorrenteResponse {

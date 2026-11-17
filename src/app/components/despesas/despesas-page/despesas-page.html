@@ -28,7 +28,7 @@
             </article>
         </section>
 
-        <section class="ym-card ym-card-pad ym-bill-reconcile" aria-labelledby="bill-reconcile-title">
+        <section *ngIf="regraAtiva('despesas.conciliacao-fatura-cartao')" class="ym-card ym-card-pad ym-bill-reconcile" aria-labelledby="bill-reconcile-title">
             <div class="ym-section-header">
                 <div>
                     <h2 id="bill-reconcile-title" class="ym-section-title">Conferir fatura do cartão</h2>
@@ -43,12 +43,12 @@
                         <option *ngFor="let conta of contas" [value]="conta.id">{{ conta.descricao }}</option>
                     </select>
                 </label>
-                <label for="valor-fatura">Valor atual da fatura (R$)
+                <label *ngIf="contaConciliacaoId" for="valor-fatura">Valor atual da fatura (R$)
                     <input id="valor-fatura" class="form-control" type="number" min="0" step="0.01"
                         financialValueInput name="valorFatura" [(ngModel)]="valorFaturaInput"
                         [disabled]="!contaConciliacaoId || carregandoResumoFatura">
                 </label>
-                <button type="button" class="ym-button primary" (click)="salvarValorFatura()"
+                <button *ngIf="contaConciliacaoId" type="button" class="ym-button primary" (click)="salvarValorFatura()"
                     [disabled]="!contaConciliacaoId || carregandoResumoFatura || salvandoValorFatura">
                     {{ salvandoValorFatura ? 'Salvando...' : 'Salvar valor' }}
                 </button>
@@ -256,7 +256,7 @@
                                     <i class="bi bi-layers"></i>{{ obterRotuloParcela(despesa) }}
                                 </span>
                                 <span class="ym-chip">{{ obterNomeCategoria(despesa.idCategoria) }}</span>
-                                <button type="button" class="ym-review-button" [class.ym-review-button--done]="despesa.conferida"
+                                <button *ngIf="regraAtiva('despesas.conciliacao-fatura-cartao')" type="button" class="ym-review-button" [class.ym-review-button--done]="despesa.conferida"
                                     [attr.aria-pressed]="!!despesa.conferida" [disabled]="!!marcandoConferenciaId"
                                     (click)="alternarConferencia(despesa)">
                                     <i class="bi" [ngClass]="despesa.conferida ? 'bi-check-circle-fill' : 'bi-circle'"></i>
