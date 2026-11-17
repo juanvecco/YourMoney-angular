@@ -1,0 +1,67 @@
+<div class="ym-shell">
+  <div class="ym-container">
+    <app-page-header eyebrow="Administração" heading="Usuários"
+      description="Consulte os cadastros do YourMoney."></app-page-header>
+
+    <section class="ym-card ym-card-pad admin-users" aria-labelledby="admin-users-title">
+      <div class="admin-users__heading">
+        <div>
+          <h2 id="admin-users-title">Contas cadastradas</h2>
+          <p>Nome e e-mail informados no cadastro. Senhas não ficam disponíveis para consulta.</p>
+        </div>
+        @if (resultado) { <span class="ym-chip">{{ resultado.total }} contas</span> }
+      </div>
+
+      <form class="admin-users__search" (ngSubmit)="pesquisar()">
+        <label for="admin-users-query">Buscar por e-mail</label>
+        <div>
+          <input id="admin-users-query" name="busca" type="search" [(ngModel)]="busca" maxlength="120" autocomplete="off">
+          <button type="submit" class="ym-button primary">Buscar</button>
+        </div>
+      </form>
+      @if (resultado && !resultado.redefinicaoDisponivel) {
+        <p class="admin-users__notice">O envio de redefinição de senha ainda não está configurado neste ambiente.</p>
+      }
+
+      @if (mensagemRedefinicao) { <p role="status">{{ mensagemRedefinicao }}</p> }
+
+      @if (carregando) { <p role="status">Carregando usuários...</p> }
+      @if (erro) {
+        <div role="alert" class="admin-users__error">
+          <p>{{ erro }}</p>
+          <button type="button" class="ym-button secondary" (click)="carregar()">Tentar novamente</button>
+        </div>
+      }
+      @if (!carregando && !erro && resultado) {
+        @if (!resultado.itens.length) { <p>Nenhum usuário encontrado.</p> }
+        @else {
+          <ul class="admin-users__list">
+            @for (usuario of resultado.itens; track usuario.id) {
+              <li>
+                <div>
+                  <strong>{{ usuario.nome || 'Nome não informado' }}</strong>
+                  <span>{{ usuario.email }}</span>
+                </div>
+                @if (resultado.redefinicaoDisponivel) {
+                  <button type="button" class="ym-button secondary"
+                    [attr.aria-label]="'Enviar redefinição de senha para ' + usuario.email"
+                    [disabled]="!!redefinindoId"
+                    (click)="enviarRedefinicao(usuario.id, usuario.email)">
+                    {{ redefinindoId === usuario.id ? 'Enviando...' : 'Enviar redefinição' }}
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+          @if (totalPaginas > 1) {
+            <nav class="admin-users__pages" aria-label="Páginas de usuários">
+              <button type="button" class="ym-button secondary" (click)="irPara(pagina - 1)" [disabled]="pagina <= 1 || carregando">Anterior</button>
+              <span>Página {{ pagina }} de {{ totalPaginas }}</span>
+              <button type="button" class="ym-button secondary" (click)="irPara(pagina + 1)" [disabled]="pagina >= totalPaginas || carregando">Próxima</button>
+            </nav>
+          }
+        }
+      }
+    </section>
+  </div>
+</div>

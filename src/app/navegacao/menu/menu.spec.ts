@@ -12,11 +12,12 @@ class MenuTestPage {}
 
 describe('MenuComponent', () => {
   let fixture: ComponentFixture<MenuComponent>;
-  const auth = jasmine.createSpyObj<AuthService>('AuthService', ['isLoggedIn', 'logout']);
+  const auth = jasmine.createSpyObj<AuthService>('AuthService', ['isLoggedIn', 'isAdmin', 'logout']);
   let viewport: { matches: boolean; addEventListener: jasmine.Spy; removeEventListener: jasmine.Spy };
 
   beforeEach(async () => {
     auth.isLoggedIn.and.returnValue(true);
+    auth.isAdmin.and.returnValue(false);
     viewport = { matches: false, addEventListener: jasmine.createSpy(), removeEventListener: jasmine.createSpy() };
     spyOn(window, 'matchMedia').and.returnValue(viewport as unknown as MediaQueryList);
     await TestBed.configureTestingModule({
@@ -57,6 +58,13 @@ describe('MenuComponent', () => {
     const links = Array.from(fixture.nativeElement.querySelectorAll('#main-menu .ym-app-drawer__nav a')) as HTMLAnchorElement[];
     const hrefs = links.map(link => link.getAttribute('href'));
     expect(hrefs).toEqual(['/dashboard', '/receitas', '/despesas', '/investimento', '/metas', '/openfinance']);
+  });
+
+  it('shows the user list only to an administrator', () => {
+    expect(fixture.nativeElement.querySelector('a[href="/admin/usuarios"]')).toBeNull();
+    auth.isAdmin.and.returnValue(true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('a[href="/admin/usuarios"]')?.textContent).toContain('Usuários');
   });
 
   it('has one explicit logout action', () => {

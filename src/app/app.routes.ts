@@ -1,4 +1,5 @@
 import { AuthGuard } from './guards/auth.guard';
+import { adminGuard } from './guards/admin.guard';
 import { regraNegocioGuard } from './guards/regra-negocio.guard';
 import { Routes } from '@angular/router';
 import { HomeComponent } from './navegacao/home/home';
@@ -68,6 +69,12 @@ export const routes: Routes = [
         path: 'configuracao',
         component: ConfiguracaoPageComponent,
         canActivate: [AuthGuard]
+    },
+    {
+        path: 'admin/usuarios',
+        loadComponent: () => import('./components/admin/usuarios-admin-page')
+            .then(module => module.UsuariosAdminPageComponent),
+        canActivate: [AuthGuard, adminGuard]
     },
 
     // fallback

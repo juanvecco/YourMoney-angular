@@ -48,6 +48,7 @@ export class MenuComponent {
   }
 
   isLoggedIn(): boolean { return this.authService.isLoggedIn(); }
+  isAdmin(): boolean { return this.authService.isAdmin(); }
   regraAtiva(codigo: string): boolean { return this.regras?.estaAtiva(codigo) ?? true; }
   closeMenu(restoreFocus = false): void {
     const focusTarget = restoreFocus ? this.menuTrigger?.nativeElement : undefined;

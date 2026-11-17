@@ -74,6 +74,11 @@
         </a> }
       </nav>
       <div class="ym-app-drawer__footer">
+        @if (isAdmin()) {
+          <a routerLink="/admin/usuarios" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="onNavigate()">
+            <i class="bi bi-people" aria-hidden="true"></i><span>Usuários</span>
+          </a>
+        }
         <a routerLink="/configuracao" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="onNavigate()">
           <i class="bi bi-gear" aria-hidden="true"></i><span>Configurações</span>
         </a>

@@ -63,6 +63,16 @@ export class AuthService {
         return !!token && !!expiresAt && Date.now() < Number(expiresAt);
     }
 
+    isAdmin(): boolean {
+        if (!this.isLoggedIn()) return false;
+        try {
+            const roles = JSON.parse(localStorage.getItem('user_roles') ?? '[]');
+            return Array.isArray(roles) && roles.includes('Admin');
+        } catch {
+            return false;
+        }
+    }
+
 
     logout(): void {
         this.clearAuthData();
@@ -77,6 +87,7 @@ export class AuthService {
         );
         localStorage.setItem('user_email', auth.usuarioToken.email);
         localStorage.setItem('username', auth.usuarioToken.nome || '');
+        localStorage.setItem('user_roles', JSON.stringify(auth.usuarioToken.roles ?? []));
     }
 
     private clearAuthData(): void {
@@ -84,6 +95,7 @@ export class AuthService {
         localStorage.removeItem('expires_at');
         localStorage.removeItem('user_email');
         localStorage.removeItem('username');
+        localStorage.removeItem('user_roles');
         this.financialContext.resetPrivateContext();
         this.despesaService.clearUserCache();
     }

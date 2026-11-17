@@ -44,6 +44,7 @@ export interface AuthData {
         id: string;
         nome?: string;
         email: string;
+        roles?: string[];
         claims: { type: string; value: string }[];
     };
 }

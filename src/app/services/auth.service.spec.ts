@@ -35,6 +35,7 @@ describe('AuthService', () => {
     localStorage.setItem('expires_at', String(Date.now() + 10000));
     localStorage.setItem('user_email', 'user@example.com');
     localStorage.setItem('username', 'legacy-user');
+    localStorage.setItem('user_roles', '["Admin"]');
     localStorage.setItem('financial_filter', '2026-05');
     localStorage.setItem('ym_theme_v1', 'dark');
     const context = TestBed.inject(FinancialNavigationContextService);
@@ -46,6 +47,7 @@ describe('AuthService', () => {
     expect(localStorage.getItem('expires_at')).toBeNull();
     expect(localStorage.getItem('user_email')).toBeNull();
     expect(localStorage.getItem('username')).toBeNull();
+    expect(localStorage.getItem('user_roles')).toBeNull();
     expect(localStorage.getItem('financial_filter')).toBe('2026-05');
     expect(localStorage.getItem('ym_theme_v1')).toBe('dark');
     expect(context.period().key).not.toBe('2022-01');
@@ -136,6 +138,20 @@ describe('AuthService', () => {
     expect(localStorage.getItem('expires_at')).not.toBeNull();
     expect(localStorage.getItem('user_email')).toBe('local@example.com');
     expect(localStorage.getItem('username')).toBe('Local User');
+  });
+
+  it('shows administrator access only when the current session carries the role', () => {
+    service.login({ email: 'admin@example.com', senha: 'Senha123' }).subscribe();
+    httpMock.expectOne(`${environment.apiUrl}/identidade/autenticar`).flush({
+      success: true,
+      data: {
+        accessToken: 'admin-token', expiresIn: 900,
+        usuarioToken: { id: 'admin-id', nome: 'Admin', email: 'admin@example.com', roles: ['Admin'], claims: [] }
+      }
+    });
+    expect(service.isAdmin()).toBeTrue();
+    service.logout();
+    expect(service.isAdmin()).toBeFalse();
   });
 
   it('replaces stale authentication data returned by a previous user on login', () => {
