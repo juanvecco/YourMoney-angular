@@ -128,6 +128,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     };
     filtrosMobileAbertos = false;
     totalPorConta: { descricao: string; valor: number }[] = [];
+    private totaisPorContaBrutos: { idContaFinanceira: string; valor: number }[] = [];
     estadoCarregamento: FinancialViewState = 'loading';
     mensagemCarregamento = '';
 
@@ -218,6 +219,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
             .subscribe({
                 next: (contas) => {
                     this.contas = contas;
+                    this.aplicarTotaisPorConta(this.totaisPorContaBrutos);
                     if (!this.contaConciliacaoId) {
                         this.contaConciliacaoId = this.filtrosTransacoes.idContaFinanceira || (contas.length === 1 ? contas[0].id : '');
                     }
@@ -258,6 +260,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.totalResultadosDespesas = 0;
         this.totalPaginas = 0;
         this.totalPorConta = [];
+        this.totaisPorContaBrutos = [];
         this.estadoCarregamento = 'loading';
         this.atualizarMensagemCarregamento();
 
@@ -743,6 +746,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.totalResultadosDespesas = 0;
         this.totalPaginas = 0;
         this.totalPorConta = [];
+        this.totaisPorContaBrutos = [];
         this.estadoCarregamento = 'loadError';
         this.atualizarMensagemCarregamento();
     }
@@ -769,6 +773,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     }
 
     private aplicarTotaisPorConta(totais: { idContaFinanceira: string; valor: number }[]) {
+        this.totaisPorContaBrutos = totais;
         this.totalPorConta = totais.map(total => ({
             descricao: this.obterNomeConta(total.idContaFinanceira),
             valor: total.valor

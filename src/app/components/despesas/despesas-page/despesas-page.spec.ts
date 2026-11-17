@@ -249,6 +249,21 @@ describe('DespesasComponent', () => {
     expect(component.mesReferenciaDiferente({ ...despesa, mesReferencia: '2026-11-01' })).toBeFalse();
   });
 
+  it('updates account names when accounts arrive after expense totals', () => {
+    const contas = new Subject<{ id: string; descricao: string }[]>();
+    despesaService.listarContas.and.returnValue(contas.asObservable());
+    despesaService.consultarDespesas.and.returnValue(of(criarConsultaResponse([], {
+      totaisPorConta: [{ idContaFinanceira: 'c6', valor: 120 }]
+    })));
+
+    component.ngOnInit();
+    expect(component.totalPorConta[0].descricao).toBe('Conta Desconhecida');
+    contas.next([{ id: 'c6', descricao: 'C6BANK' }]);
+    expect(component.totalPorConta[0].descricao).toBe('C6BANK');
+    expect(component.totalPorConta[0].valor).toBe(120);
+    component.ngOnDestroy();
+  });
+
   function criarSugestao(overrides: Partial<SugestaoDespesaRecorrenteResponse> = {}): SugestaoDespesaRecorrenteResponse {
     return {
       ocorrenciaId: 'ocorrencia-1',
