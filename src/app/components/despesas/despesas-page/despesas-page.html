@@ -264,39 +264,40 @@
                 <p *ngIf="erroConferencia" class="ym-bill-reconcile__error" role="alert">{{ erroConferencia }}</p>
                 <div class="ym-list" *ngIf="estadoCarregamento === 'loadedWithData'">
                     <article *ngFor="let despesa of despesas" class="ym-list-item ym-expense-item">
-                        <div class="ym-list-main">
+                        <button class="ym-expense-item__toggle" type="button" (click)="alternarDetalhesDespesa(despesa.id)"
+                            [attr.aria-expanded]="despesaDetalhadaId === despesa.id" [attr.aria-controls]="'despesa-detalhes-' + despesa.id"
+                            [attr.aria-label]="(despesaDetalhadaId === despesa.id ? 'Ocultar detalhes de ' : 'Ver detalhes de ') + despesa.descricao">
                             <div class="ym-expense-item__headline">
                                 <h3 class="ym-list-title">{{ despesa.descricao }}</h3>
                                 <span class="ym-amount">{{ obterValorLiquidoDespesa(despesa) | financialValue }}</span>
                             </div>
                             <div class="ym-list-meta">
                                 <span><i class="bi bi-calendar3"></i> {{ formatarData(despesa.data) }}</span>
-                                <span class="ym-expense-item__reference" [class.ym-expense-item__reference--different]="mesReferenciaDiferente(despesa)"><i class="bi bi-calendar-month"></i> Ref. {{ obterMesReferenciaTexto(despesa.mesReferencia || despesa.data) }}</span>
                                 <span class="ym-chip ym-installment-chip" *ngIf="temParcelamento(despesa)">
                                     <i class="bi bi-layers"></i>{{ obterRotuloParcela(despesa) }}
                                 </span>
                                 <span class="ym-chip">{{ obterNomeCategoria(despesa.idCategoria) }}</span>
                             </div>
-                            <small *ngIf="despesa.possuiReembolso" class="ym-expense-item__reimbursement">
-                                Bruto {{ despesa.valor | financialValue }} · Reembolso {{ despesa.valorReembolsado | financialValue }}
-                            </small>
-                        </div>
-                        <div class="ym-expense-item__actions accent-danger">
-                            <button *ngIf="regraAtiva('despesas.conciliacao-fatura-cartao')" type="button" class="ym-review-button" [class.ym-review-button--done]="despesa.conferida"
-                                [attr.aria-pressed]="!!despesa.conferida" [disabled]="!!marcandoConferenciaId"
-                                (click)="alternarConferencia(despesa)">
-                                <i class="bi" [ngClass]="despesa.conferida ? 'bi-check-circle-fill' : 'bi-circle'"></i>
-                                {{ despesa.conferida ? 'Conferida' : 'Marcar conferida' }}
-                            </button>
-                            <div class="ym-expense-item__icon-actions">
-                                <button class="ym-icon-button" type="button" (click)="abrirModalEditar(despesa)"
-                                    [attr.aria-label]="'Editar ' + despesa.descricao">
-                                    <i class="bi bi-pencil"></i>
+                            <span class="ym-expense-item__hint">{{ despesaDetalhadaId === despesa.id ? 'Ocultar detalhes' : 'Ver detalhes' }} <i class="bi" [ngClass]="despesaDetalhadaId === despesa.id ? 'bi-chevron-up' : 'bi-chevron-down'" aria-hidden="true"></i></span>
+                        </button>
+                        <div *ngIf="despesaDetalhadaId === despesa.id" class="ym-entry-details" [id]="'despesa-detalhes-' + despesa.id">
+                            <dl>
+                                <div><dt>Data</dt><dd>{{ formatarData(despesa.data) }}</dd></div>
+                                <div><dt>Mês de referência</dt><dd>{{ obterMesReferenciaTexto(despesa.mesReferencia || despesa.data) }}</dd></div>
+                                <div><dt>Conta</dt><dd>{{ obterNomeConta(despesa.idContaFinanceira) }}</dd></div>
+                                <div><dt>Categoria</dt><dd>{{ obterNomeCategoria(despesa.idCategoria) }}</dd></div>
+                                <div *ngIf="temParcelamento(despesa)"><dt>Parcelamento</dt><dd>{{ obterRotuloParcela(despesa) }}</dd></div>
+                                <div *ngIf="despesa.possuiReembolso"><dt>Valor bruto</dt><dd>{{ despesa.valor | financialValue }}</dd></div>
+                                <div *ngIf="despesa.possuiReembolso"><dt>Reembolso</dt><dd>{{ despesa.valorReembolsado | financialValue }}</dd></div>
+                            </dl>
+                            <div class="ym-entry-details__actions">
+                                <button *ngIf="regraAtiva('despesas.conciliacao-fatura-cartao')" type="button" class="ym-review-button" [class.ym-review-button--done]="despesa.conferida"
+                                    [attr.aria-pressed]="!!despesa.conferida" [disabled]="!!marcandoConferenciaId" (click)="alternarConferencia(despesa)">
+                                    <i class="bi" [ngClass]="despesa.conferida ? 'bi-check-circle-fill' : 'bi-circle'"></i>
+                                    {{ despesa.conferida ? 'Conferida' : 'Marcar conferida' }}
                                 </button>
-                                <button class="ym-icon-button" type="button" (click)="deletarDespesa(despesa.id)"
-                                    [attr.aria-label]="'Excluir ' + despesa.descricao">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                                <button class="ym-button secondary" type="button" (click)="abrirModalEditar(despesa)"><i class="bi bi-pencil" aria-hidden="true"></i> Editar despesa</button>
+                                <button class="ym-button secondary ym-entry-details__delete" type="button" (click)="deletarDespesa(despesa.id)"><i class="bi bi-trash" aria-hidden="true"></i> Excluir despesa</button>
                             </div>
                         </div>
                     </article>

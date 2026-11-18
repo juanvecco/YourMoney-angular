@@ -15,9 +15,9 @@
     <section class="ym-objective-summary" *ngIf="regraAtiva('investimentos.objetivos') && objetivosResumo.length" aria-labelledby="objetivosResumoTitulo">
       <div class="ym-section-header"><div><h2 class="ym-section-title" id="objetivosResumoTitulo">Progresso dos objetivos</h2><p class="ym-subtitle">Patrimônio atual e cumprimento do valor planejado no mês, sem duplicar saldos.</p></div></div>
       <div class="ym-objective-summary__grid">
-        <article class="ym-card ym-objective-card" *ngFor="let objetivo of objetivosPrincipais()">
+        <article class="ym-card ym-objective-card" *ngFor="let objetivo of objetivosPrincipais(); let primeiro = first">
           <div class="ym-objective-card__cover" [class.empty]="!imagemObjetivo(objetivo)">
-            <img *ngIf="imagemObjetivo(objetivo) as imagem" [src]="imagem" [alt]="'Imagem do objetivo ' + objetivo.nome + (objetivo.descricao ? ': ' + objetivo.descricao : '')" />
+            <img *ngIf="imagemObjetivo(objetivo) as imagem" [src]="imagem" [attr.loading]="primeiro ? 'eager' : 'lazy'" [alt]="'Imagem do objetivo ' + objetivo.nome + (objetivo.descricao ? ': ' + objetivo.descricao : '')" />
             <i *ngIf="!imagemObjetivo(objetivo)" class="bi bi-bullseye" aria-hidden="true"></i>
             <span class="ym-objective-card__category"><i class="bi bi-heart" aria-hidden="true"></i> Objetivo pessoal</span>
           </div>
@@ -50,7 +50,7 @@
             <div *ngIf="subobjetivosAbertos(objetivo.id)" class="ym-subobjective-list" [id]="'subobjetivos-' + objetivo.id">
               <article *ngFor="let subobjetivo of subobjetivosDe(objetivo.id)" class="ym-subobjective-card">
                 <div class="ym-subobjective-card__heading">
-                  <img *ngIf="imagemObjetivo(subobjetivo) as imagem" [src]="imagem" [alt]="'Imagem do subobjetivo ' + subobjetivo.nome" />
+                  <img *ngIf="imagemObjetivo(subobjetivo) as imagem" [src]="imagem" loading="lazy" [alt]="'Imagem do subobjetivo ' + subobjetivo.nome" />
                   <div><span>Subobjetivo</span><h4>{{ subobjetivo.nome }}</h4><p *ngIf="subobjetivo.descricao">{{ subobjetivo.descricao }}</p></div>
                 </div>
                 <div class="ym-subobjective-card__amount"><span>Guardado para este objetivo</span><strong>{{ formatarMoeda(subobjetivo.valorAtualCarteira) | financialValue }}</strong></div>

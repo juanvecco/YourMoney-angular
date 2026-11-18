@@ -76,7 +76,7 @@
                 [retryAvailable]="estadoResumo === 'loadError'" (retry)="carregarDadosMesAtual()"></app-view-state>
         }
 
-        <section class="ym-kpi-grid" [hidden]="estadoResumo !== 'loadedWithData'">
+        <section class="ym-kpi-grid ym-dashboard-kpis" [hidden]="estadoResumo !== 'loadedWithData'">
             <article class="ym-card ym-kpi accent-success">
                 <i class="ym-kpi-icon bi bi-arrow-up-right"></i>
                 <h2 class="ym-kpi-label">Receitas</h2>

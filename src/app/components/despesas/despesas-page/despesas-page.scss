@@ -23,13 +23,13 @@
 .ym-bill-reconcile__difference { border: 1px solid var(--ym-primary); }
 .ym-bill-reconcile__error { color: var(--ym-danger); margin: 8px 0; }
 .ym-expense-toolbar { display: none; }
-.ym-expense-item .ym-list-main { flex: 1 1 auto; }
+.ym-expense-item { display: block; padding: 0; }
+.ym-expense-item__toggle { display: block; width: 100%; padding: 14px 16px; border: 0; color: var(--ym-text); background: transparent; text-align: left; cursor: pointer; }
+.ym-expense-item__toggle:focus-visible { outline: 2px solid var(--ym-primary); outline-offset: -3px; }
+.ym-expense-item__hint { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; color: var(--ym-primary); font-size: 12px; font-weight: 700; }
 .ym-expense-item__headline { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .ym-expense-item__headline .ym-list-title { min-width: 0; overflow-wrap: anywhere; }
 .ym-expense-item__headline .ym-amount { font-size: 1rem; }
-.ym-expense-item__reimbursement { display: block; margin-top: 6px; color: var(--ym-muted); }
-.ym-expense-item__actions, .ym-expense-item__icon-actions { display: flex; align-items: center; gap: 8px; }
-.ym-expense-item__actions { flex: none; }
 .ym-openfinance-title-mobile { display: none; }
 .ym-review-button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 3px 9px; border: 1px solid var(--ym-border); border-radius: 999px; background: var(--ym-surface); color: var(--ym-muted); font: inherit; font-size: 12px; cursor: pointer; }
 .ym-review-button--done { color: var(--ym-primary); border-color: var(--ym-primary); }
@@ -64,15 +64,11 @@
   .ym-expense-toolbar__summary { color: var(--ym-muted); font-size: 12px; font-weight: 600; }
   .ym-expense-query { display: none; }
   .ym-expense-query--open { display: grid; padding: 12px; border: 1px solid var(--ym-border); border-radius: var(--ym-radius-sm); background: var(--ym-surface-strong); }
-  .ym-expense-item { display: grid; gap: 10px; padding: 12px; }
-  .ym-expense-item .ym-list-main { width: 100%; }
-  .ym-expense-item__reference { display: none; }
-  .ym-expense-item__reference--different { display: inline; }
+  .ym-expense-item { display: block; padding: 0; }
+  .ym-expense-item__toggle { padding: 12px; }
+  .ym-entry-details { padding: 12px; }
   .ym-expense-item .ym-list-meta { gap: 6px 8px; margin-top: 7px; }
-  .ym-expense-item__actions { width: 100%; justify-content: space-between; padding-top: 8px; border-top: 1px solid var(--ym-border); }
-  .ym-expense-item__actions .ym-review-button { min-height: 40px; }
-  .ym-expense-item__icon-actions { margin-left: auto; }
-  .ym-expense-item__icon-actions .ym-icon-button { width: 40px; height: 40px; }
+  .ym-entry-details__actions .ym-review-button { min-height: 40px; }
   .ym-openfinance-toggle-row { padding: 12px; }
   .ym-openfinance-toggle small, .ym-openfinance-origin { display: none; }
   .ym-openfinance-title-desktop { display: none; }

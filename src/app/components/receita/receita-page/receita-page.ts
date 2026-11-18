@@ -60,6 +60,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
 
     // === DADOS ===
     receitas: Receita[] = [];
+    receitaDetalhadaId: string | null = null;
     despesasVinculaveis: Despesa[] = [];
     mesAtual: Date = new Date();
     totalReceitas = 0;
@@ -305,6 +306,10 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     }
 
     // === MODAL ===
+    alternarDetalhesReceita(id: string): void {
+        this.receitaDetalhadaId = this.receitaDetalhadaId === id ? null : id;
+    }
+
     abrirModalReceita() {
         this.editando = false;
         this.resetForm();
@@ -510,6 +515,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
                     .subscribe({
                         next: () => {
                             this.receitas = this.receitas.filter(d => d.id !== id);
+                            if (this.receitaDetalhadaId === id) this.receitaDetalhadaId = null;
                             this.totalReceitas = this.receitas.reduce((s, d) => s + d.valor, 0);
                             Swal.fire('Deletado!', '', 'success');
                         },

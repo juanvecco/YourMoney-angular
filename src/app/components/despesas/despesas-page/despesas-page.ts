@@ -117,6 +117,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     naturezasFiltroDespesa: Categoria[] = [];
 
     despesas: Despesa[] = [];
+    despesaDetalhadaId: string | null = null;
     mesAtual: Date = new Date();
     totalDespesas = 0;
     totalDespesasFiltradas = 0;
@@ -821,6 +822,10 @@ export class DespesasComponent implements OnInit, OnDestroy {
     }
 
     selecionarContaConciliacao(): void { this.carregarResumoFatura(); }
+
+    alternarDetalhesDespesa(id: string): void {
+        this.despesaDetalhadaId = this.despesaDetalhadaId === id ? null : id;
+    }
 
     carregarResumoFatura(): void {
         const revision = ++this.resumoFaturaRevision;
@@ -1971,6 +1976,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
                     .pipe(takeUntil(this.destroy$))
                     .subscribe({
                         next: () => {
+                            if (this.despesaDetalhadaId === id) this.despesaDetalhadaId = null;
                             this.carregarDespesas();
                             Swal.fire('Deletado!', '', 'success');
                         },

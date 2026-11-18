@@ -5,6 +5,13 @@
     font-weight: 700;
 }
 
+.ym-revenue-item { display: block; padding: 0; }
+.ym-revenue-item__toggle { display: block; width: 100%; padding: 14px 16px; border: 0; color: var(--ym-text); background: transparent; text-align: left; cursor: pointer; }
+.ym-revenue-item__toggle:focus-visible { outline: 2px solid var(--ym-primary); outline-offset: -3px; }
+.ym-revenue-item__summary { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.ym-revenue-item__summary .ym-list-title { min-width: 0; overflow-wrap: anywhere; }
+.ym-revenue-item__hint { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; color: var(--ym-primary); font-size: 12px; font-weight: 700; }
+
 .natureza-disponivel {
     background: rgba(25, 135, 84, 0.12);
     border-color: rgba(25, 135, 84, 0.28);

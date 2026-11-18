@@ -20,6 +20,15 @@
 .ym-section-title { font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif; letter-spacing: -.02em; }
 .ym-section-subtitle { color: var(--ym-subtle); }
 .ym-list-item, .ym-batch-item { background: var(--ym-surface-strong); }
+
+.ym-entry-details { padding: 14px 16px; border-top: 1px solid var(--ym-border); }
+.ym-entry-details dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0 0 16px; }
+.ym-entry-details dl div { min-width: 0; }
+.ym-entry-details dt { color: var(--ym-muted); font-size: 12px; }
+.ym-entry-details dd { margin: 2px 0 0; color: var(--ym-text); overflow-wrap: anywhere; }
+.ym-entry-details__actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.ym-entry-details__delete { color: var(--ym-danger); }
+@media (max-width: 480px) { .ym-entry-details dl { grid-template-columns: 1fr; } }
 .ym-chip { color: var(--ym-muted); background: var(--ym-surface-interactive); }
 .ym-metric-row { border-color: var(--ym-border); }
 .form-control, .form-select {

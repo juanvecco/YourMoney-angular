@@ -3,16 +3,8 @@ import { adminGuard } from './guards/admin.guard';
 import { regraNegocioGuard } from './guards/regra-negocio.guard';
 import { Routes } from '@angular/router';
 import { HomeComponent } from './navegacao/home/home';
-import { DespesasComponent } from './components/despesas/despesas-page/despesas-page';
-import { ReceitaPageComponent } from './components/receita/receita-page/receita-page';
-import { DisponivelPageComponent } from './components/disponivel/disponivel-page/disponivel-page';
-import { InvestimentoPageComponent } from './components/investimento/investimento-page/investimento-page';
-import { ConfiguracaoPageComponent } from './components/configuracao/configuracao-page/configuracao-page';
-import { DashboardPageComponent } from './components/dashboard/dashboard-page/dashboard-page';
 import { LoginPageComponent } from './components/login/login-page/login-page';
 import { CadastroPageComponent } from './components/cadastro/cadastro-page/cadastro-page';
-import { MetasPageComponent } from './components/metas/metas-page/metas-page';
-import { MovimentacoesPageComponent } from './components/movimentacoes/movimentacoes-page/movimentacoes-page';
 import { RecuperarSenhaPageComponent } from './components/auth/recuperar-senha-page/recuperar-senha-page';
 import { RedefinirSenhaPageComponent } from './components/auth/redefinir-senha-page/redefinir-senha-page';
 
@@ -26,37 +18,37 @@ export const routes: Routes = [
 
     {
         path: 'dashboard',
-        component: DashboardPageComponent,
+        loadComponent: () => import('./components/dashboard/dashboard-page/dashboard-page').then(module => module.DashboardPageComponent),
         canActivate: [AuthGuard]
     },
     {
         path: 'despesas',
-        component: DespesasComponent,
+        loadComponent: () => import('./components/despesas/despesas-page/despesas-page').then(module => module.DespesasComponent),
         canActivate: [AuthGuard]
     },
     {
         path: 'receitas',
-        component: ReceitaPageComponent,
+        loadComponent: () => import('./components/receita/receita-page/receita-page').then(module => module.ReceitaPageComponent),
         canActivate: [AuthGuard]
     },
     {
         path: 'disponivel',
-        component: DisponivelPageComponent,
+        loadComponent: () => import('./components/disponivel/disponivel-page/disponivel-page').then(module => module.DisponivelPageComponent),
         canActivate: [AuthGuard]
     },
     {
         path: 'investimento',
-        component: InvestimentoPageComponent,
+        loadComponent: () => import('./components/investimento/investimento-page/investimento-page').then(module => module.InvestimentoPageComponent),
         canActivate: [AuthGuard]
     },
     {
         path: 'metas',
-        component: MetasPageComponent,
+        loadComponent: () => import('./components/metas/metas-page/metas-page').then(module => module.MetasPageComponent),
         canActivate: [AuthGuard, regraNegocioGuard('metas.mensais')]
     },
     {
         path: 'movimentacoes',
-        component: MovimentacoesPageComponent,
+        loadComponent: () => import('./components/movimentacoes/movimentacoes-page/movimentacoes-page').then(module => module.MovimentacoesPageComponent),
         canActivate: [AuthGuard]
     },
     {
@@ -67,7 +59,7 @@ export const routes: Routes = [
     },
     {
         path: 'configuracao',
-        component: ConfiguracaoPageComponent,
+        loadComponent: () => import('./components/configuracao/configuracao-page/configuracao-page').then(module => module.ConfiguracaoPageComponent),
         canActivate: [AuthGuard]
     },
     {

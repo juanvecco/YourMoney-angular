@@ -123,29 +123,29 @@
                     <app-view-state *ngIf="estadoCarregamento === 'loading'" state="loading" skeleton="list"
                         message="Carregando lançamentos..."></app-view-state>
                     <div class="ym-list" *ngIf="estadoCarregamento === 'loadedWithData'">
-                        <article *ngFor="let receita of receitas" class="ym-list-item">
-                            <div class="ym-list-main">
-                                <h3 class="ym-list-title">{{ receita.descricao }}</h3>
-                                <div class="ym-list-meta">
-                                    <span><i class="bi bi-calendar3"></i> {{ receita.data | date:'dd/MM/yyyy' }}</span>
-                                    <span><i class="bi bi-calendar-month"></i> Ref. {{ obterMesReferenciaTexto(receita.mesReferencia || receita.data) }}</span>
-                                    <span [ngClass]="obterNaturezaClasse(receita.natureza)">{{ obterNaturezaTexto(receita.natureza) }}</span>
-                                    <span class="ym-chip receita-impacto">{{ obterImpactoMetas(receita) }}</span>
-                                    <span class="ym-chip" *ngIf="receita.despesaVinculadaDescricao">
-                                        <i class="bi bi-link-45deg"></i>{{ receita.despesaVinculadaDescricao }}
-                                    </span>
+                        <article *ngFor="let receita of receitas" class="ym-list-item ym-revenue-item">
+                            <button class="ym-revenue-item__toggle" type="button" (click)="alternarDetalhesReceita(receita.id)"
+                                [attr.aria-expanded]="receitaDetalhadaId === receita.id" [attr.aria-controls]="'receita-detalhes-' + receita.id"
+                                [attr.aria-label]="(receitaDetalhadaId === receita.id ? 'Ocultar detalhes de ' : 'Ver detalhes de ') + receita.descricao">
+                                <span class="ym-revenue-item__summary"><strong class="ym-list-title">{{ receita.descricao }}</strong>
+                                    <strong class="ym-amount accent-success">{{ receita.valor | financialValue }}</strong></span>
+                                <span class="ym-list-meta"><span><i class="bi bi-calendar3"></i> {{ receita.data | date:'dd/MM/yyyy' }}</span>
+                                    <span>{{ obterNaturezaTexto(receita.natureza) }}</span></span>
+                                <span class="ym-revenue-item__hint">{{ receitaDetalhadaId === receita.id ? 'Ocultar detalhes' : 'Ver detalhes' }} <i class="bi" [ngClass]="receitaDetalhadaId === receita.id ? 'bi-chevron-up' : 'bi-chevron-down'" aria-hidden="true"></i></span>
+                            </button>
+                            <div *ngIf="receitaDetalhadaId === receita.id" class="ym-entry-details" [id]="'receita-detalhes-' + receita.id">
+                                <dl>
+                                    <div><dt>Data</dt><dd>{{ receita.data | date:'dd/MM/yyyy' }}</dd></div>
+                                    <div><dt>Mês de referência</dt><dd>{{ obterMesReferenciaTexto(receita.mesReferencia || receita.data) }}</dd></div>
+                                    <div><dt>Natureza</dt><dd>{{ obterNaturezaTexto(receita.natureza) }}</dd></div>
+                                    <div><dt>Metas</dt><dd>{{ obterImpactoMetas(receita) }}</dd></div>
+                                    <div *ngIf="receita.contaDescricao"><dt>Conta</dt><dd>{{ receita.contaDescricao }}</dd></div>
+                                    <div *ngIf="receita.despesaVinculadaDescricao"><dt>Despesa vinculada</dt><dd>{{ receita.despesaVinculadaDescricao }}</dd></div>
+                                </dl>
+                                <div class="ym-entry-details__actions">
+                                    <button class="ym-button secondary" type="button" (click)="abrirModalEditar(receita)"><i class="bi bi-pencil" aria-hidden="true"></i> Editar receita</button>
+                                    <button class="ym-button secondary ym-entry-details__delete" type="button" (click)="deletarReceita(receita.id)"><i class="bi bi-trash" aria-hidden="true"></i> Excluir receita</button>
                                 </div>
-                            </div>
-                            <div class="ym-list-actions accent-success">
-                                <span class="ym-amount">{{ receita.valor | financialValue }}</span>
-                                <button class="ym-icon-button" type="button" (click)="abrirModalEditar(receita)"
-                                    aria-label="Editar receita">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button class="ym-icon-button" type="button" (click)="deletarReceita(receita.id)"
-                                    aria-label="Excluir receita">
-                                    <i class="bi bi-trash"></i>
-                                </button>
                             </div>
                         </article>
                     </div>

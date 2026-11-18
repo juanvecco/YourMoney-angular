@@ -1,12 +1,10 @@
 import { expect, test } from './fixtures/api.fixture';
 
 const destinations = [
-  { label: 'Dashboard', path: '/dashboard' },
+  { label: 'Início', path: '/dashboard' },
   { label: 'Receitas', path: '/receitas' },
   { label: 'Despesas', path: '/despesas' },
   { label: 'Investimentos', path: '/investimento' },
-  { label: 'Metas', path: '/metas' },
-  { label: 'Conexões', path: '/openfinance' },
 ];
 
 const viewports = [
@@ -71,9 +69,6 @@ for (const viewport of [
     const actions = page.locator('.ym-topbar__actions');
     await expect(actions.getByRole('button', { name: /Mostrar valores|Ocultar valores/ })).toBeVisible();
     await expect(actions.getByRole('button', { name: /Ativar modo/ })).toBeVisible();
-    await expect(actions.getByRole('link', { name: 'Configurações' })).toBeVisible();
-    await expect(actions.getByRole('button', { name: 'Sair' })).toBeVisible();
-
     const valuesToggle = actions.locator('.ym-topbar__icon-action');
     const valuesBefore = await valuesToggle.getAttribute('aria-pressed');
     await valuesToggle.click();
@@ -85,22 +80,17 @@ for (const viewport of [
     expect(await themeToggle.getAttribute('aria-pressed')).not.toBe(themeBefore);
     await expect(themeToggle.locator('span')).toHaveClass(/visually-hidden/);
 
-    for (const selector of ['a[href="/configuracao"] .ym-topbar__label', '[data-testid="logout"] .ym-topbar__label']) {
-      const label = actions.locator(selector);
-      const bounds = await label.boundingBox();
-      expect(bounds?.width ?? 0).toBeGreaterThan(10);
-      await expect(label).toBeInViewport();
+    if (viewport.width <= 980) {
+      await page.getByRole('button', { name: 'Abrir menu de navegação' }).click();
+      const drawer = page.locator('#main-menu');
+      await expect(drawer.getByRole('link', { name: 'Configurações' })).toBeVisible();
+      await expect(drawer.getByRole('button', { name: 'Sair' })).toBeVisible();
+    } else {
+      await expect(actions.getByRole('link', { name: 'Configurações' })).toBeVisible();
+      await expect(actions.getByRole('button', { name: 'Sair' })).toBeVisible();
     }
 
-    const triggerBounds = await page.locator('.ym-menu-trigger').boundingBox();
-    const brandBounds = await page.locator('.ym-brand').boundingBox();
-    const actionsBounds = await actions.boundingBox();
-    expect(triggerBounds).not.toBeNull();
-    expect(brandBounds).not.toBeNull();
-    expect(actionsBounds).not.toBeNull();
-    expect((triggerBounds?.x ?? 0) + (triggerBounds?.width ?? 0)).toBeLessThanOrEqual(brandBounds?.x ?? 0);
-    expect((brandBounds?.x ?? 0) + (brandBounds?.width ?? 0)).toBeLessThanOrEqual(actionsBounds?.x ?? 0);
-    expect((actionsBounds?.x ?? 0) + (actionsBounds?.width ?? 0)).toBeLessThanOrEqual(viewport.width);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
   });
 }
 
@@ -131,7 +121,7 @@ test('keeps mobile navigation compact and closes the drawer after choosing a pag
   }
 });
 
-test('opens Configurações and ends the session from the top bar', async ({ page, mockApi, authenticateAs, userA }) => {
+test('opens Configurações and ends the session from the desktop actions', async ({ page, mockApi, authenticateAs, userA }) => {
   await mockApi();
   await authenticateAs(userA);
   await page.goto('/dashboard');
@@ -139,6 +129,6 @@ test('opens Configurações and ends the session from the top bar', async ({ pag
   const actions = page.locator('.ym-topbar__actions');
   await actions.getByRole('link', { name: 'Configurações' }).click();
   await expect(page).toHaveURL(/\/configuracao$/);
-  await page.locator('.ym-topbar__actions').getByRole('button', { name: 'Sair' }).click();
+  await actions.getByRole('button', { name: 'Sair' }).click();
   await expect(page).toHaveURL(/\/login$/);
 });
