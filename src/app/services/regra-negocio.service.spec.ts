@@ -52,4 +52,20 @@ describe('RegraNegocioService', () => {
     http.expectOne(url).flush([{ ...renda, ativa: false, efetiva: false }]);
     expect(service.estaAtiva('receitas.recorrencia')).toBeFalse();
   });
+
+  it('shares a pending rules request even when a caller forces refresh', () => {
+    const first = jasmine.createSpy('first');
+    const second = jasmine.createSpy('second');
+    service.carregar().subscribe(first);
+    service.carregar(true).subscribe(second);
+
+    const pending = http.match(url);
+    expect(pending.length).toBe(1);
+    pending[0].flush([renda]);
+    expect(first).toHaveBeenCalledWith([renda]);
+    expect(second).toHaveBeenCalledWith([renda]);
+
+    service.carregar(true).subscribe();
+    http.expectOne(url).flush([reserva]);
+  });
 });

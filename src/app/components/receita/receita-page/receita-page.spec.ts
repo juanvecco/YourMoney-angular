@@ -9,6 +9,8 @@ import { AuthService } from '../../../services/auth.service';
 import Swal from 'sweetalert2';
 import { CriarReceitaResponse, Receita } from '../../../models/receita.model';
 import { Despesa } from '../../../models/despesa.model';
+import { FinancialNavigationContextService } from '../../../services/financial-navigation-context.service';
+import { RegraNegocioService } from '../../../services/regra-negocio.service';
 
 describe('ReceitaPageComponent', () => {
   let component: ReceitaPageComponent;
@@ -86,6 +88,21 @@ describe('ReceitaPageComponent', () => {
       authService,
       router
     );
+  });
+
+  it('loads recurring revenue and reserve projection once after business rules are available', () => {
+    const regras = jasmine.createSpyObj<RegraNegocioService>('RegraNegocioService', ['carregar', 'estaAtiva']);
+    regras.carregar.and.returnValue(of([]));
+    regras.estaAtiva.and.returnValue(true);
+    component = new ReceitaPageComponent(receitaService, despesaService, receitaRecorrenteService,
+      authService, router, new FinancialNavigationContextService(), regras);
+
+    component.ngOnInit();
+
+    expect(receitaRecorrenteService.listar).toHaveBeenCalledTimes(1);
+    expect(receitaRecorrenteService.listarSugestoes).toHaveBeenCalledTimes(1);
+    expect(receitaRecorrenteService.obterProjecaoReserva).toHaveBeenCalledTimes(1);
+    component.ngOnDestroy();
   });
 
   it('loads receitas by selected month and updates total', () => {

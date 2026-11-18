@@ -75,6 +75,9 @@ export class DespesasComponent implements OnInit, OnDestroy {
     private loadRevision = 0;
     private openFinanceRevision = 0;
     private resumoFaturaRevision = 0;
+    private aguardandoResumoInicial = false;
+    private contasIniciaisCarregadas = false;
+    private regrasIniciaisCarregadas = false;
 
     // === FORMULÁRIO ===
     novaDespesa = {
@@ -180,15 +183,27 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.filtrosTransacoes = { ...this.financialContext.expenseFilters() };
+        this.aguardandoResumoInicial = true;
         this.carregarDadosIniciais();
-        this.regras?.carregar().pipe(takeUntil(this.destroy$)).subscribe({
-            next: () => {
-                this.carregarRecorrencias();
-                this.carregarSugestoesRecorrentes();
-                this.carregarResumoFatura();
-            },
-            error: () => {},
-        });
+        if (this.regras) {
+            this.regras.carregar().pipe(takeUntil(this.destroy$)).subscribe({
+                next: () => {
+                    this.carregarRecorrencias();
+                    this.carregarSugestoesRecorrentes();
+                    this.regrasIniciaisCarregadas = true;
+                    this.tentarCarregarResumoInicial();
+                },
+                error: () => {
+                    this.regrasIniciaisCarregadas = true;
+                    this.tentarCarregarResumoInicial();
+                },
+            });
+        } else {
+            this.carregarRecorrencias();
+            this.carregarSugestoesRecorrentes();
+            this.regrasIniciaisCarregadas = true;
+            this.tentarCarregarResumoInicial();
+        }
     }
 
     ngOnDestroy() {
@@ -205,8 +220,6 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.carregarContas();
         this.carregarCategoriasCompletas();
         this.carregarDespesas();
-        this.carregarRecorrencias();
-        this.carregarSugestoesRecorrentes();
     }
 
     regraAtiva(codigo: string): boolean {
@@ -225,10 +238,23 @@ export class DespesasComponent implements OnInit, OnDestroy {
                     }
                     if (this.contaConciliacaoId && !contas.some(conta => conta.id === this.contaConciliacaoId))
                         this.contaConciliacaoId = '';
-                    this.carregarResumoFatura();
+                    if (this.aguardandoResumoInicial) {
+                        this.contasIniciaisCarregadas = true;
+                        this.tentarCarregarResumoInicial();
+                    } else this.carregarResumoFatura();
                 },
-                error: (erro) => console.error('Erro ao carregar contas', erro)
+                error: (erro) => {
+                    console.error('Erro ao carregar contas', erro);
+                    this.contasIniciaisCarregadas = true;
+                    this.tentarCarregarResumoInicial();
+                }
             });
+    }
+
+    private tentarCarregarResumoInicial(): void {
+        if (!this.aguardandoResumoInicial || !this.contasIniciaisCarregadas || !this.regrasIniciaisCarregadas) return;
+        this.aguardandoResumoInicial = false;
+        this.carregarResumoFatura();
     }
 
     carregarCategoriasCompletas() {
@@ -250,7 +276,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     }
 
     carregarDespesas() {
-        this.carregarResumoFatura();
+        if (!this.aguardandoResumoInicial) this.carregarResumoFatura();
         const revision = ++this.loadRevision;
         const mes = this.mesAtual.getMonth() + 1;
         const ano = this.mesAtual.getFullYear();

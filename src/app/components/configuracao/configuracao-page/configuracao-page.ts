@@ -75,10 +75,10 @@ export class ConfiguracaoPageComponent implements OnInit {
     if (secao === 'regras') this.carregarRegras();
   }
 
-  carregarRegras(): void {
+  carregarRegras(forcar = false): void {
     this.carregandoRegras = true;
     this.erroRegras = '';
-    this.regraNegocioService.carregar(true).subscribe({
+    this.regraNegocioService.carregar(forcar).subscribe({
       next: regras => {
         this.regras = regras;
         this.carregandoRegras = false;

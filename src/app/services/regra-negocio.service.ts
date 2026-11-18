@@ -21,8 +21,8 @@ export class RegraNegocioService {
       this.carregamento = null;
       this.tokenCarregado = token;
     }
+    if (this.carregamento) return this.carregamento;
     if (!forcar && this.regrasState()) return of(this.regrasState()!);
-    if (!forcar && this.carregamento) return this.carregamento;
 
     this.carregamento = this.http.get<RegraNegocio[]>(this.url).pipe(
       tap(regras => this.regrasState.set(regras)),

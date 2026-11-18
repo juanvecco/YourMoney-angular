@@ -2,12 +2,18 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AppComponent } from './app';
 import { AuthService } from './services/auth.service';
+import { RegraNegocioService } from './services/regra-negocio.service';
+import { of } from 'rxjs';
 
 describe('AppComponent shell', () => {
   it('renders one shared menu, main target and footer on public routes', async () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent],
-      providers: [provideRouter([]), { provide: AuthService, useValue: { isLoggedIn: () => false, logout: () => undefined } }],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { isLoggedIn: () => false, logout: () => undefined } },
+        { provide: RegraNegocioService, useValue: { carregar: () => of([]), estaAtiva: () => true } },
+      ],
     }).compileComponents();
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();

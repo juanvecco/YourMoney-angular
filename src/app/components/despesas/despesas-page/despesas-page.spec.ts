@@ -194,6 +194,37 @@ describe('DespesasComponent', () => {
     };
   }
 
+  it('loads recurring expenses once after business rules are available', () => {
+    const regras = jasmine.createSpyObj<RegraNegocioService>('RegraNegocioService', ['carregar', 'estaAtiva']);
+    regras.carregar.and.returnValue(of([]));
+    regras.estaAtiva.and.returnValue(true);
+    component = new DespesasComponent(despesaService, despesaRecorrenteService, authService, router,
+      new FinancialNavigationContextService(), null, regras, null);
+
+    component.ngOnInit();
+
+    expect(despesaRecorrenteService.listar).toHaveBeenCalledTimes(1);
+    expect(despesaRecorrenteService.listarSugestoes).toHaveBeenCalledTimes(1);
+    component.ngOnDestroy();
+  });
+
+  it('loads the initial card bill only once after accounts and rules are ready', () => {
+    const regras = jasmine.createSpyObj<RegraNegocioService>('RegraNegocioService', ['carregar', 'estaAtiva']);
+    regras.carregar.and.returnValue(of([]));
+    regras.estaAtiva.and.returnValue(true);
+    const fatura = jasmine.createSpyObj<ConciliacaoFaturaService>('ConciliacaoFaturaService', ['obter']);
+    fatura.obter.and.returnValue(of({ idContaFinanceira: 'conta-1', mes: 11, ano: 2026,
+      valorInformado: 500, totalCadastrado: 320, diferenca: 180, quantidadeDespesas: 2, quantidadePendentes: 1 }));
+    despesaService.listarContas.and.returnValue(of([{ id: 'conta-1', descricao: 'Cartão' }]));
+    component = new DespesasComponent(despesaService, despesaRecorrenteService, authService, router,
+      new FinancialNavigationContextService(), null, regras, fatura);
+
+    component.ngOnInit();
+
+    expect(fatura.obter).toHaveBeenCalledTimes(1);
+    component.ngOnDestroy();
+  });
+
   it('discards stale bill responses after changing month', () => {
     const fatura = jasmine.createSpyObj<ConciliacaoFaturaService>('ConciliacaoFaturaService', ['obter', 'salvar']);
     const primeira = new Subject<ResumoFatura>();

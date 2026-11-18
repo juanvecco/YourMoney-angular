@@ -117,14 +117,20 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.carregarDadosIniciais();
-        this.regras?.carregar().pipe(takeUntil(this.destroy$)).subscribe({
-            next: () => {
-                this.carregarRecorrencias();
-                this.carregarSugestoesRecorrentes();
-                this.carregarProjecaoReserva();
-            },
-            error: () => {},
-        });
+        if (this.regras) {
+            this.regras.carregar().pipe(takeUntil(this.destroy$)).subscribe({
+                next: () => {
+                    this.carregarRecorrencias();
+                    this.carregarSugestoesRecorrentes();
+                    this.carregarProjecaoReserva();
+                },
+                error: () => {},
+            });
+        } else {
+            this.carregarRecorrencias();
+            this.carregarSugestoesRecorrentes();
+            this.carregarProjecaoReserva();
+        }
     }
 
     ngOnDestroy() {
@@ -136,9 +142,6 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         this.carregarReceitas();
         this.carregarDespesasVinculaveis();
         this.carregarContas();
-        this.carregarRecorrencias();
-        this.carregarSugestoesRecorrentes();
-        this.carregarProjecaoReserva();
     }
 
     regraAtiva(codigo: string): boolean {

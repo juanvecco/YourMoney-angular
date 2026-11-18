@@ -91,7 +91,7 @@
         </div>
         <label for="ruleSearch" class="settings-rules__search-label">Buscar regras</label>
         <input id="ruleSearch" type="search" [(ngModel)]="buscaRegras" placeholder="Nome ou descrição" autocomplete="off">
-        @if (erroRegras) { <p class="ym-chip ym-negative" role="alert">{{ erroRegras }} <button type="button" (click)="carregarRegras()">Tentar novamente</button></p> }
+        @if (erroRegras) { <p class="ym-chip ym-negative" role="alert">{{ erroRegras }} <button type="button" (click)="carregarRegras(true)">Tentar novamente</button></p> }
         @if (carregandoRegras) { <app-view-state state="loading" message="Carregando regras..."></app-view-state> }
         @else if (!regrasFiltradas.length && !erroRegras) { <p class="settings-rules__empty">Nenhuma regra encontrada.</p> }
         @else {
