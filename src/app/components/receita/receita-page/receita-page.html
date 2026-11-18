@@ -4,12 +4,12 @@
             description="Registre salário e outras entradas para calcular o saldo do mês.">
             <app-month-picker pageHeaderActions [period]="mesAtual" (periodChange)="selecionarMes($event)"></app-month-picker>
         </app-page-header>
-        <app-view-state [state]="estadoCarregamento" [message]="mensagemCarregamento"
+        <app-view-state [state]="estadoCarregamento" [message]="mensagemCarregamento" skeleton="summary"
             [retryAvailable]="estadoCarregamento === 'loadError'" (retry)="carregarReceitas()"></app-view-state>
 
         <section class="ym-grid">
             <div class="ym-stack">
-                <article class="ym-card ym-kpi accent-success">
+                <article class="ym-card ym-kpi accent-success" *ngIf="estadoCarregamento !== 'loading'">
                     <i class="ym-kpi-icon bi bi-cash-stack"></i>
                     <h2 class="ym-kpi-label">Total de receitas</h2>
                     <p class="ym-kpi-value">{{ totalReceitas | financialValue }}</p>
@@ -120,10 +120,8 @@
                         </button>
                     </div>
 
-                    <div *ngIf="estadoCarregamento !== 'loadedWithData'" class="ym-empty ym-state-message"
-                        [class.ym-state-error]="estadoCarregamento === 'loadError'">
-                        {{ mensagemCarregamento }}
-                    </div>
+                    <app-view-state *ngIf="estadoCarregamento === 'loading'" state="loading" skeleton="list"
+                        message="Carregando lançamentos..."></app-view-state>
                     <div class="ym-list" *ngIf="estadoCarregamento === 'loadedWithData'">
                         <article *ngFor="let receita of receitas" class="ym-list-item">
                             <div class="ym-list-main">

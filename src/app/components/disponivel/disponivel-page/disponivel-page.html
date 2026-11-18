@@ -6,7 +6,7 @@
     </app-page-header>
 
     @if (estadoDaPagina !== 'loadedWithData') {
-      <app-view-state [state]="estadoDaPagina" [message]="mensagemCarregamento"
+      <app-view-state [state]="estadoDaPagina" [message]="mensagemCarregamento" skeleton="summary"
         [retryAvailable]="estadoDaPagina === 'loadError'" (retry)="carregarDados()"></app-view-state>
     }
 

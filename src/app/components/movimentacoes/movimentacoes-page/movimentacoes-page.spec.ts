@@ -6,6 +6,27 @@ import { FinancialNavigationContextService } from '../../../services/financial-n
 import { ConsultaMovimentacoesResponse } from '../../../models/movimentacao.model';
 
 describe('MovimentacoesPageComponent', () => {
+  it('clears previous period totals while a new month loads', () => {
+    const first = new Subject<ConsultaMovimentacoesResponse>();
+    const second = new Subject<ConsultaMovimentacoesResponse>();
+    const movimentacoes = jasmine.createSpyObj<MovimentacaoService>('MovimentacaoService', ['consultar']);
+    movimentacoes.consultar.and.returnValues(first, second);
+    const contas = jasmine.createSpyObj<ContaFinanceiraService>('ContaFinanceiraService', ['listarContas']);
+    contas.listarContas.and.returnValue(of([]));
+    const component = new MovimentacoesPageComponent(movimentacoes, contas, new FinancialNavigationContextService());
+
+    component.ngOnInit();
+    first.next({ itens: [{ id: '1' } as ConsultaMovimentacoesResponse['itens'][number]],
+      pagina: 1, tamanhoPagina: 25, totalItens: 1, totalPaginas: 1,
+      totais: { receitas: 100, despesas: 0, investimentos: 0, saldo: 100 } });
+    component.selecionarPeriodo(new Date(2026, 6, 1));
+
+    expect(component.estado).toBe('loading');
+    expect(component.resposta.itens).toEqual([]);
+    expect(component.totais.saldo).toBe(0);
+    component.ngOnDestroy();
+  });
+
   it('ignores stale responses after the period changes', () => {
     const first = new Subject<ConsultaMovimentacoesResponse>();
     const second = new Subject<ConsultaMovimentacoesResponse>();

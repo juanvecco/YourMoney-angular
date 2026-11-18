@@ -72,7 +72,7 @@
         </dialog>
 
         @if (estadoResumo !== 'loadedWithData') {
-            <app-view-state [state]="estadoResumo" [message]="mensagemResumo"
+            <app-view-state [state]="estadoResumo" [message]="mensagemResumo" skeleton="summary"
                 [retryAvailable]="estadoResumo === 'loadError'" (retry)="carregarDadosMesAtual()"></app-view-state>
         }
 
@@ -119,7 +119,7 @@
                     </div>
                 </div>
 
-                <app-view-state *ngIf="estadoHistorico === 'loading'" state="loading" message="Carregando histórico financeiro..."></app-view-state>
+                <app-view-state *ngIf="estadoHistorico === 'loading'" state="loading" skeleton="chart" message="Carregando histórico financeiro..."></app-view-state>
                 <app-view-state *ngIf="estadoHistorico === 'emptyPeriod'" state="emptyPeriod" [message]="mensagemHistorico"></app-view-state>
                 <app-view-state *ngIf="estadoHistorico === 'loadError'" state="loadError" [message]="mensagemHistorico"
                     [retryAvailable]="true" (retry)="carregarDadosMesAtual()"></app-view-state>
@@ -141,10 +141,8 @@
                     </span>
                 </div>
 
-                <div class="ym-chart-state" *ngIf="resumoGrafico.estado === 'carregando'" role="status">
-                    <i class="bi bi-arrow-repeat"></i>
-                    <span>{{ resumoGrafico.mensagemEstado }}</span>
-                </div>
+                <app-view-state *ngIf="resumoGrafico.estado === 'carregando'" state="loading" skeleton="chart"
+                    [message]="resumoGrafico.mensagemEstado || 'Carregando distribuição financeira...'"></app-view-state>
 
                 <div class="ym-chart-state" *ngIf="resumoGrafico.estado === 'vazio'">
                     <i class="bi bi-pie-chart"></i>
@@ -180,7 +178,7 @@
                     <h2 class="ym-section-title">Despesas por tipo</h2>
                 </div>
 
-                <div *ngIf="despesasPorTipo.length === 0" class="ym-empty">
+                <div *ngIf="despesasPorTipo.length === 0 && estadoResumo === 'loadedWithData'" class="ym-empty">
                     Nenhuma despesa registrada neste período.
                 </div>
 
@@ -195,7 +193,7 @@
                     <h2 class="ym-section-title">Despesas por natureza</h2>
                 </div>
 
-                <div *ngIf="despesasPorNatureza.length === 0" class="ym-empty">
+                <div *ngIf="despesasPorNatureza.length === 0 && estadoResumo === 'loadedWithData'" class="ym-empty">
                     Nenhuma despesa registrada neste período.
                 </div>
 

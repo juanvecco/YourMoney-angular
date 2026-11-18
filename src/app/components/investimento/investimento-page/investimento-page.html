@@ -9,7 +9,7 @@
           <i class="bi bi-bullseye"></i>Gerenciar objetivos
         </button>
     </app-page-header>
-    <app-view-state [state]="estadoCompartilhado" [message]="mensagemEstado"
+    <app-view-state [state]="estadoCompartilhado" [message]="mensagemEstado" skeleton="summary"
       [retryAvailable]="estadoCompartilhado === 'loadError' || estadoCompartilhado === 'stale'" (retry)="carregarInvestimentos()"></app-view-state>
 
     <section class="ym-objective-summary" *ngIf="regraAtiva('investimentos.objetivos') && objetivosResumo.length" aria-labelledby="objetivosResumoTitulo">
@@ -182,7 +182,7 @@
 
     <section class="ym-grid">
       <div class="ym-stack">
-        <div class="ym-investment-kpis"><article class="ym-card ym-kpi accent-investment">
+        <div class="ym-investment-kpis" *ngIf="estadoCarregamento !== 'loading'"><article class="ym-card ym-kpi accent-investment">
           <i class="ym-kpi-icon bi bi-gem"></i>
           <h2 class="ym-kpi-label">Total investido</h2>
           <p class="ym-kpi-value">{{ totalInvestimentos | financialValue }}</p>
@@ -211,10 +211,8 @@
             </div>
           </section>
 
-          <div *ngIf="estadoCarregamento !== 'loadedWithData' && estadoCarregamento !== 'refreshing' && estadoCarregamento !== 'stale'" class="ym-empty ym-state-message"
-            [class.ym-state-error]="estadoCarregamento === 'loadError'">
-            {{ estadoCarregamento === 'loading' ? 'Carregando investimentos...' : estadoCarregamento === 'loadError' ? 'Não foi possível carregar os investimentos.' : 'Nenhum investimento cadastrado.' }}
-          </div>
+          <app-view-state *ngIf="estadoCarregamento === 'loading'" state="loading" skeleton="list"
+            message="Carregando investimentos..."></app-view-state>
           <div class="ym-list" *ngIf="estadoCarregamento === 'loadedWithData'">
             <article *ngFor="let investimento of investimentos" class="ym-list-item">
               <div class="ym-list-main">

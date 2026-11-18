@@ -5,7 +5,9 @@
       <app-month-picker pageHeaderActions [period]="periodo" (periodChange)="selecionarPeriodo($event)"></app-month-picker>
     </app-page-header>
 
-    <section class="movement-summary" aria-label="Resumo do período">
+    <app-view-state *ngIf="estado === 'loading'" state="loading" skeleton="summary"
+      message="Carregando resumo das movimentações..."></app-view-state>
+    <section class="movement-summary" *ngIf="estado !== 'loading'" aria-label="Resumo do período">
       <article class="ym-card"><span>Receitas</span><strong class="positive">{{ formatarMoeda(totais.receitas) | financialValue }}</strong></article>
       <article class="ym-card"><span>Despesas</span><strong class="negative">{{ formatarMoeda(totais.despesas) | financialValue }}</strong></article>
       <article class="ym-card"><span>Investimentos</span><strong class="investment">{{ formatarMoeda(totais.investimentos) | financialValue }}</strong></article>
@@ -35,11 +37,11 @@
     </form>
 
     @if (estado !== 'loadedWithData') {
-      <app-view-state [state]="estado" [message]="mensagemEstado" [retryAvailable]="estado === 'loadError'"
+      <app-view-state [state]="estado" [message]="mensagemEstado" skeleton="list" [retryAvailable]="estado === 'loadError'"
         (retry)="carregar()"></app-view-state>
     }
 
-    @if (resposta.itens.length) {
+    @if (estado !== 'loading' && resposta.itens.length) {
       <section class="movement-list" aria-label="Linha do tempo de movimentações">
         @for (item of resposta.itens; track item.tipo + item.id) {
           <article class="ym-card movement-item">

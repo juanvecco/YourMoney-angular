@@ -4,10 +4,10 @@
             description="Registre seus gastos, veja quanto saiu por conta e confira a fatura do cartão.">
             <app-month-picker pageHeaderActions [period]="mesAtual" (periodChange)="selecionarMes($event)"></app-month-picker>
         </app-page-header>
-        <app-view-state [state]="estadoCarregamento" [message]="mensagemCarregamento"
+        <app-view-state [state]="estadoCarregamento" [message]="mensagemCarregamento" skeleton="summary"
             [retryAvailable]="estadoCarregamento === 'loadError'" (retry)="carregarDespesas()"></app-view-state>
 
-        <section class="ym-kpi-grid three">
+        <section class="ym-kpi-grid three" [hidden]="estadoCarregamento === 'loading'">
             <article class="ym-card ym-kpi accent-danger">
                 <i class="ym-kpi-icon bi bi-arrow-down"></i>
                 <h2 class="ym-kpi-label">Total de despesas</h2>
@@ -92,8 +92,8 @@
                         <i class="bi bi-funnel" aria-hidden="true"></i>
                         Filtros{{ temFiltrosTransacoesAtivos() ? ' ativos' : '' }}
                     </button>
-                    <span class="ym-expense-toolbar__summary">
-                        {{ estadoCarregamento === 'loading' ? 'Carregando...' : totalResultadosDespesas + (totalResultadosDespesas === 1 ? ' lançamento' : ' lançamentos') }}
+                    <span class="ym-expense-toolbar__summary" *ngIf="estadoCarregamento !== 'loading'">
+                        {{ totalResultadosDespesas + (totalResultadosDespesas === 1 ? ' lançamento' : ' lançamentos') }}
                     </span>
                 </div>
                 <div id="expense-filters" class="ym-expense-query" [class.ym-expense-query--open]="filtrosMobileAbertos">
@@ -133,11 +133,10 @@
                         </button>
                     </div>
 
-                    <div class="ym-filter-total">
+                    <div class="ym-filter-total" *ngIf="estadoCarregamento !== 'loading'">
                         <div>
                             <span>Total filtrado</span>
-                            <strong *ngIf="estadoCarregamento !== 'loading'">{{ totalDespesasFiltradas | financialValue }}</strong>
-                            <strong *ngIf="estadoCarregamento === 'loading'">Calculando...</strong>
+                            <strong>{{ totalDespesasFiltradas | financialValue }}</strong>
                         </div>
                         <small>{{ totalResultadosDespesas }} resultados no filtro atual</small>
                     </div>
@@ -259,11 +258,8 @@
                     </div>
                 </section>
 
-                <div *ngIf="estadoCarregamento !== 'loadedWithData'" class="ym-empty ym-state-message"
-                    [class.ym-state-error]="estadoCarregamento === 'loadError'">
-                    <i class="bi bi-inbox"></i>
-                    <p>{{ mensagemCarregamento }}</p>
-                </div>
+                <app-view-state *ngIf="estadoCarregamento === 'loading'" state="loading" skeleton="list"
+                    message="Carregando lançamentos..."></app-view-state>
 
                 <p *ngIf="erroConferencia" class="ym-bill-reconcile__error" role="alert">{{ erroConferencia }}</p>
                 <div class="ym-list" *ngIf="estadoCarregamento === 'loadedWithData'">
@@ -327,7 +323,7 @@
             <aside class="ym-stack">
                 <div class="ym-card ym-card-pad">
                     <h2 class="ym-section-title">Distribuição por conta</h2>
-                    <div *ngIf="totalPorConta.length === 0" class="ym-empty">
+                    <div *ngIf="totalPorConta.length === 0 && estadoCarregamento !== 'loading'" class="ym-empty">
                         {{ estadoCarregamento === 'loadError' ? 'Não foi possível carregar a distribuição por conta.' : 'Sem dados para este mês.' }}
                     </div>
                     <div *ngFor="let total of totalPorConta" class="ym-metric-row">

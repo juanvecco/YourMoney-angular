@@ -16,6 +16,48 @@ describe('ViewStateComponent', () => {
     expect(fixture.nativeElement.querySelector('[role="status"]')).toBeTruthy();
   });
 
+  it('shows decorative summary placeholders only while initially loading', () => {
+    fixture.componentRef.setInput('state', 'loading');
+    fixture.componentRef.setInput('message', 'Carregando resumo...');
+    fixture.componentRef.setInput('skeleton', 'summary');
+    fixture.detectChanges();
+
+    const status = fixture.nativeElement.querySelector('[role="status"]') as HTMLElement;
+    expect(status.getAttribute('aria-busy')).toBe('true');
+    expect(status.textContent).toContain('Carregando resumo...');
+    expect(status.querySelector('.ym-skeleton--summary[aria-hidden="true"]')).toBeTruthy();
+    expect(status.querySelector('.ym-view-state__spinner')).toBeNull();
+
+    fixture.componentRef.setInput('state', 'loadedWithData');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.ym-skeleton')).toBeNull();
+  });
+
+  it('keeps refresh progress without covering existing data with a skeleton', () => {
+    fixture.componentRef.setInput('state', 'refreshing');
+    fixture.componentRef.setInput('message', 'Atualizando dados...');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.ym-skeleton')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.ym-view-state__spinner')).toBeTruthy();
+  });
+
+  it('renders list and chart placeholders according to the requested variant', () => {
+    fixture.componentRef.setInput('state', 'loading');
+    fixture.componentRef.setInput('skeleton', 'list');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.ym-skeleton--list')).toBeTruthy();
+
+    fixture.componentRef.setInput('skeleton', 'chart');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.ym-skeleton--chart')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.ym-skeleton--list')).toBeNull();
+
+    fixture.componentRef.setInput('state', 'loadError');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.ym-skeleton')).toBeNull();
+  });
+
   it('uses alert semantics and emits retry for errors', () => {
     fixture.componentRef.setInput('state', 'loadError');
     fixture.componentRef.setInput('message', 'Falha ao carregar.');

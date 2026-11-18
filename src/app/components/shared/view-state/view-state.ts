@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { FinancialViewState } from '../../../models/financial-view-state.model';
 
+export type SkeletonVariant = 'summary' | 'list' | 'chart';
+
 @Component({
   selector: 'app-view-state', standalone: true, templateUrl: './view-state.html', styleUrl: './view-state.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -8,6 +10,7 @@ import { FinancialViewState } from '../../../models/financial-view-state.model';
 export class ViewStateComponent {
   @Input({ required: true }) state: FinancialViewState = 'loading';
   @Input() message = '';
+  @Input() skeleton: SkeletonVariant = 'list';
   @Input() retryAvailable = false;
   @Input() actionLabel = '';
   @Output() readonly retry = new EventEmitter<void>();

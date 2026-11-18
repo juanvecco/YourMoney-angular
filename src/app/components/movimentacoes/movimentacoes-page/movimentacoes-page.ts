@@ -61,7 +61,7 @@ export class MovimentacoesPageComponent implements OnInit, OnDestroy {
   selecionarPeriodo(periodo: Date): void {
     this.context.setPeriod(periodo);
     this.periodo = this.context.period().date;
-    this.resposta.pagina = 1;
+    this.resposta = this.respostaVazia();
     this.carregar(1);
   }
 

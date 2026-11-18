@@ -1,8 +1,41 @@
 @if (isVisible) {
   <section class="ym-view-state" [class.ym-view-state--error]="isError"
+    [class.ym-view-state--loading]="state === 'loading'"
     [attr.role]="isError ? 'alert' : 'status'" [attr.aria-live]="isError ? 'assertive' : 'polite'"
     [attr.aria-label]="statusLabel" [attr.aria-busy]="isProgress">
-    @if (isProgress) {
+    @if (state === 'loading') {
+      <div class="ym-skeleton" [class.ym-skeleton--summary]="skeleton === 'summary'"
+        [class.ym-skeleton--list]="skeleton === 'list'" [class.ym-skeleton--chart]="skeleton === 'chart'"
+        aria-hidden="true">
+        @if (skeleton === 'summary') {
+          @for (item of [1, 2, 3, 4]; track item) {
+            <div class="ym-skeleton__card">
+              <span class="ym-skeleton__line ym-skeleton__line--short"></span>
+              <span class="ym-skeleton__line ym-skeleton__line--value"></span>
+              <span class="ym-skeleton__line ym-skeleton__line--medium"></span>
+            </div>
+          }
+        } @else if (skeleton === 'chart') {
+          <div class="ym-skeleton__chart-bars">
+            @for (item of [1, 2, 3, 4, 5, 6]; track item) {
+              <span class="ym-skeleton__bar"></span>
+            }
+          </div>
+          <span class="ym-skeleton__line ym-skeleton__line--medium"></span>
+        } @else {
+          @for (item of [1, 2, 3]; track item) {
+            <div class="ym-skeleton__row">
+              <span class="ym-skeleton__dot"></span>
+              <span class="ym-skeleton__row-copy">
+                <span class="ym-skeleton__line ym-skeleton__line--medium"></span>
+                <span class="ym-skeleton__line ym-skeleton__line--short"></span>
+              </span>
+              <span class="ym-skeleton__line ym-skeleton__line--amount"></span>
+            </div>
+          }
+        }
+      </div>
+    } @else if (isProgress) {
       <span class="ym-view-state__spinner" aria-hidden="true"></span>
     } @else {
       <i class="bi" [class.bi-inbox]="state === 'emptyPeriod' || state === 'emptyFilter'" [class.bi-exclamation-triangle]="isError" aria-hidden="true"></i>

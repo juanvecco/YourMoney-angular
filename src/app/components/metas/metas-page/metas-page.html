@@ -4,10 +4,10 @@
     description="Defina valores ou percentuais da receita e veja o impacto junto das despesas.">
     <app-month-picker pageHeaderActions [period]="mesAtual" (periodChange)="selecionarMes($event)"></app-month-picker>
   </app-page-header>
-  <app-view-state [state]="estadoCompartilhado" [message]="mensagemEstado"
+  <app-view-state [state]="estadoCompartilhado" [message]="mensagemEstado" skeleton="summary"
     [retryAvailable]="estadoCompartilhado === 'loadError'" (retry)="carregarResumo()"></app-view-state>
 
-  <section class="metas-summary" *ngIf="resumo">
+  <section class="metas-summary" *ngIf="resumo && estado !== 'loading'">
     <article class="metas-kpi">
       <span>Receita elegível para metas</span>
       <strong>{{ formatarMoeda(resumo.receitaTotal) | financialValue }}</strong>
@@ -133,11 +133,10 @@
         </button>
       </div>
 
-      <div class="metas-state" *ngIf="estado === 'loading'">Carregando metas...</div>
-      <div class="metas-state" *ngIf="estado === 'empty'">Nenhuma meta cadastrada para este mês.</div>
-      <div class="metas-state error" *ngIf="estado === 'error'">Não foi possível carregar as metas.</div>
+      <app-view-state *ngIf="estado === 'loading'" state="loading" skeleton="list"
+        message="Carregando metas cadastradas..."></app-view-state>
 
-      <div class="metas-list" *ngIf="metas.length > 0">
+      <div class="metas-list" *ngIf="estado === 'loaded' && metas.length > 0">
         <article class="metas-row" *ngFor="let meta of metas">
           <div>
             <h3>{{ meta.nome }}</h3>
