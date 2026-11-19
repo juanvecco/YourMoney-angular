@@ -15,6 +15,10 @@ for (const width of [320, 390]) {
     await page.getByLabel('Seu nome').fill('Maria Silva');
     await page.getByRole('button', { name: 'Continuar' }).click();
     await expect(page.getByRole('heading', { name: 'Prazer em te conhecer, Maria!' })).toBeVisible();
+    const mascot = page.getByRole('img', { name: 'Carteirinha, mascote do YourMoney, acenando para você' });
+    await expect(mascot).toBeVisible();
+    await expect.poll(() => mascot.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    if (width === 390) await page.screenshot({ path: 'test-results/onboarding-carteirinha-mobile.png', fullPage: true, animations: 'disabled' });
     await page.getByRole('button', { name: 'Continuar' }).click();
     await page.getByRole('button', { name: /Minha fatura/ }).click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -25,7 +29,7 @@ for (const width of [320, 390]) {
     await expect(page.locator('[data-provider="apple"]')).toBeDisabled();
     const hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
     expect(hasOverflow).toBe(false);
-    if (width === 390) await page.screenshot({ path: 'test-results/onboarding-method-mobile.png', fullPage: true });
+    if (width === 390) await page.screenshot({ path: 'test-results/onboarding-method-mobile.png', fullPage: true, animations: 'disabled' });
     await page.getByRole('button', { name: 'Entrar com e-mail' }).click();
     await expect(page.getByLabel('Seu e-mail')).toBeVisible();
     await expect(page.getByLabel('Criar senha')).toBeVisible();
