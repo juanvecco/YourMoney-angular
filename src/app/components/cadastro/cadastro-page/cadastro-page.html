@@ -49,10 +49,10 @@
         <div class="signup-step">
           <p class="signup-eyebrow">SÓ MAIS UM POUCO</p>
           <h1 data-step-heading>O que você quer organizar primeiro?</h1>
-          <p class="signup-description">Escolha o que mais importa agora. Você poderá explorar tudo depois.</p>
-          <div class="signup-options" role="group" aria-label="Seu objetivo inicial">
+          <p class="signup-description">Marque uma ou mais opções. Você poderá explorar tudo depois.</p>
+          <div class="signup-options" role="group" aria-label="O que você quer organizar">
             @for (goal of goals; track goal.value) {
-              <button type="button" class="signup-option" [class.signup-option--selected]="form.controls['objetivoInicial'].value === goal.value" [attr.aria-pressed]="form.controls['objetivoInicial'].value === goal.value" (click)="selectGoal(goal.value)">
+              <button type="button" class="signup-option" [class.signup-option--selected]="selectedGoals.includes(goal.value)" [attr.aria-pressed]="selectedGoals.includes(goal.value)" (click)="selectGoal(goal.value)">
                 <span class="signup-option__icon"><i class="bi" [ngClass]="goal.icon" aria-hidden="true"></i></span><span class="signup-option__copy"><strong>{{ goal.label }}</strong><small>{{ goal.detail }}</small></span><i class="bi bi-check-circle-fill signup-option__check" aria-hidden="true"></i>
               </button>
             }

@@ -21,6 +21,9 @@ for (const width of [320, 390]) {
     if (width === 390) await page.screenshot({ path: 'test-results/onboarding-carteirinha-mobile.png', fullPage: true, animations: 'disabled' });
     await page.getByRole('button', { name: 'Continuar' }).click();
     await page.getByRole('button', { name: /Minha fatura/ }).click();
+    await page.getByRole('button', { name: /Meus gastos/ }).click();
+    await expect(page.getByRole('button', { name: /Minha fatura/ })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: /Meus gastos/ })).toHaveAttribute('aria-pressed', 'true');
     await page.getByRole('button', { name: 'Continuar' }).click();
     await page.getByRole('button', { name: 'Instagram' }).click();
     await page.getByRole('button', { name: 'Continuar' }).click();

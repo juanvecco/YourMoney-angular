@@ -63,7 +63,7 @@ export class AuthService {
         return this.http.post<void>(`${this.apiUrl}/convites/${encodeURIComponent(id)}/revogar`, {});
     }
 
-    startExternalLogin(provider: 'google' | 'apple', data: { nome: string; objetivoInicial: OnboardingGoal; origemConhecimento?: string; codigoConvite?: string }): void {
+    startExternalLogin(provider: 'google' | 'apple', data: { nome: string; objetivoInicial: OnboardingGoal; objetivosIniciais: OnboardingGoal[]; origemConhecimento?: string; codigoConvite?: string }): void {
         this.submitExternalLogin(provider, data);
     }
 
@@ -71,17 +71,19 @@ export class AuthService {
         this.submitExternalLogin(provider, { modoEntrar: 'true' });
     }
 
-    private submitExternalLogin(provider: 'google' | 'apple', data: Record<string, string | undefined>): void {
+    private submitExternalLogin(provider: 'google' | 'apple', data: Record<string, string | string[] | undefined>): void {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = `${this.apiUrl}/externo/iniciar/${provider}`;
         for (const [name, value] of Object.entries(data)) {
             if (!value) continue;
-            const field = document.createElement('input');
-            field.type = 'hidden';
-            field.name = name;
-            field.value = value;
-            form.appendChild(field);
+            for (const item of Array.isArray(value) ? value : [value]) {
+                const field = document.createElement('input');
+                field.type = 'hidden';
+                field.name = name;
+                field.value = item;
+                form.appendChild(field);
+            }
         }
         document.body.appendChild(form);
         form.submit();

@@ -6,6 +6,7 @@ export interface LoginRequest {
 export interface RegisterRequest {
     nome: string;
     objetivoInicial: OnboardingGoal;
+    objetivosIniciais?: OnboardingGoal[];
     email: string;
     senha: string;
     senhaConfirmacao: string;

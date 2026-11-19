@@ -33,9 +33,11 @@ describe('CadastroPageComponent', () => {
     expect(page.textContent).toContain('Prazer em te conhecer, Maria!');
     component.next();
     component.selectGoal('cartao');
+    component.selectGoal('gastos');
     component.next();
     component.selectSource('instagram');
     component.back();
+    expect(component.selectedGoals).toEqual(['cartao', 'gastos']);
     expect(component.form.controls['objetivoInicial'].value).toBe('cartao');
     component.next();
     expect(component.origemConhecimento).toBe('instagram');
@@ -47,6 +49,7 @@ describe('CadastroPageComponent', () => {
     component.continueFromName();
     component.next();
     component.selectGoal('gastos');
+    component.selectGoal('cartao');
     component.next();
     component.selectSource('google');
     component.next();
@@ -60,7 +63,7 @@ describe('CadastroPageComponent', () => {
     component.form.patchValue({ email: 'maria@example.com', senha: 'Senha123', senhaConfirmacao: 'Senha123' });
     component.onSubmit();
     expect(auth.register).toHaveBeenCalledWith(jasmine.objectContaining({
-      nome: 'Maria Silva', objetivoInicial: 'gastos', origemConhecimento: 'google', email: 'maria@example.com'
+      nome: 'Maria Silva', objetivoInicial: 'gastos', objetivosIniciais: ['gastos', 'cartao'], origemConhecimento: 'google', email: 'maria@example.com'
     }));
     expect(navigate).toHaveBeenCalledWith(['/dashboard']);
   });
@@ -82,5 +85,22 @@ describe('CadastroPageComponent', () => {
     expect(component.error).toContain('E-mail já está em uso');
     expect(component.form.controls['objetivoInicial'].value).toBe('saldo');
     expect(component.step).toBe('email');
+  });
+
+  it('allows toggling goals and requires at least one selection', () => {
+    component.form.controls['nome'].setValue('Maria');
+    component.continueFromName();
+    component.next();
+    component.next();
+    expect(component.step).toBe('goal');
+    expect(component.error).toContain('pelo menos uma');
+    component.selectGoal('cartao');
+    component.selectGoal('saldo');
+    component.selectGoal('cartao');
+    expect(component.selectedGoals).toEqual(['saldo']);
+    expect(component.form.controls['objetivoInicial'].value).toBe('saldo');
+    component.selectGoal('saldo');
+    expect(component.selectedGoals).toEqual([]);
+    expect(component.form.controls['objetivoInicial'].invalid).toBeTrue();
   });
 });

@@ -38,6 +38,7 @@ export class CadastroPageComponent implements OnInit {
   step: Step = 'name';
   methods: ExternalMethods = { google: false, apple: false };
   origemConhecimento: ReferralSource | '' = '';
+  selectedGoals: OnboardingGoal[] = [];
   codigoConvite = '';
   conviteDigitado = '';
   conviteValidando = false;
@@ -104,13 +105,19 @@ export class CadastroPageComponent implements OnInit {
     this.moveTo('welcome');
   }
 
-  selectGoal(value: OnboardingGoal): void { this.form.controls['objetivoInicial'].setValue(value); this.error = null; }
+  selectGoal(value: OnboardingGoal): void {
+    this.selectedGoals = this.selectedGoals.includes(value)
+      ? this.selectedGoals.filter(goal => goal !== value)
+      : [...this.selectedGoals, value];
+    this.form.controls['objetivoInicial'].setValue(this.selectedGoals[0] || '');
+    this.error = null;
+  }
   selectSource(value: ReferralSource): void { this.origemConhecimento = value; this.error = null; }
 
   next(): void {
     if (this.step === 'welcome') this.moveTo('goal');
     else if (this.step === 'goal') {
-      if (!this.form.controls['objetivoInicial'].value) { this.error = 'Escolha uma opção para continuar.'; return; }
+      if (!this.selectedGoals.length) { this.error = 'Escolha pelo menos uma opção para continuar.'; return; }
       this.moveTo('source');
     } else if (this.step === 'source') {
       if (!this.origemConhecimento) { this.error = 'Escolha uma opção para continuar.'; return; }
@@ -132,6 +139,7 @@ export class CadastroPageComponent implements OnInit {
     this.authService.startExternalLogin(provider, {
       nome: String(this.form.controls['nome'].value).trim(),
       objetivoInicial: this.form.controls['objetivoInicial'].value,
+      objetivosIniciais: this.selectedGoals,
       origemConhecimento: this.origemConhecimento,
       codigoConvite: this.codigoConvite
     });
@@ -179,6 +187,7 @@ export class CadastroPageComponent implements OnInit {
     const payload = {
       nome: String(this.form.controls['nome'].value).trim(),
       objetivoInicial: this.form.controls['objetivoInicial'].value as OnboardingGoal,
+      objetivosIniciais: this.selectedGoals,
       email: String(this.form.controls['email'].value).trim(),
       senha: this.form.controls['senha'].value as string,
       senhaConfirmacao: this.form.controls['senhaConfirmacao'].value as string,
