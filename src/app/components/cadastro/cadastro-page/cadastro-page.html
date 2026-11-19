@@ -1,126 +1,127 @@
-<div class="register-container">
-    <section class="branding-section">
-        <div class="logo-container">
-            <div class="logo-icon">
-                <i class="bi bi-person-plus"></i>
-            </div>
-            <div><h1 class="brand-name">YourMoney</h1><p class="brand-tagline">Um novo jeito de cuidar do seu dinheiro.</p></div>
-        </div>
+<main class="signup-shell">
+  <header class="signup-topbar">
+    <a routerLink="/" class="signup-brand" aria-label="YourMoney, página inicial"><span class="signup-brand__mark"><i class="bi bi-wallet2" aria-hidden="true"></i></span><span>YourMoney</span></a>
+    <a routerLink="/login" class="signup-login">Já tem conta? <strong>Entrar</strong></a>
+  </header>
 
-        <div class="branding-copy">
-            <p class="branding-eyebrow">COMECE POR AQUI</p>
-            <h2>Saiba quanto entra e quanto sai.</h2>
-            <p>Depois do cadastro, dê um nome ao seu cartão ou banco e registre seus primeiros ganhos e gastos.</p>
-        </div>
+  <div class="signup-layout">
+    <aside class="signup-aside" aria-hidden="true">
+      <span class="signup-aside__eyebrow">COMECE DO SEU JEITO</span>
+      <h2>Um passo de cada vez. Seu dinheiro mais claro.</h2>
+      <p>Conte o que você quer organizar. O resto a gente constrói junto, sem complicar.</p>
+      <div class="signup-aside__illustration"><span class="signup-orbit signup-orbit--one"></span><span class="signup-orbit signup-orbit--two"></span><span class="signup-orbit__center"><i class="bi bi-stars"></i></span></div>
+    </aside>
 
-        <ul class="feature-list">
-            <li class="feature-item">
-                <div class="feature-icon"><i class="bi bi-shield-lock"></i></div>
-                <div class="feature-text">Dados financeiros separados por usuário</div>
-            </li>
-            <li class="feature-item">
-                <div class="feature-icon"><i class="bi bi-wallet2"></i></div>
-                <div class="feature-text">Registre ganhos e gastos manualmente</div>
-            </li>
-            <li class="feature-item">
-                <div class="feature-icon"><i class="bi bi-graph-up"></i></div>
-                <div class="feature-text">Veja seu saldo mensal após os primeiros registros</div>
-            </li>
-        </ul>
+    <section class="signup-card" aria-label="Cadastro do YourMoney">
+      <div class="signup-card__top">
+        @if (step !== 'name') { <button type="button" class="signup-back" (click)="back()" aria-label="Voltar à etapa anterior"><i class="bi bi-arrow-left" aria-hidden="true"></i> Voltar</button> }
+        @else { <a routerLink="/" class="signup-back"><i class="bi bi-arrow-left" aria-hidden="true"></i> Início</a> }
+        <span class="signup-progress-label">Passo {{ progress }} de 5</span>
+      </div>
+      <div class="signup-progress" role="progressbar" [attr.aria-valuenow]="progress" aria-valuemin="1" aria-valuemax="5" aria-label="Progresso do cadastro"><span [style.width.%]="progress * 20"></span></div>
+      @if (codigoConvite && step !== 'method') { <p class="signup-invite-applied" role="status"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Convite aplicado</p> }
+
+      @if (step === 'name') {
+        <div class="signup-step">
+          <p class="signup-eyebrow">VAMOS NOS CONHECER</p>
+          <h1 data-step-heading>Como podemos te chamar?</h1>
+          <p class="signup-description">Queremos deixar sua experiência mais pessoal.</p>
+          <div class="signup-field" [formGroup]="form">
+            <label for="cadastroNome">Seu nome</label>
+            <input id="cadastroNome" type="text" formControlName="nome" placeholder="Digite seu nome" autocomplete="name" maxlength="100" (keyup.enter)="continueFromName()" [attr.aria-invalid]="isInvalid('nome')" aria-describedby="nomeErro" autofocus>
+            @if (isInvalid('nome')) { <small id="nomeErro" class="signup-error">Informe seu nome com pelo menos 2 caracteres.</small> }
+          </div>
+          <button type="button" class="signup-primary" (click)="continueFromName()">Continuar <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+        </div>
+      }
+
+      @if (step === 'welcome') {
+        <div class="signup-step signup-step--center">
+          <div class="signup-mascot" role="img" aria-label="Mascote do YourMoney acenando para você"><span class="signup-mascot__arm"></span><span class="signup-mascot__body"><span class="signup-mascot__eye"></span><span class="signup-mascot__eye"></span><span class="signup-mascot__smile"></span></span></div>
+          <p class="signup-eyebrow">QUE BOM TER VOCÊ AQUI</p>
+          <h1 data-step-heading>Prazer em te conhecer, {{ firstName }}!</h1>
+          <p class="signup-description">Vamos preparar um começo que faça sentido para você.</p>
+          <button type="button" class="signup-primary" (click)="next()">Continuar <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+        </div>
+      }
+
+      @if (step === 'goal') {
+        <div class="signup-step">
+          <p class="signup-eyebrow">SÓ MAIS UM POUCO</p>
+          <h1 data-step-heading>O que você quer organizar primeiro?</h1>
+          <p class="signup-description">Escolha o que mais importa agora. Você poderá explorar tudo depois.</p>
+          <div class="signup-options" role="group" aria-label="Seu objetivo inicial">
+            @for (goal of goals; track goal.value) {
+              <button type="button" class="signup-option" [class.signup-option--selected]="form.controls['objetivoInicial'].value === goal.value" [attr.aria-pressed]="form.controls['objetivoInicial'].value === goal.value" (click)="selectGoal(goal.value)">
+                <span class="signup-option__icon"><i class="bi" [ngClass]="goal.icon" aria-hidden="true"></i></span><span class="signup-option__copy"><strong>{{ goal.label }}</strong><small>{{ goal.detail }}</small></span><i class="bi bi-check-circle-fill signup-option__check" aria-hidden="true"></i>
+              </button>
+            }
+          </div>
+          <button type="button" class="signup-primary" (click)="next()">Continuar <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+        </div>
+      }
+
+      @if (step === 'source') {
+        <div class="signup-step">
+          <p class="signup-eyebrow">QUEREMOS SABER</p>
+          <h1 data-step-heading>Onde você ouviu falar da gente?</h1>
+          <p class="signup-description">Sua resposta nos ajuda a chegar a mais pessoas.</p>
+          <div class="signup-options signup-options--source" role="group" aria-label="Onde conheceu o YourMoney">
+            @for (source of sources; track source.value) {
+              <button type="button" class="signup-option" [class.signup-option--selected]="origemConhecimento === source.value" [attr.aria-pressed]="origemConhecimento === source.value" (click)="selectSource(source.value)">
+                <span class="signup-option__icon"><i class="bi" [ngClass]="source.icon" aria-hidden="true"></i></span><strong>{{ source.label }}</strong><i class="bi bi-check-circle-fill signup-option__check" aria-hidden="true"></i>
+              </button>
+            }
+          </div>
+          <button type="button" class="signup-primary" (click)="next()">Continuar <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+        </div>
+      }
+
+      @if (step === 'method') {
+        <div class="signup-step">
+          <p class="signup-eyebrow">ÚLTIMO PASSO</p>
+          <h1 data-step-heading>Crie sua conta</h1>
+          <p class="signup-description">Escolha como prefere entrar no YourMoney.</p>
+          @if (codigoConvite) { <p class="signup-invite-applied"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Convite aplicado <button type="button" (click)="codigoConvite = ''; conviteDigitado = ''">Remover</button></p> }
+          <div class="signup-methods">
+            <button type="button" class="signup-method" data-provider="apple" [disabled]="!methods.apple || loading" (click)="startExternal('apple')"><i class="bi bi-apple" aria-hidden="true"></i><span>Entrar com Apple <small *ngIf="!methods.apple">Em breve</small></span></button>
+            <button type="button" class="signup-method" data-provider="google" [disabled]="!methods.google || loading" (click)="startExternal('google')"><i class="bi bi-google" aria-hidden="true"></i><span>Entrar com Google <small *ngIf="!methods.google">Em breve</small></span></button>
+            <button type="button" class="signup-method" (click)="chooseEmail()"><i class="bi bi-envelope" aria-hidden="true"></i><span>Entrar com e-mail</span><i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+            <button type="button" class="signup-method signup-method--invite" (click)="chooseInvite()"><i class="bi bi-gift" aria-hidden="true"></i><span>Tenho um convite</span><i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+          </div>
+          @if (!methods.apple || !methods.google) { <p class="signup-footnote">Apple e Google estarão disponíveis quando a integração oficial for ativada. Você já pode criar sua conta com e-mail.</p> }
+        </div>
+      }
+
+      @if (step === 'invite') {
+        <div class="signup-step">
+          <p class="signup-eyebrow">UM CONVITE ESPECIAL</p>
+          <h1 data-step-heading>Você recebeu um convite?</h1>
+          <p class="signup-description">Cole o link ou o código que recebeu. Depois, escolha como criar sua conta.</p>
+          <div class="signup-field"><label for="conviteCodigo">Link ou código do convite</label><input id="conviteCodigo" type="text" [value]="conviteDigitado" (input)="conviteDigitado = $any($event.target).value; conviteErro = ''" placeholder="Cole seu convite aqui" autocomplete="off" aria-describedby="conviteErro"></div>
+          @if (conviteErro) { <p id="conviteErro" class="signup-error" role="alert">{{ conviteErro }}</p> }
+          <button type="button" class="signup-primary" [disabled]="conviteValidando" (click)="applyInvite()">{{ conviteValidando ? 'Verificando...' : 'Usar convite' }}</button>
+          <button type="button" class="signup-text-button" (click)="codigoConvite = ''; moveToMethod()">Continuar sem convite</button>
+        </div>
+      }
+
+      @if (step === 'email') {
+        <div class="signup-step">
+          <p class="signup-eyebrow">CRIAR COM E-MAIL</p>
+          <h1 data-step-heading>Falta só seu acesso</h1>
+          <p class="signup-description">Use um e-mail que você acessa e crie uma senha para entrar depois.</p>
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" (input)="onFormInput()" novalidate>
+            <div class="signup-field"><label for="cadastroEmail">Seu e-mail</label><input id="cadastroEmail" type="email" formControlName="email" autocomplete="email" placeholder="voce@exemplo.com" [attr.aria-invalid]="isInvalid('email')">@if (isInvalid('email')) { <small class="signup-error">Informe um e-mail válido.</small> }</div>
+            <div class="signup-field"><label for="cadastroSenha">Criar senha</label><div class="signup-password"><input id="cadastroSenha" [type]="showPassword ? 'text' : 'password'" formControlName="senha" autocomplete="new-password" placeholder="Pelo menos 6 caracteres" [attr.aria-invalid]="isInvalid('senha')"><button type="button" (click)="togglePasswordVisibility()" [attr.aria-label]="showPassword ? 'Ocultar senha' : 'Mostrar senha'"><i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'" aria-hidden="true"></i></button></div>@if (isInvalid('senha')) { <small class="signup-error">A senha precisa ter pelo menos 6 caracteres.</small> }</div>
+            <div class="signup-field"><label for="cadastroConfirmacao">Confirmar senha</label><div class="signup-password"><input id="cadastroConfirmacao" [type]="showPasswordConfirmation ? 'text' : 'password'" formControlName="senhaConfirmacao" autocomplete="new-password" placeholder="Repita sua senha" [attr.aria-invalid]="isInvalid('senhaConfirmacao') || (form.hasError('passwordsMismatch') && form.controls['senhaConfirmacao'].touched)"><button type="button" (click)="togglePasswordConfirmationVisibility()" [attr.aria-label]="showPasswordConfirmation ? 'Ocultar confirmação' : 'Mostrar confirmação'"><i class="bi" [ngClass]="showPasswordConfirmation ? 'bi-eye-slash' : 'bi-eye'" aria-hidden="true"></i></button></div>@if (isInvalid('senhaConfirmacao') || (form.hasError('passwordsMismatch') && form.controls['senhaConfirmacao'].touched)) { <small class="signup-error">As senhas não conferem.</small> }</div>
+            <button type="submit" class="signup-primary" [disabled]="loading">{{ loading ? 'Criando conta...' : 'Criar minha conta' }} <i *ngIf="!loading" class="bi bi-arrow-right" aria-hidden="true"></i></button>
+          </form>
+          <p class="signup-footnote">O e-mail digitado ainda não é confirmado. Você pode começar a usar sua conta agora.</p>
+        </div>
+      }
+
+      @if (validationSummary.length) { <div class="signup-alert" role="alert"><strong>Confira os dados:</strong><ul><li *ngFor="let message of validationSummary">{{ message }}</li></ul></div> }
+      @if (error) { <div class="signup-alert" role="alert">{{ error }}</div> }
     </section>
-
-    <section class="form-section">
-        <div class="form-container">
-            <a routerLink="/" class="back-home"><i class="bi bi-arrow-left" aria-hidden="true"></i>Voltar para home</a>
-            <div class="form-header">
-                <p class="form-kicker">SUA JORNADA FINANCEIRA</p>
-                <h2 class="form-title">Crie sua conta</h2>
-                <p class="form-subtitle">As categorias básicas já vêm prontas. Depois, adicione uma conta ou cartão para identificar seus lançamentos. Conectar ao banco é opcional.</p>
-            </div>
-
-            <form [formGroup]="form" (ngSubmit)="onSubmit()" (input)="onFormInput()" novalidate>
-                <div class="form-group">
-                    <label class="form-label" for="cadastroNome">
-                        <span><i class="bi bi-person"></i>Nome</span><span class="required-mark" aria-label="obrigatório">*</span>
-                    </label>
-                    <input id="cadastroNome" type="text" class="form-control" [class.is-invalid]="isInvalid('nome')" formControlName="nome" placeholder="Seu nome completo"
-                        autocomplete="name" aria-describedby="cadastroNomeErro" [attr.aria-invalid]="isInvalid('nome')" required />
-                    <small id="cadastroNomeErro" *ngIf="hasError('nome', 'required')" class="field-error">Informe seu nome.</small>
-                    <small id="cadastroNomeErro" *ngIf="hasError('nome', 'minlength')" class="field-error">Informe pelo menos 2 caracteres.</small>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="cadastroEmail">
-                        <span><i class="bi bi-envelope"></i>E-mail</span><span class="required-mark" aria-label="obrigatório">*</span>
-                    </label>
-                    <input id="cadastroEmail" type="email" class="form-control" [class.is-invalid]="isInvalid('email')" formControlName="email" placeholder="nome@exemplo.com"
-                        autocomplete="email" aria-describedby="cadastroEmailErro" [attr.aria-invalid]="isInvalid('email')" required />
-                    <small id="cadastroEmailErro" *ngIf="hasError('email', 'required')" class="field-error">Informe seu e-mail.</small>
-                    <small id="cadastroEmailErro" *ngIf="hasError('email', 'email')" class="field-error">Informe um e-mail válido.</small>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="cadastroSenha">
-                        <span><i class="bi bi-lock"></i>Senha</span><span class="required-mark" aria-label="obrigatório">*</span>
-                    </label>
-                    <div class="password-wrapper">
-                        <input id="cadastroSenha" [type]="showPassword ? 'text' : 'password'" class="form-control" [class.is-invalid]="isInvalid('senha')" formControlName="senha"
-                            placeholder="Mínimo de 6 caracteres" autocomplete="new-password" aria-describedby="cadastroSenhaErro"
-                            [attr.aria-invalid]="isInvalid('senha')" required />
-                        <button type="button" class="toggle-password" (click)="togglePasswordVisibility()"
-                            [attr.aria-label]="showPassword ? 'Ocultar senha' : 'Mostrar senha'">
-                            <i [class]="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
-                        </button>
-                    </div>
-                    <small id="cadastroSenhaErro" *ngIf="hasError('senha', 'required')" class="field-error">Informe uma senha.</small>
-                    <small id="cadastroSenhaErro" *ngIf="hasError('senha', 'minlength')" class="field-error">A senha precisa ter pelo menos 6 caracteres.</small>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="cadastroSenhaConfirmacao">
-                        <span><i class="bi bi-lock-fill"></i>Confirmar senha</span><span class="required-mark" aria-label="obrigatório">*</span>
-                    </label>
-                    <div class="password-wrapper">
-                        <input id="cadastroSenhaConfirmacao" [type]="showPasswordConfirmation ? 'text' : 'password'" class="form-control"
-                            [class.is-invalid]="isInvalid('senhaConfirmacao') || (form.hasError('passwordsMismatch') && form.controls['senhaConfirmacao'].touched)"
-                            formControlName="senhaConfirmacao" placeholder="Repita sua senha" autocomplete="new-password"
-                            aria-describedby="cadastroConfirmacaoErro" [attr.aria-invalid]="isInvalid('senhaConfirmacao') || (form.hasError('passwordsMismatch') && form.controls['senhaConfirmacao'].touched)" required />
-                        <button type="button" class="toggle-password" (click)="togglePasswordConfirmationVisibility()"
-                            [attr.aria-label]="showPasswordConfirmation ? 'Ocultar confirmação da senha' : 'Mostrar confirmação da senha'">
-                            <i [class]="showPasswordConfirmation ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
-                        </button>
-                    </div>
-                    <small id="cadastroConfirmacaoErro" *ngIf="form.touched && form.hasError('passwordsMismatch')" class="field-error">As senhas não conferem.</small>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="cadastroOrigem"><span><i class="bi bi-chat-square-heart"></i>De onde nos conheceu?</span><span class="optional-mark">Opcional</span></label>
-                    <select id="cadastroOrigem" class="form-control" [(ngModel)]="origemConhecimento" [ngModelOptions]="{ standalone: true }" name="origemConhecimento" autocomplete="off">
-                        <option value="">Selecione uma opção</option>
-                        <option value="Indicação de amigo ou familiar">Indicação de amigo ou familiar</option>
-                        <option value="Redes sociais">Redes sociais</option>
-                        <option value="Pesquisa na internet">Pesquisa na internet</option>
-                        <option value="Vídeo ou conteúdo online">Vídeo ou conteúdo online</option>
-                        <option value="Outro">Outro</option>
-                    </select>
-                </div>
-
-                <p class="required-note"><span class="required-mark" aria-hidden="true">*</span> Campos obrigatórios</p>
-
-                <button type="submit" class="btn-register-submit" [disabled]="loading">
-                    <span *ngIf="!loading"><i class="bi bi-check-circle"></i>Criar conta</span>
-                    <span *ngIf="loading"><i class="bi bi-hourglass-split"></i>Criando conta...</span>
-                </button>
-
-                <div *ngIf="validationSummary.length" class="alert-error" role="alert" aria-live="assertive">
-                    <i class="bi bi-exclamation-circle" aria-hidden="true"></i><div><strong>Opa! Algo deu errado</strong><ul><li *ngFor="let message of validationSummary">{{ message }}</li></ul></div>
-                </div>
-                <div *ngIf="error" class="alert-error" role="alert" aria-live="assertive">
-                    <i class="bi bi-exclamation-circle" aria-hidden="true"></i><div><strong>Não foi possível criar sua conta.</strong><ul><li *ngFor="let message of serverErrorMessages">{{ message }}</li></ul></div>
-                </div>
-            </form>
-
-            <p class="account-prompt">Já tem uma conta? <a routerLink="/login">Entrar</a></p>
-        </div>
-    </section>
-</div>
+  </div>
+</main>

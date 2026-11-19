@@ -1,4 +1,12 @@
 :host { display: block; }
+.admin-invites { display: grid; gap: 1rem; margin-bottom: 1.25rem; }
+.admin-invites__actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.admin-invites__link { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.admin-invites__link label, .admin-invites__link small { width: 100%; }
+.admin-invites__link input { flex: 1; min-width: min(100%, 220px); min-height: 44px; padding: .6rem; border: 1px solid var(--ym-border); border-radius: var(--ym-radius-sm); color: var(--ym-text); background: var(--ym-surface); }
+.admin-invites__list { display: grid; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.admin-invites__list li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .3rem; padding: .7rem; border: 1px solid var(--ym-border); border-radius: var(--ym-radius-sm); }
+.admin-invites__list span { color: var(--ym-muted); }
 .admin-users { display: grid; gap: 1.25rem; }
 .admin-users__heading { display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
 .admin-users__heading h2 { margin: 0; }

@@ -3,6 +3,15 @@
     <app-page-header eyebrow="Administração" heading="Usuários"
       description="Consulte os cadastros do YourMoney."></app-page-header>
 
+    <section class="ym-card ym-card-pad admin-invites" aria-labelledby="admin-invites-title">
+      <div class="admin-users__heading"><div><h2 id="admin-invites-title">Convites para o YourMoney</h2><p>Gere um link válido por sete dias e usado uma única vez. O convite não dá acesso aos seus dados.</p></div></div>
+      <div class="admin-invites__actions"><button type="button" class="ym-button primary" [disabled]="conviteCarregando" (click)="gerarConvite()">{{ conviteCarregando ? 'Gerando...' : 'Gerar convite' }}</button><button type="button" class="ym-button secondary" (click)="listarConvites()">Ver convites emitidos</button></div>
+      @if (conviteCriado) { <div class="admin-invites__link"><label for="admin-invite-link">Compartilhe este link</label><input id="admin-invite-link" type="text" readonly [value]="conviteCriado.link" (focus)="$any($event.target).select()"><button type="button" class="ym-button secondary" (click)="copiarConvite()">Copiar link</button><small>O link completo aparece apenas agora. Guarde-o antes de sair da página.</small></div> }
+      @if (conviteMensagem) { <p role="status">{{ conviteMensagem }}</p> }
+      @if (conviteErro) { <p class="admin-users__error" role="alert">{{ conviteErro }}</p> }
+      @if (convites) { <ul class="admin-invites__list">@for (convite of convites; track convite.id) { <li><strong>{{ convite.usadoPorEmail || (convite.revogado ? 'Revogado' : 'Aguardando uso') }}</strong><span>Expira em {{ convite.expiraEm | date:'dd/MM/yyyy' }} @if (convite.usadoEm) { · Usado em {{ convite.usadoEm | date:'dd/MM/yyyy' }} }</span>@if (!convite.usadoEm && !convite.revogado && convite.expiraEm > agoraIso) { <button type="button" class="ym-button secondary" [disabled]="!!conviteRevogandoId" (click)="revogarConvite(convite.id)">Revogar</button> }</li> } @empty { <li>Nenhum convite emitido.</li> }</ul> }
+    </section>
+
     <section class="ym-card ym-card-pad admin-users" aria-labelledby="admin-users-title">
       <div class="admin-users__heading">
         <div>

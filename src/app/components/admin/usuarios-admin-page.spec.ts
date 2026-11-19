@@ -7,7 +7,7 @@ import { UsuariosAdminPageComponent } from './usuarios-admin-page';
 describe('UsuariosAdminPageComponent', () => {
   let fixture: ComponentFixture<UsuariosAdminPageComponent>;
   const users = jasmine.createSpyObj<AdminUsuariosService>('AdminUsuariosService', ['listar']);
-  const auth = jasmine.createSpyObj<AuthService>('AuthService', ['requestPasswordReset']);
+  const auth = jasmine.createSpyObj<AuthService>('AuthService', ['requestPasswordReset', 'createInvite', 'listInvites', 'revokeInvite']);
 
   beforeEach(async () => {
     users.listar.and.returnValue(of({
@@ -15,6 +15,8 @@ describe('UsuariosAdminPageComponent', () => {
       pagina: 1, tamanho: 25, total: 1, redefinicaoDisponivel: true,
     }));
     auth.requestPasswordReset.and.returnValue(of({ mensagem: 'Solicitação aceita.' }));
+    auth.createInvite.and.returnValue(of({ codigo: 'code', link: 'https://example.com/cadastro?convite=code', expiraEm: '2026-11-26T00:00:00Z' }));
+    auth.listInvites.and.returnValue(of([]));
     await TestBed.configureTestingModule({
       imports: [UsuariosAdminPageComponent],
       providers: [
@@ -48,5 +50,14 @@ describe('UsuariosAdminPageComponent', () => {
     const page = fixture.nativeElement as HTMLElement;
     expect(page.textContent).toContain('ainda não está configurado');
     expect(page.querySelector('[aria-label="Enviar redefinição de senha para maria@example.com"]')).toBeNull();
+  });
+
+  it('shows a one-time invitation link only when an admin requests one', () => {
+    const page = fixture.nativeElement as HTMLElement;
+    expect(page.querySelector('#admin-invite-link')).toBeNull();
+    page.querySelector<HTMLButtonElement>('.admin-invites__actions button')?.click();
+    fixture.detectChanges();
+    expect(auth.createInvite).toHaveBeenCalled();
+    expect(page.querySelector<HTMLInputElement>('#admin-invite-link')?.value).toContain('convite=code');
   });
 });

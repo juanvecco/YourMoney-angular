@@ -3,7 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap, map } from 'rxjs';
 import {
     ApiResponse, AuthData, LoginRequest, PasswordResetConfirmRequest,
-    PasswordResetMessage, PasswordResetRequest, RegisterRequest
+    PasswordResetMessage, PasswordResetRequest, RegisterRequest,
+    ExternalMethods, InviteValidation, RegistrationInvite, RegistrationInviteSummary, OnboardingGoal
 } from '../models/auth.model';
 import { environment } from '../../environments/environment';
 import { FinancialNavigationContextService } from './financial-navigation-context.service';
@@ -40,6 +41,55 @@ export class AuthService {
                 tap(response => this.storeAuthData(response.data)),
                 map(response => response.data)
             );
+    }
+
+    getExternalMethods(): Observable<ExternalMethods> {
+        return this.http.get<ExternalMethods>(`${this.apiUrl}/metodos`);
+    }
+
+    validateInvite(codigo: string): Observable<InviteValidation> {
+        return this.http.get<InviteValidation>(`${this.apiUrl}/convites/validar`, { params: { codigo } });
+    }
+
+    createInvite(): Observable<RegistrationInvite> {
+        return this.http.post<RegistrationInvite>(`${this.apiUrl}/convites`, {});
+    }
+
+    listInvites(): Observable<RegistrationInviteSummary[]> {
+        return this.http.get<RegistrationInviteSummary[]>(`${this.apiUrl}/convites`);
+    }
+
+    revokeInvite(id: string): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/convites/${encodeURIComponent(id)}/revogar`, {});
+    }
+
+    startExternalLogin(provider: 'google' | 'apple', data: { nome: string; objetivoInicial: OnboardingGoal; origemConhecimento?: string; codigoConvite?: string }): void {
+        this.submitExternalLogin(provider, data);
+    }
+
+    startExistingExternalLogin(provider: 'google' | 'apple'): void {
+        this.submitExternalLogin(provider, { modoEntrar: 'true' });
+    }
+
+    private submitExternalLogin(provider: 'google' | 'apple', data: Record<string, string | undefined>): void {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `${this.apiUrl}/externo/iniciar/${provider}`;
+        for (const [name, value] of Object.entries(data)) {
+            if (!value) continue;
+            const field = document.createElement('input');
+            field.type = 'hidden';
+            field.name = name;
+            field.value = value;
+            form.appendChild(field);
+        }
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    completeExternalLogin(): Observable<AuthData> {
+        return this.http.post<ApiResponse<AuthData>>(`${this.apiUrl}/externo/concluir`, {}, { withCredentials: true })
+            .pipe(tap(response => this.storeAuthData(response.data)), map(response => response.data));
     }
 
     requestPasswordReset(request: PasswordResetRequest): Observable<PasswordResetMessage> {

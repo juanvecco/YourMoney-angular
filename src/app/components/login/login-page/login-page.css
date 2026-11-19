@@ -67,6 +67,10 @@
 .divider span { padding: 0 12px; }
 .account-prompt { margin: 0; color: var(--ym-muted); text-align: center; font-size: 14px; }
 .account-prompt a { margin-left: 3px; }
+.external-login-methods { display: grid; gap: 10px; margin: 0 0 22px; }
+.external-login-button { min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; border: 1px solid var(--ym-border); border-radius: 12px; background: var(--ym-surface); color: var(--ym-text); font-weight: 700; cursor: pointer; }
+.external-login-button:hover:not(:disabled) { border-color: var(--ym-primary); }
+.external-login-button:disabled { opacity: .6; cursor: wait; }
 .field-error { display: block; margin-top: 7px; color: #b42318; font-size: 12px; line-height: 1.4; }
 .alert-error { display: flex; align-items: flex-start; gap: 10px; margin-top: 16px; padding: 13px 14px; border: 1px solid rgba(220,53,69,.28); border-radius: 12px; color: #8e1b27; background: rgba(220,53,69,.075); font-size: 13px; }
 .alert-error > i { margin-top: 1px; color: #c63242; }

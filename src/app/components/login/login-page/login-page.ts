@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
+import { ExternalMethods } from '../../../models/auth.model';
 
 @Component({
     selector: 'app-login-page',
@@ -22,6 +23,7 @@ export class LoginPageComponent implements OnInit {
     validationSummary: string[] = [];
 
     showPassword = false;
+    methods: ExternalMethods = { google: false, apple: false };
 
     constructor(
         private fb: FormBuilder,
@@ -103,7 +105,29 @@ export class LoginPageComponent implements OnInit {
         return messages;
     }
 
-    ngOnInit(): void { }
+    ngOnInit(): void {
+        this.authService.getExternalMethods().subscribe({
+            next: methods => this.methods = methods,
+            error: () => this.methods = { google: false, apple: false }
+        });
+        const external = this.route.snapshot.queryParamMap.get('externo');
+        if (external === 'concluido') {
+            this.loading = true;
+            this.authService.completeExternalLogin().subscribe({
+                next: () => this.router.navigate(['/dashboard']),
+                error: () => { this.loading = false; this.error = 'Não foi possível concluir o acesso. Tente novamente.'; }
+            });
+        } else if (external === 'conta-inexistente') {
+            this.error = 'Ainda não há uma conta ligada a esse método. Crie sua conta primeiro.';
+        } else if (external === 'erro') {
+            this.error = 'Não foi possível entrar com essa conta. Tente novamente.';
+        }
+    }
+
+    startExternal(provider: 'google' | 'apple'): void {
+        if (!this.methods[provider] || this.loading) return;
+        this.authService.startExistingExternalLogin(provider);
+    }
     togglePasswordVisibility(): void {
         this.showPassword = !this.showPassword;
     }

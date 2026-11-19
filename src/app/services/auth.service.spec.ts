@@ -81,6 +81,7 @@ describe('AuthService', () => {
   it('stores authentication data returned by registration', () => {
     service.register({
       nome: 'Maria Silva',
+      objetivoInicial: 'gastos',
       email: 'maria@example.com',
       senha: 'Senha123',
       senhaConfirmacao: 'Senha123'

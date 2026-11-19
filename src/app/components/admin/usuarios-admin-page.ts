@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { PageHeaderComponent } from '../shared/page-header/page-header';
 import { AdminUsuariosService, PaginaUsuariosAdmin } from '../../services/admin-usuarios.service';
 import { AuthService } from '../../services/auth.service';
+import { RegistrationInvite, RegistrationInviteSummary } from '../../models/auth.model';
 
 @Component({
   selector: 'app-usuarios-admin-page',
@@ -13,6 +14,7 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './usuarios-admin-page.css',
 })
 export class UsuariosAdminPageComponent implements OnInit {
+  readonly agoraIso = new Date().toISOString();
   busca = '';
   buscaAplicada = '';
   pagina = 1;
@@ -21,6 +23,12 @@ export class UsuariosAdminPageComponent implements OnInit {
   erro = '';
   redefinindoId = '';
   mensagemRedefinicao = '';
+  conviteCriado: RegistrationInvite | null = null;
+  convites: RegistrationInviteSummary[] | null = null;
+  conviteCarregando = false;
+  conviteErro = '';
+  conviteMensagem = '';
+  conviteRevogandoId = '';
   private revisao = 0;
 
   constructor(
@@ -29,6 +37,40 @@ export class UsuariosAdminPageComponent implements OnInit {
   ) {}
 
   ngOnInit(): void { this.carregar(); }
+
+  gerarConvite(): void {
+    if (this.conviteCarregando) return;
+    this.conviteCarregando = true;
+    this.conviteErro = '';
+    this.conviteCriado = null;
+    this.auth.createInvite().subscribe({
+      next: invite => { this.conviteCriado = invite; this.conviteCarregando = false; this.listarConvites(); },
+      error: () => { this.conviteCarregando = false; this.conviteErro = 'Não foi possível gerar o convite agora.'; }
+    });
+  }
+
+  listarConvites(): void {
+    this.auth.listInvites().subscribe({
+      next: invites => { this.convites = invites; this.conviteErro = ''; },
+      error: () => { this.conviteErro = 'Não foi possível consultar os convites.'; }
+    });
+  }
+
+  async copiarConvite(): Promise<void> {
+    if (!this.conviteCriado) return;
+    try { await navigator.clipboard.writeText(this.conviteCriado.link); this.conviteMensagem = 'Link copiado.'; }
+    catch { this.conviteMensagem = 'Selecione e copie o link abaixo.'; }
+  }
+
+  revogarConvite(id: string): void {
+    if (this.conviteRevogandoId) return;
+    this.conviteRevogandoId = id;
+    this.conviteErro = '';
+    this.auth.revokeInvite(id).subscribe({
+      next: () => { this.conviteRevogandoId = ''; this.conviteMensagem = 'Convite revogado.'; this.listarConvites(); },
+      error: () => { this.conviteRevogandoId = ''; this.conviteErro = 'Não foi possível revogar o convite.'; }
+    });
+  }
 
   pesquisar(): void {
     this.buscaAplicada = this.busca.trim();

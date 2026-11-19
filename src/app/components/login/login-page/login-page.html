@@ -85,6 +85,11 @@
 
             <div class="divider"><span>ou</span></div>
 
+            <div *ngIf="methods.google || methods.apple" class="external-login-methods" aria-label="Outras formas de entrar">
+                <button *ngIf="methods.google" type="button" class="external-login-button" [disabled]="loading" (click)="startExternal('google')"><i class="bi bi-google" aria-hidden="true"></i>Entrar com Google</button>
+                <button *ngIf="methods.apple" type="button" class="external-login-button" [disabled]="loading" (click)="startExternal('apple')"><i class="bi bi-apple" aria-hidden="true"></i>Entrar com Apple</button>
+            </div>
+
             <p class="account-prompt">Ainda não tem uma conta? <a routerLink="/cadastro">Criar minha conta</a></p>
         </div>
     </section>
