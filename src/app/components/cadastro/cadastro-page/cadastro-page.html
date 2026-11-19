@@ -89,7 +89,13 @@
             <button type="button" class="signup-method" (click)="chooseEmail()"><i class="bi bi-envelope" aria-hidden="true"></i><span>Entrar com e-mail</span><i class="bi bi-arrow-right" aria-hidden="true"></i></button>
             <button type="button" class="signup-method signup-method--invite" (click)="chooseInvite()"><i class="bi bi-gift" aria-hidden="true"></i><span>Tenho um convite</span><i class="bi bi-arrow-right" aria-hidden="true"></i></button>
           </div>
-          @if (!methods.apple || !methods.google) { <p class="signup-footnote">Apple e Google estarão disponíveis quando a integração oficial for ativada. Você já pode criar sua conta com e-mail.</p> }
+          @if (!methods.apple && !methods.google) {
+            <p class="signup-footnote">Apple e Google estarão disponíveis quando a integração oficial for ativada. Você já pode criar sua conta com e-mail.</p>
+          } @else if (!methods.apple) {
+            <p class="signup-footnote">O acesso com Apple ainda não está disponível. Você já pode criar sua conta com Google ou e-mail.</p>
+          } @else if (!methods.google) {
+            <p class="signup-footnote">O acesso com Google ainda não está disponível. Você já pode criar sua conta com Apple ou e-mail.</p>
+          }
         </div>
       }
 

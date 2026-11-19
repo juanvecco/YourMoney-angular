@@ -87,6 +87,22 @@ describe('CadastroPageComponent', () => {
     expect(component.step).toBe('email');
   });
 
+  it('shows Google as available without saying it is coming soon', () => {
+    component.methods = { google: true, apple: false };
+    component.form.controls['nome'].setValue('Maria');
+    component.continueFromName();
+    component.next();
+    component.selectGoal('gastos');
+    component.next();
+    component.selectSource('google');
+    component.next();
+    fixture.detectChanges();
+    const page: HTMLElement = fixture.nativeElement;
+    expect(page.querySelector<HTMLButtonElement>('[data-provider="google"]')?.disabled).toBeFalse();
+    expect(page.textContent).toContain('O acesso com Apple ainda não está disponível');
+    expect(page.textContent).not.toContain('Apple e Google estarão disponíveis');
+  });
+
   it('allows toggling goals and requires at least one selection', () => {
     component.form.controls['nome'].setValue('Maria');
     component.continueFromName();
