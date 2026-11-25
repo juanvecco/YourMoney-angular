@@ -114,9 +114,13 @@ export class ConfiguracaoPageComponent implements OnInit {
     this.secao = 'seguranca';
     this.authService.getPendingGoogleLink().subscribe({
       next: pending => this.googleLinkPendente = pending,
-      error: () => {
+      error: (error: HttpErrorResponse) => {
         this.googleLinkPendente = null;
-        this.erroVinculoGoogle = 'A confirmação expirou ou sua sessão terminou. Entre novamente e inicie a conexão do Google.';
+        this.erroVinculoGoogle = error.status === 410
+          ? 'A confirmação expirou ou não está mais disponível. Inicie novamente a conexão com Google.'
+          : error.status === 401
+            ? 'Sua sessão expirou. Entre novamente e inicie a conexão do Google.'
+            : 'Não foi possível recuperar a confirmação. Atualize a página e tente novamente.';
         this.limparResultadoPendenteGoogle();
       },
     });
@@ -193,6 +197,7 @@ export class ConfiguracaoPageComponent implements OnInit {
     if (error.status === 409) return 'Esta conta Google já está conectada a outra conta ou o método já está conectado aqui.';
     if (error.status === 422) return 'O Google precisa usar o mesmo e-mail verificado da sua conta YourMoney.';
     if (error.status === 503) return 'A conexão com Google não está disponível no momento.';
+    if (error.status === 410) return 'A confirmação expirou ou não está mais disponível. Inicie novamente a conexão com Google.';
     return 'Não foi possível concluir a conexão. Sua conta e seus dados permanecem inalterados.';
   }
 
