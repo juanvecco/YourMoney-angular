@@ -4,7 +4,8 @@ import { Observable, tap, map } from 'rxjs';
 import {
     ApiResponse, AuthData, LoginRequest, PasswordResetConfirmRequest,
     PasswordResetMessage, PasswordResetRequest, RegisterRequest,
-    ExternalMethods, InviteValidation, RegistrationInvite, RegistrationInviteSummary, OnboardingGoal
+    ExternalMethods, InviteValidation, RegistrationInvite, RegistrationInviteSummary, OnboardingGoal,
+    ExternalAccountLinkStatus, PendingGoogleLink, PrepareGoogleLinkResponse
 } from '../models/auth.model';
 import { environment } from '../../environments/environment';
 import { FinancialNavigationContextService } from './financial-navigation-context.service';
@@ -92,6 +93,44 @@ export class AuthService {
     completeExternalLogin(): Observable<AuthData> {
         return this.http.post<ApiResponse<AuthData>>(`${this.apiUrl}/externo/concluir`, {}, { withCredentials: true })
             .pipe(tap(response => this.storeAuthData(response.data)), map(response => response.data));
+    }
+
+    getExternalAccountLinkStatus(): Observable<ExternalAccountLinkStatus> {
+        return this.http.get<ApiResponse<ExternalAccountLinkStatus>>(`${this.apiUrl}/vinculos`)
+            .pipe(map(response => response.data));
+    }
+
+    prepareGoogleLink(senhaAtual: string): Observable<PrepareGoogleLinkResponse> {
+        return this.http.post<ApiResponse<PrepareGoogleLinkResponse>>(
+            `${this.apiUrl}/vincular/google/preparar`, { senhaAtual }, { withCredentials: true }
+        ).pipe(map(response => response.data));
+    }
+
+    startGoogleLink(continuationPath: string): void {
+        const expectedPath = '/api/identidade/externo/vincular/google/iniciar';
+        if (continuationPath !== expectedPath) throw new Error('Caminho de continuação inválido.');
+        const form = document.createElement('form');
+        form.method = 'POST';
+        const apiBaseUrl = new URL(environment.apiUrl, window.location.origin);
+        form.action = new URL(continuationPath, apiBaseUrl).toString();
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    getPendingGoogleLink(): Observable<PendingGoogleLink> {
+        return this.http.get<ApiResponse<PendingGoogleLink>>(
+            `${this.apiUrl}/vincular/google/pendente`, { withCredentials: true }
+        ).pipe(map(response => response.data));
+    }
+
+    confirmGoogleLink(): Observable<ExternalAccountLinkStatus> {
+        return this.http.post<ApiResponse<ExternalAccountLinkStatus>>(
+            `${this.apiUrl}/vincular/google/confirmar`, {}, { withCredentials: true }
+        ).pipe(map(response => response.data));
+    }
+
+    cancelGoogleLink(): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/vincular/google/cancelar`, {}, { withCredentials: true });
     }
 
     requestPasswordReset(request: PasswordResetRequest): Observable<PasswordResetMessage> {

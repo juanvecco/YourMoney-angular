@@ -128,6 +128,7 @@
 
       @if (validationSummary.length) { <div class="signup-alert" role="alert"><strong>Confira os dados:</strong><ul><li *ngFor="let message of validationSummary">{{ message }}</li></ul></div> }
       @if (error) { <div class="signup-alert" role="alert">{{ error }}</div> }
+      @if (accountAlreadyExists) { <p class="signup-footnote"><a routerLink="/login">Entrar na conta existente</a> · <a routerLink="/recuperar-senha">Recuperar senha</a></p> }
     </section>
   </div>
 </main>

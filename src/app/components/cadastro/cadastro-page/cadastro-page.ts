@@ -47,6 +47,7 @@ export class CadastroPageComponent implements OnInit {
   error: string | null = null;
   validationSummary: string[] = [];
   serverErrorMessages: string[] = [];
+  accountAlreadyExists = false;
   showPassword = false;
   showPasswordConfirmation = false;
 
@@ -91,7 +92,8 @@ export class CadastroPageComponent implements OnInit {
       this.error = 'Não foi possível entrar com essa conta. Escolha outro método ou tente novamente.';
     } else if (external === 'conta-existente') {
       this.step = 'method';
-      this.error = 'Este e-mail já tem uma conta. Entre com e-mail e senha. Para usar outro método de acesso, fale com o suporte.';
+      this.accountAlreadyExists = true;
+      this.error = 'Este e-mail já tem uma conta. Entre nela com e-mail e senha; depois, conecte o Google em Configurações > Segurança e acesso.';
     }
   }
 
@@ -177,6 +179,7 @@ export class CadastroPageComponent implements OnInit {
     if (this.step !== 'email' || this.loading) return;
     this.error = null;
     this.serverErrorMessages = [];
+    this.accountAlreadyExists = false;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.validationSummary = this.collectValidationSummary();
@@ -199,6 +202,7 @@ export class CadastroPageComponent implements OnInit {
       error: err => {
         this.serverErrorMessages = this.extractErrorMessages(err);
         this.error = this.serverErrorMessages.join(' ');
+        this.accountAlreadyExists = this.error.toLocaleLowerCase('pt-BR').includes('já tem uma conta');
         this.loading = false;
       }
     });
@@ -208,7 +212,7 @@ export class CadastroPageComponent implements OnInit {
   togglePasswordConfirmationVisibility(): void { this.showPasswordConfirmation = !this.showPasswordConfirmation; }
   hasError(name: string, error: string): boolean { const control = this.form.get(name); return !!control && control.touched && control.hasError(error); }
   isInvalid(name: string): boolean { const control = this.form.get(name); return !!control && control.touched && control.invalid; }
-  onFormInput(): void { this.error = null; this.serverErrorMessages = []; this.validationSummary = []; }
+  onFormInput(): void { this.error = null; this.serverErrorMessages = []; this.validationSummary = []; this.accountAlreadyExists = false; }
 
   private moveTo(step: Step): void { this.step = step; this.error = null; this.validationSummary = []; }
 

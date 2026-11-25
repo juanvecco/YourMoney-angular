@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, Optional } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Categoria, ContaFinanceira } from '../../../models/despesa.model';
 import { CategoriaPayload, CategoriaService } from '../../../services/categoria';
 import { ContaFinanceiraService } from '../../../services/conta';
@@ -12,8 +12,10 @@ import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { ViewStateComponent } from '../../shared/view-state/view-state';
 import { RegraNegocio } from '../../../models/regra-negocio.model';
 import { RegraNegocioService } from '../../../services/regra-negocio.service';
+import { AuthService } from '../../../services/auth.service';
+import { ExternalAccountLinkStatus, PendingGoogleLink } from '../../../models/auth.model';
 
-type SecaoConfiguracao = 'categorias' | 'contas' | 'conexoes' | 'regras';
+type SecaoConfiguracao = 'categorias' | 'contas' | 'conexoes' | 'regras' | 'seguranca';
 
 @Component({
   selector: 'app-configuracao-page',
@@ -47,18 +49,35 @@ export class ConfiguracaoPageComponent implements OnInit {
   carregandoRegras = false;
   erroRegras = '';
   salvandoRegraCodigo = '';
+  carregandoVinculoGoogle = false;
+  vinculandoGoogle = false;
+  googleLinkStatus: ExternalAccountLinkStatus | null = null;
+  googleLinkPendente: PendingGoogleLink | null = null;
+  senhaAtualGoogle = '';
+  erroVinculoGoogle = '';
+  sucessoVinculoGoogle = '';
 
   constructor(
     private readonly categoriaService: CategoriaService,
     private readonly contaService: ContaFinanceiraService,
     private readonly feedback: FeedbackService,
     private readonly regraNegocioService: RegraNegocioService,
+    private readonly authService: AuthService,
     @Optional() private readonly route: ActivatedRoute | null = null,
+    @Optional() private readonly router: Router | null = null,
   ) {}
 
   ngOnInit(): void {
     const secaoSolicitada = this.route?.snapshot.queryParamMap.get('secao');
-    if (secaoSolicitada === 'contas' || secaoSolicitada === 'regras') this.secao = secaoSolicitada;
+    if (secaoSolicitada === 'contas' || secaoSolicitada === 'regras' || secaoSolicitada === 'seguranca') this.secao = secaoSolicitada;
+    const resultadoGoogle = this.route?.snapshot.queryParamMap.get('google');
+    if (resultadoGoogle === 'pendente') this.carregarGooglePendente();
+    else if (resultadoGoogle === 'conectado') this.sucessoVinculoGoogle = 'Google conectado à sua conta YourMoney.';
+    else if (resultadoGoogle === 'conflito') this.erroVinculoGoogle = 'Esta conta Google já está conectada a outra conta. Nenhum vínculo foi alterado.';
+    else if (resultadoGoogle === 'email-diferente') this.erroVinculoGoogle = 'Escolha o Google que usa o mesmo e-mail verificado da sua conta YourMoney.';
+    else if (resultadoGoogle === 'cancelado') this.sucessoVinculoGoogle = 'Conexão cancelada. Sua conta não foi alterada.';
+    else if (resultadoGoogle === 'erro') this.erroVinculoGoogle = 'Não foi possível conectar o Google. Sua conta e seus dados continuam inalterados. Tente novamente.';
+    this.carregarStatusVinculoGoogle();
     this.carregarCategorias();
     this.carregarContas();
     this.carregarInstituicoesBancarias();
@@ -73,6 +92,118 @@ export class ConfiguracaoPageComponent implements OnInit {
     this.secao = secao;
     this.limparMensagens();
     if (secao === 'regras') this.carregarRegras();
+    if (secao === 'seguranca') this.carregarStatusVinculoGoogle();
+  }
+
+  carregarStatusVinculoGoogle(): void {
+    this.carregandoVinculoGoogle = true;
+    this.authService.getExternalAccountLinkStatus().subscribe({
+      next: status => {
+        this.googleLinkStatus = status;
+        this.carregandoVinculoGoogle = false;
+      },
+      error: () => {
+        this.googleLinkStatus = null;
+        this.carregandoVinculoGoogle = false;
+        this.erroVinculoGoogle ||= 'Não foi possível consultar os métodos de acesso. Atualize a página e tente novamente.';
+      },
+    });
+  }
+
+  carregarGooglePendente(): void {
+    this.secao = 'seguranca';
+    this.authService.getPendingGoogleLink().subscribe({
+      next: pending => this.googleLinkPendente = pending,
+      error: () => {
+        this.googleLinkPendente = null;
+        this.erroVinculoGoogle = 'A confirmação expirou ou sua sessão terminou. Entre novamente e inicie a conexão do Google.';
+        this.limparResultadoPendenteGoogle();
+      },
+    });
+  }
+
+  iniciarVinculoGoogle(): void {
+    if (this.vinculandoGoogle) return;
+    if (!this.senhaAtualGoogle) {
+      this.erroVinculoGoogle = 'Digite a senha atual da sua conta YourMoney para continuar.';
+      return;
+    }
+    this.erroVinculoGoogle = '';
+    this.sucessoVinculoGoogle = '';
+    this.vinculandoGoogle = true;
+    this.authService.prepareGoogleLink(this.senhaAtualGoogle).subscribe({
+      next: result => {
+        try {
+          this.authService.startGoogleLink(result.continuationPath);
+        } catch {
+          this.vinculandoGoogle = false;
+          this.erroVinculoGoogle = 'Não foi possível iniciar a conexão com Google. Tente novamente.';
+        }
+      },
+      error: error => {
+        this.vinculandoGoogle = false;
+        this.erroVinculoGoogle = this.mensagemFalhaVinculo(error);
+      },
+    });
+  }
+
+  confirmarVinculoGoogle(): void {
+    if (!this.googleLinkPendente || this.vinculandoGoogle) return;
+    this.vinculandoGoogle = true;
+    this.erroVinculoGoogle = '';
+    this.authService.confirmGoogleLink().subscribe({
+      next: status => {
+        this.googleLinkStatus = status;
+        this.googleLinkPendente = null;
+        this.senhaAtualGoogle = '';
+        this.vinculandoGoogle = false;
+        this.sucessoVinculoGoogle = 'Google conectado à sua conta YourMoney. Seu acesso por e-mail e senha continua ativo.';
+        this.limparResultadoPendenteGoogle();
+      },
+      error: error => {
+        this.vinculandoGoogle = false;
+        this.erroVinculoGoogle = this.mensagemFalhaVinculo(error);
+        this.carregarStatusVinculoGoogle();
+      },
+    });
+  }
+
+  cancelarVinculoGoogle(): void {
+    if (this.vinculandoGoogle) return;
+    this.vinculandoGoogle = true;
+    this.authService.cancelGoogleLink().subscribe({
+      next: () => {
+        this.googleLinkPendente = null;
+        this.vinculandoGoogle = false;
+        this.sucessoVinculoGoogle = 'Conexão cancelada. Sua conta não foi alterada.';
+        this.limparResultadoPendenteGoogle();
+      },
+      error: () => {
+        this.googleLinkPendente = null;
+        this.vinculandoGoogle = false;
+        this.erroVinculoGoogle = 'A confirmação foi cancelada nesta tela. Se a tentativa ainda estiver ativa, ela expirará em poucos minutos.';
+      },
+    });
+  }
+
+  private mensagemFalhaVinculo(error: HttpErrorResponse): string {
+    const message = error.error?.mensagem || error.error?.message;
+    if (typeof message === 'string' && message.trim()) return message;
+    if (error.status === 401) return 'Sua sessão expirou. Entre novamente e inicie a conexão do Google.';
+    if (error.status === 409) return 'Esta conta Google já está conectada a outra conta ou o método já está conectado aqui.';
+    if (error.status === 422) return 'O Google precisa usar o mesmo e-mail verificado da sua conta YourMoney.';
+    if (error.status === 503) return 'A conexão com Google não está disponível no momento.';
+    return 'Não foi possível concluir a conexão. Sua conta e seus dados permanecem inalterados.';
+  }
+
+  private limparResultadoPendenteGoogle(): void {
+    if (!this.router || !this.route) return;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { google: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   carregarRegras(forcar = false): void {

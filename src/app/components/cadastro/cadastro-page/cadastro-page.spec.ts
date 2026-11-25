@@ -87,6 +87,26 @@ describe('CadastroPageComponent', () => {
     expect(component.step).toBe('email');
   });
 
+  it('offers existing-account and recovery paths when registration email is already used', () => {
+    component.form.controls['nome'].setValue('Maria');
+    component.continueFromName();
+    component.next();
+    component.selectGoal('saldo');
+    component.next();
+    component.selectSource('prefiro-nao-responder');
+    component.next();
+    component.chooseEmail();
+    component.form.patchValue({ email: 'maria@example.com', senha: 'Senha123', senhaConfirmacao: 'Senha123' });
+    auth.register.and.returnValue(throwError(() => ({ error: { errors: { Mensagens: [
+      'Este e-mail já tem uma conta. Entre com e-mail e senha; se esqueceu sua senha, recupere o acesso.'
+    ] } } })));
+    component.onSubmit();
+    fixture.detectChanges();
+    expect(component.accountAlreadyExists).toBeTrue();
+    expect(fixture.nativeElement.querySelector('a[routerlink="/login"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('a[routerlink="/recuperar-senha"]')).toBeTruthy();
+  });
+
   it('shows Google as available without saying it is coming soon', () => {
     component.methods = { google: true, apple: false };
     component.form.controls['nome'].setValue('Maria');

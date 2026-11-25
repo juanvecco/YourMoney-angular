@@ -118,7 +118,9 @@ export class LoginPageComponent implements OnInit {
                 error: () => { this.loading = false; this.error = 'Não foi possível concluir o acesso. Tente novamente.'; }
             });
         } else if (external === 'conta-inexistente') {
-            this.error = 'Ainda não há uma conta ligada a esse método. Crie sua conta primeiro.';
+            this.error = 'Este método ainda não está ligado a uma conta. Entre com o método que você já usa no YourMoney.';
+        } else if (external === 'google-nao-vinculado') {
+            this.error = 'Se sua conta foi criada com e-mail e senha, entre por eles primeiro. Depois, acesse Configurações > Segurança e acesso para conectar o Google. Se esqueceu a senha, use a opção de recuperação abaixo.';
         } else if (external === 'erro') {
             this.error = 'Não foi possível entrar com essa conta. Tente novamente.';
         }

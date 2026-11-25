@@ -78,6 +78,21 @@ describe('AuthService', () => {
     expect(localStorage.getItem('reset_token')).toBeNull();
   });
 
+  it('uses credentialed account-link requests and posts only to the fixed continuation path', () => {
+    service.prepareGoogleLink('Senha123!').subscribe();
+    const prepare = httpMock.expectOne(`${environment.apiUrl}/identidade/vincular/google/preparar`);
+    expect(prepare.request.body).toEqual({ senhaAtual: 'Senha123!' });
+    expect(prepare.request.withCredentials).toBeTrue();
+    prepare.flush({ success: true, data: { continuationPath: '/api/identidade/externo/vincular/google/iniciar' } });
+
+    const submit = spyOn(HTMLFormElement.prototype, 'submit').and.stub();
+    service.startGoogleLink('/api/identidade/externo/vincular/google/iniciar');
+    const form = document.body.querySelector('form') as HTMLFormElement;
+    expect(form.action).toBe(new URL('/api/identidade/externo/vincular/google/iniciar', new URL(environment.apiUrl, window.location.origin)).toString());
+    expect(submit).toHaveBeenCalled();
+    form.remove();
+  });
+
   it('stores authentication data returned by registration', () => {
     service.register({
       nome: 'Maria Silva',

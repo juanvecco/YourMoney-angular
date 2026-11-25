@@ -17,6 +17,9 @@ export interface RegisterRequest {
 export type OnboardingGoal = 'gastos' | 'cartao' | 'objetivos' | 'saldo';
 export type ReferralSource = 'instagram' | 'google-play' | 'amigo-familiar' | 'tiktok' | 'google' | 'facebook' | 'youtube' | 'linkedin' | 'outro' | 'prefiro-nao-responder';
 export interface ExternalMethods { google: boolean; apple: boolean; }
+export interface ExternalAccountLinkStatus { googleAvailable: boolean; googleLinked: boolean; }
+export interface PrepareGoogleLinkResponse { continuationPath: string; }
+export interface PendingGoogleLink { provider: 'google'; emailMasked: string; expiresAt: string; }
 export interface InviteValidation { valido: boolean; motivo?: string | null; }
 export interface RegistrationInvite { codigo: string; link: string; expiraEm: string; }
 export interface RegistrationInviteSummary { id: string; expiraEm: string; usadoEm?: string | null; usadoPorEmail?: string | null; revogado: boolean; }

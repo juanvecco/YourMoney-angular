@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { of } from 'rxjs';
 import { LoginPageComponent } from './login-page';
@@ -22,5 +22,24 @@ describe('LoginPageComponent', () => {
     fixture.detectChanges();
     fixture.nativeElement.querySelector('.external-login-button').click();
     expect(externalLogin).toHaveBeenCalledOnceWith('google');
+  });
+
+  it('guides an unlinked Google login to the existing account and password recovery', async () => {
+    await TestBed.configureTestingModule({
+      imports: [LoginPageComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({ externo: 'google-nao-vinculado' }) } } },
+        { provide: AuthService, useValue: {
+          login: jasmine.createSpy('login'), getExternalMethods: () => of({ google: true, apple: false }),
+          startExistingExternalLogin: jasmine.createSpy('startExistingExternalLogin')
+        } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(LoginPageComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('entre por eles primeiro');
+    expect(fixture.nativeElement.textContent).toContain('conectar o Google');
+    expect(fixture.nativeElement.querySelector('a[routerlink="/recuperar-senha"]')).toBeTruthy();
   });
 });
