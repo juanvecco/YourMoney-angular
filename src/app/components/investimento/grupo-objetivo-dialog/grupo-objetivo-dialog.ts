@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { finalize } from 'rxjs';
+import { finalize, Subject, takeUntil } from 'rxjs';
 import { AcaoVinculosGrupoObjetivo, GrupoObjetivoInvestimento } from '../../../models/investimento-grupo.model';
 import { IMAGEM_OBJETIVO_CARRO, imagemSugeridaObjetivo, resolverImagemObjetivo } from '../../../models/objetivo-imagem';
 import { FeedbackService } from '../../../services/feedback.service';
@@ -16,7 +16,7 @@ import { FinancialValueInputDirective } from '../../../directives/financial-valu
   templateUrl: './grupo-objetivo-dialog.html',
   styleUrls: ['./grupo-objetivo-dialog.scss'],
 })
-export class GrupoObjetivoDialogComponent {
+export class GrupoObjetivoDialogComponent implements OnDestroy {
   @Input() grupos: GrupoObjetivoInvestimento[] = [];
   @Output() readonly alterado = new EventEmitter<void>();
   @ViewChild('nomeInput') nomeInput?: ElementRef<HTMLInputElement>;
@@ -34,24 +34,46 @@ export class GrupoObjetivoDialogComponent {
   grupoDestinoId = '';
   salvando = false;
   enviandoImagem = false;
+  uploadImagemHabilitado = false;
   mensagemImagem = '';
   private retornoFoco: HTMLElement | null = null;
+  private readonly destroy$ = new Subject<void>();
+  private readonly imagensCarregadas = new Map<string, string | null>();
+  private readonly imagensEmCarregamento = new Set<string>();
+  private imagemTemporariaUrl: string | null = null;
 
   constructor(private readonly service: InvestimentoGrupoService, private readonly feedback: FeedbackService) {}
+
+  ngOnDestroy(): void {
+    this.descartarImagemTemporaria();
+    this.destroy$.next();
+    this.destroy$.complete();
+    for (const url of this.imagensCarregadas.values()) {
+      if (url) URL.revokeObjectURL(url);
+    }
+    this.imagensCarregadas.clear();
+  }
 
   abrir(): void {
     this.retornoFoco = document.activeElement as HTMLElement | null;
     this.cancelarEdicao();
+    this.uploadImagemHabilitado = false;
+    this.service.obterStatusUploadImagem().pipe(takeUntil(this.destroy$)).subscribe({
+      next: status => this.uploadImagemHabilitado = status.uploadHabilitado,
+      error: () => this.uploadImagemHabilitado = false,
+    });
     this.dialog?.nativeElement.showModal();
     queueMicrotask(() => this.nomeInput?.nativeElement.focus());
   }
 
   fechar(): void {
+    this.descartarImagemTemporaria();
     if (this.dialog?.nativeElement.open) this.dialog.nativeElement.close();
     this.retornoFoco?.focus();
   }
 
   editar(grupo: GrupoObjetivoInvestimento): void {
+    this.descartarImagemTemporaria();
     this.editando = grupo;
     this.excluindo = null;
     this.nome = grupo.nome;
@@ -64,6 +86,7 @@ export class GrupoObjetivoDialogComponent {
   }
 
   cancelarEdicao(): void {
+    this.descartarImagemTemporaria();
     this.nome = '';
     this.descricao = '';
     this.imagemUrl = null;
@@ -91,6 +114,7 @@ export class GrupoObjetivoDialogComponent {
     request$.pipe(finalize(() => this.salvando = false)).subscribe({
       next: async () => {
         const titulo = this.editando ? 'Objetivo atualizado' : 'Objetivo criado';
+        this.imagemTemporariaUrl = null;
         this.cancelarEdicao();
         this.alterado.emit();
         this.fechar();
@@ -101,6 +125,7 @@ export class GrupoObjetivoDialogComponent {
   }
 
   aplicarSugestaoCarro(): void {
+    this.descartarImagemTemporaria();
     this.nome = 'Carro / Família';
     this.descricao = 'City LX Sedan';
     this.valorAlvo = 117700;
@@ -137,25 +162,30 @@ export class GrupoObjetivoDialogComponent {
       return;
     }
 
+    this.descartarImagemTemporaria();
     this.enviandoImagem = true;
     this.mensagemImagem = '';
     this.service.enviarImagem(arquivo).pipe(finalize(() => this.enviandoImagem = false)).subscribe({
-      next: resposta => this.imagemUrl = resposta.imagemUrl,
+      next: resposta => {
+        this.imagemUrl = resposta.imagemUrl;
+        this.imagemTemporariaUrl = resposta.imagemUrl;
+      },
       error: error => this.mensagemImagem = error?.error?.message ?? 'Não foi possível enviar a imagem.',
     });
   }
 
   removerImagem(): void {
+    this.descartarImagemTemporaria();
     this.imagemUrl = null;
     this.mensagemImagem = '';
   }
 
   imagemPreview(): string | null {
-    return resolverImagemObjetivo(this.imagemUrl);
+    return this.resolverImagem(this.imagemUrl);
   }
 
   imagemDoGrupo(grupo: GrupoObjetivoInvestimento): string | null {
-    return resolverImagemObjetivo(grupo.imagemUrl) ?? imagemSugeridaObjetivo(grupo.nome, grupo.descricao);
+    return this.resolverImagem(grupo.imagemUrl) ?? imagemSugeridaObjetivo(grupo.nome, grupo.descricao);
   }
 
   alterarEstado(grupo: GrupoObjetivoInvestimento): void {
@@ -238,5 +268,35 @@ export class GrupoObjetivoDialogComponent {
   private mensagemErro(error: any): string {
     if (error?.status === 409) return error?.error?.message ?? 'Os dados mudaram. Atualize e tente novamente.';
     return error?.error?.message ?? 'Tente novamente em instantes.';
+  }
+
+  private resolverImagem(imagemUrl: string | null | undefined): string | null {
+    if (imagemUrl?.startsWith('/uploads/objetivos/')) {
+      if (this.imagensCarregadas.has(imagemUrl)) return this.imagensCarregadas.get(imagemUrl) ?? null;
+      this.carregarImagemSeNecessario(imagemUrl);
+      return null;
+    }
+    return resolverImagemObjetivo(imagemUrl);
+  }
+
+  private carregarImagemSeNecessario(imagemUrl: string): void {
+    if (this.imagensCarregadas.has(imagemUrl) || this.imagensEmCarregamento.has(imagemUrl)) return;
+    if (typeof this.service.carregarImagem !== 'function') return;
+    this.imagensEmCarregamento.add(imagemUrl);
+    this.service.carregarImagem(imagemUrl).pipe(takeUntil(this.destroy$)).subscribe({
+      next: imagem => this.imagensCarregadas.set(imagemUrl, URL.createObjectURL(imagem)),
+      error: () => {
+        this.imagensCarregadas.set(imagemUrl, null);
+        this.imagensEmCarregamento.delete(imagemUrl);
+      },
+      complete: () => this.imagensEmCarregamento.delete(imagemUrl),
+    });
+  }
+
+  private descartarImagemTemporaria(): void {
+    const imagemUrl = this.imagemTemporariaUrl;
+    this.imagemTemporariaUrl = null;
+    if (imagemUrl && typeof this.service.excluirImagemTemporaria === 'function')
+      this.service.excluirImagemTemporaria(imagemUrl).subscribe({ error: () => {} });
   }
 }

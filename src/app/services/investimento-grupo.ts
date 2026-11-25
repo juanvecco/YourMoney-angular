@@ -49,11 +49,31 @@ export class InvestimentoGrupoService {
     return this.http.post<EnviarImagemObjetivoResponse>(`${this.baseUrl}/imagens`, dados);
   }
 
+  obterStatusUploadImagem(): Observable<{ uploadHabilitado: boolean }> {
+    return this.http.get<{ uploadHabilitado: boolean }>(`${this.baseUrl}/imagens/status`);
+  }
+
+  carregarImagem(imagemUrl: string): Observable<Blob> {
+    const nomeArquivo = this.nomeArquivoImagem(imagemUrl);
+    return this.http.get(`${this.baseUrl}/imagens/${encodeURIComponent(nomeArquivo)}`, { responseType: 'blob' });
+  }
+
+  excluirImagemTemporaria(imagemUrl: string): Observable<void> {
+    const nomeArquivo = this.nomeArquivoImagem(imagemUrl);
+    return this.http.delete<void>(`${this.baseUrl}/imagens/${encodeURIComponent(nomeArquivo)}`);
+  }
+
   renomear(id: string, request: RenomearGrupoObjetivoRequest): Observable<GrupoObjetivoInvestimento> {
     return this.http.put<GrupoObjetivoInvestimento>(`${this.baseUrl}/${id}`, request);
   }
 
   excluir(id: string, request: ExcluirGrupoObjetivoRequest): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/${id}/exclusao`, request);
+  }
+
+  private nomeArquivoImagem(imagemUrl: string): string {
+    const match = /^\/uploads\/objetivos\/([0-9a-f]{32}\.(?:png|jpg|webp))$/i.exec(imagemUrl);
+    if (!match) throw new Error('URL de imagem de objetivo inválida.');
+    return match[1];
   }
 }

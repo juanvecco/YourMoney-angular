@@ -37,10 +37,11 @@
           </div>
           <div class="ym-image-actions">
             <label for="imagemObjetivo">Imagem do objetivo</label>
-            <p>Escolha uma imagem que ajude a visualizar a conquista.</p>
-            <input #imagemInput id="imagemObjetivo" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp" (change)="selecionarImagem($event)" />
-            <div><label class="ym-button secondary" for="imagemObjetivo" [attr.aria-disabled]="enviandoImagem">{{ enviandoImagem ? 'Enviando...' : 'Escolher imagem' }}</label><button *ngIf="imagemUrl" class="ym-button secondary" type="button" (click)="removerImagem()">Remover</button></div>
-            <small>PNG, JPEG ou WebP · até 5 MB</small>
+            <p *ngIf="uploadImagemHabilitado">Escolha uma imagem que ajude a visualizar a conquista.</p>
+            <input *ngIf="uploadImagemHabilitado" #imagemInput id="imagemObjetivo" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp" (change)="selecionarImagem($event)" />
+            <div><label *ngIf="uploadImagemHabilitado" class="ym-button secondary" for="imagemObjetivo" [attr.aria-disabled]="enviandoImagem">{{ enviandoImagem ? 'Enviando...' : 'Escolher imagem' }}</label><button *ngIf="imagemUrl" class="ym-button secondary" type="button" (click)="removerImagem()">Remover</button></div>
+            <small *ngIf="uploadImagemHabilitado">PNG, JPEG ou WebP · até 5 MB</small>
+            <small *ngIf="!uploadImagemHabilitado" role="status">O envio de imagens está temporariamente indisponível neste piloto.</small>
             <small *ngIf="mensagemImagem" class="ym-field-error" role="alert">{{ mensagemImagem }}</small>
           </div>
         </div>

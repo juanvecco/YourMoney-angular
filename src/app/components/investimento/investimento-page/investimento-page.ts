@@ -71,6 +71,8 @@ export class InvestimentoPageComponent implements OnInit, OnDestroy {
   @ViewChild(GrupoObjetivoDialogComponent) grupoDialog?: GrupoObjetivoDialogComponent;
   private destroy$ = new Subject<void>();
   private revisaoConsulta = 0;
+  private readonly imagensObjetivoCarregadas = new Map<string, string | null>();
+  private readonly imagensObjetivoEmCarregamento = new Set<string>();
 
   investimentos: Investimento[] = [];
   reservas: ReservaSalarial[] = [];
@@ -155,6 +157,10 @@ export class InvestimentoPageComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    for (const url of this.imagensObjetivoCarregadas.values()) {
+      if (url) URL.revokeObjectURL(url);
+    }
+    this.imagensObjetivoCarregadas.clear();
   }
 
   carregarInvestimentos(): void {
@@ -839,6 +845,25 @@ export class InvestimentoPageComponent implements OnInit, OnDestroy {
   }
 
   imagemObjetivo(objetivo: GrupoObjetivoResumo): string | null {
+    if (objetivo.imagemUrl?.startsWith('/uploads/objetivos/')) {
+      const sugestao = imagemSugeridaObjetivo(objetivo.nome, objetivo.descricao);
+      if (this.imagensObjetivoCarregadas.has(objetivo.imagemUrl))
+        return this.imagensObjetivoCarregadas.get(objetivo.imagemUrl) ?? sugestao;
+      if (!this.imagensObjetivoEmCarregamento.has(objetivo.imagemUrl)) {
+        this.imagensObjetivoEmCarregamento.add(objetivo.imagemUrl);
+        this.investimentoGrupoService.carregarImagem(objetivo.imagemUrl)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: imagem => this.imagensObjetivoCarregadas.set(objetivo.imagemUrl!, URL.createObjectURL(imagem)),
+            error: () => {
+              this.imagensObjetivoCarregadas.set(objetivo.imagemUrl!, null);
+              this.imagensObjetivoEmCarregamento.delete(objetivo.imagemUrl!);
+            },
+            complete: () => this.imagensObjetivoEmCarregamento.delete(objetivo.imagemUrl!)
+          });
+      }
+      return sugestao;
+    }
     return resolverImagemObjetivo(objetivo.imagemUrl) ?? imagemSugeridaObjetivo(objetivo.nome, objetivo.descricao);
   }
 

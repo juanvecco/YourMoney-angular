@@ -97,7 +97,7 @@
                 <i class="ym-kpi-icon bi bi-graph-up-arrow"></i>
                 <h2 class="ym-kpi-label">Investimentos</h2>
                 <p class="ym-kpi-value">{{ resumo.investimentos | financialValue }}</p>
-                <p class="ym-kpi-meta">Aplicações do mês</p>
+                <p class="ym-kpi-meta">Valor registrado na carteira no mês selecionado</p>
                 <button class="ym-button primary" type="button" (click)="verCarteira()">Ver carteira</button>
             </article>
 
@@ -105,8 +105,8 @@
                 <i class="ym-kpi-icon bi bi-wallet2"></i>
                 <h2 class="ym-kpi-label">Saldo do mês</h2>
                 <p class="ym-kpi-value" [class.ym-negative]="resumo.sobrou < 0">{{ resumo.sobrou | financialValue }}</p>
-                <p class="ym-kpi-meta">Receitas menos despesas registradas</p>
-                <button class="ym-button primary" type="button" (click)="investir()" [disabled]="resumo.sobrou <= 0">Investir saldo</button>
+                <p class="ym-kpi-meta">Receitas menos despesas registradas, antes de outros compromissos</p>
+                <button class="ym-button primary" type="button" (click)="verCarteira()">Ver investimentos</button>
             </article>
         </section>
 

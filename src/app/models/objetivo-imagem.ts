@@ -1,5 +1,3 @@
-import { environment } from '../../environments/environment';
-
 export const IMAGEM_OBJETIVO_CARRO = '/assets/objectives/city-lx-sedan.jpg';
 export const IMAGEM_OBJETIVO_LIBERDADE = '/assets/objectives/financial-freedom.jpg';
 export const IMAGEM_OBJETIVO_LONGO_PRAZO = '/assets/objectives/long-term.jpg';
@@ -7,10 +5,9 @@ export const IMAGEM_OBJETIVO_EMERGENCIA = '/assets/objectives/emergency-fund.jpg
 
 export function resolverImagemObjetivo(imagemUrl: string | null | undefined): string | null {
   if (!imagemUrl) return null;
-  if (imagemUrl.startsWith('/uploads/')) {
-    const origemApi = environment.apiUrl.replace(/\/api\/?$/, '');
-    return `${origemApi}${imagemUrl}`;
-  }
+  // Uploaded objective images are private and must be fetched through the
+  // authenticated InvestimentoGrupoService before binding them to an <img>.
+  if (imagemUrl.startsWith('/uploads/')) return null;
   return imagemUrl;
 }
 

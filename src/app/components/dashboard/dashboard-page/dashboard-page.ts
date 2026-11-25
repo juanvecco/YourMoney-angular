@@ -653,10 +653,6 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
         this.router.navigate(['/investimento']);
     }
 
-    investir(): void {
-        this.router.navigate(['/investimento']);
-    }
-
     mesAnterior(): void {
         const data = new Date(this.mesAtual);
         data.setMonth(data.getMonth() - 1);
