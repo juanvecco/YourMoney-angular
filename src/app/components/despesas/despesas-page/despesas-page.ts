@@ -369,7 +369,8 @@ export class DespesasComponent implements OnInit, OnDestroy {
                     this.contasOpenFinanceDisponiveis = overview.accounts?.length ?? 0;
                     const transactions = overview.transactions ?? [];
                     this.transacoesOpenFinance = transactions
-                        .filter(transaction => transaction.classification === 'EXPENSE');
+                        .filter(transaction => transaction.classification === 'EXPENSE'
+                            && transaction.registrationStatus !== 'REGISTERED');
                     this.transacoesOpenFinanceEmRevisao = transactions
                         .filter(transaction => transaction.classification === 'REVIEW'
                             && transaction.registrationStatus !== 'REGISTERED');
