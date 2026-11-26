@@ -490,12 +490,16 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
     async vincularDespesaOpenFinance(
         transaction: PluggyTransactionPreview,
-        candidate: PluggyDuplicateCandidate
+        candidate: PluggyDuplicateCandidate,
+        reviewedAs: 'expense' | null = null
     ): Promise<void> {
         if (transaction.registrationStatus === 'REGISTERED' || candidate.canLink === false) return;
+        if (!this.podeCadastrarOpenFinance(transaction, reviewedAs)) return;
         const confirmation = await Swal.fire({
-            title: 'Manter e vincular?',
-            text: `A despesa “${candidate.description}” será mantida sem alterações e vinculada à transação bancária.`,
+            title: reviewedAs ? 'Confirmar despesa e vincular?' : 'Manter e vincular?',
+            text: reviewedAs
+                ? `Ao confirmar esta movimentação como despesa, a despesa “${candidate.description}” será mantida sem alterações e vinculada à transação bancária.`
+                : `A despesa “${candidate.description}” será mantida sem alterações e vinculada à transação bancária.`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Manter e vincular',
@@ -507,6 +511,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.executarReconciliacao({
             transactionId: transaction.transactionId,
             action: 'link',
+            ...(reviewedAs ? { reviewedClassification: reviewedAs } : {}),
             targetExpenseId: candidate.recordId,
             expectedDescription: candidate.description,
             expectedDate: candidate.date,
@@ -516,21 +521,24 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
     async substituirDespesaOpenFinance(
         transaction: PluggyTransactionPreview,
-        candidate: PluggyDuplicateCandidate
+        candidate: PluggyDuplicateCandidate,
+        reviewedAs: 'expense' | null = null
     ): Promise<void> {
         if (transaction.registrationStatus === 'REGISTERED' || candidate.canReplace === false
-            || !this.podeCadastrarOpenFinance(transaction)) return;
+            || !this.podeCadastrarOpenFinance(transaction, reviewedAs)) return;
 
         const novaData = this.obterDataCivil(transaction.date);
         const novoValor = this.valorEmReaisOpenFinance(transaction);
         const confirmation = await Swal.fire({
-            title: 'Revisar substituição',
+            title: reviewedAs ? 'Revisar transação e substituir despesa' : 'Revisar substituição',
             html: `<div class="ym-openfinance-diff">
                 <div><strong>Campo</strong><strong>Atual</strong><strong>Open Finance</strong></div>
                 <div><span>Descrição</span><span>${this.escaparHtml(candidate.description)}</span><span>${this.escaparHtml(transaction.description)}</span></div>
                 <div><span>Data</span><span>${this.formatarData(candidate.date)}</span><span>${this.formatarData(novaData)}</span></div>
                 <div><span>Valor</span><span>${this.formatarValor(candidate.amount)}</span><span>${this.formatarValor(novoValor)}</span></div>
-                <p>Conta e classificação da despesa serão preservadas.</p>
+                <p>${reviewedAs
+                    ? 'Ao confirmar, esta movimentação será classificada como despesa e substituirá descrição, data e valor. Conta e categoria serão preservadas.'
+                    : 'Conta e classificação da despesa serão preservadas.'}</p>
             </div>`,
             icon: 'warning',
             showCancelButton: true,
@@ -543,6 +551,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.executarReconciliacao({
             transactionId: transaction.transactionId,
             action: 'replace',
+            ...(reviewedAs ? { reviewedClassification: reviewedAs } : {}),
             targetExpenseId: candidate.recordId,
             expectedDescription: candidate.description,
             expectedDate: candidate.date,
@@ -557,6 +566,14 @@ export class DespesasComponent implements OnInit, OnDestroy {
         if (transaction.classification !== 'EXPENSE') return false;
         if (!this.podeCadastrarOpenFinance(transaction)) return false;
         return transaction.status?.toUpperCase() === 'POSTED';
+    }
+
+    podeReconciliarCandidataDespesa(transaction: PluggyTransactionPreview): boolean {
+        return this.isTransacaoImportavel(transaction) || this.podeRevisarComoDespesa(transaction);
+    }
+
+    classificacaoConfirmadaParaDespesa(transaction: PluggyTransactionPreview): 'expense' | null {
+        return transaction.classification === 'REVIEW' ? 'expense' : null;
     }
 
     textoStatusOpenFinance(transaction: PluggyTransactionPreview): string {

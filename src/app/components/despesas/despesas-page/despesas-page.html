@@ -229,14 +229,14 @@
                                         </div>
                                         <small>{{ candidata.reason }}</small>
                                     </div>
-                                    <div class="ym-openfinance-actions" *ngIf="isTransacaoImportavel(transacao)">
+                                    <div class="ym-openfinance-actions" *ngIf="podeReconciliarCandidataDespesa(transacao)">
                                         <button class="ym-button" type="button"
-                                            (click)="vincularDespesaOpenFinance(transacao, candidata)"
+                                            (click)="vincularDespesaOpenFinance(transacao, candidata, classificacaoConfirmadaParaDespesa(transacao))"
                                             [disabled]="transacao.registrationStatus === 'REGISTERED' || candidata.canLink === false">
                                             Manter e vincular
                                         </button>
                                         <button class="ym-button" type="button"
-                                            (click)="substituirDespesaOpenFinance(transacao, candidata)"
+                                            (click)="substituirDespesaOpenFinance(transacao, candidata, classificacaoConfirmadaParaDespesa(transacao))"
                                             [disabled]="transacao.registrationStatus === 'REGISTERED' || candidata.canReplace === false"
                                             [title]="candidata.cannotReplaceReason || 'Revisar e substituir descrição, data e valor'">
                                             {{ candidata.canReplace === false ? 'Substituição indisponível' : 'Revisar substituição' }}
@@ -260,7 +260,7 @@
                             <header class="ym-openfinance-review__header">
                                 <div>
                                     <h3 id="openfinance-review-title">Revisar classificação</h3>
-                                    <p>Estas movimentações não foram incluídas como despesas porque os dados não confirmam sua natureza.</p>
+                                    <p>Estas movimentações também estão disponíveis para revisão em Despesas. Se os dados confirmarem uma compra, você pode classificá-las manualmente; possíveis correspondências com despesas cadastradas aparecem abaixo.</p>
                                 </div>
                                 <span class="ym-chip">{{ transacoesOpenFinanceEmRevisao.length }} para revisar</span>
                             </header>
@@ -283,6 +283,36 @@
                                 <p class="ym-openfinance-notice" role="status">
                                     {{ transacao.importUnavailableReason || mensagemRevisaoClassificacaoOpenFinance(transacao) }}
                                 </p>
+                                <div class="ym-openfinance-candidates" *ngIf="candidatosDespesa(transacao).length > 0">
+                                    <h4>Possíveis despesas já cadastradas</h4>
+                                    <p>Confira a correspondência. Você pode manter a despesa e vinculá-la ou revisar os dados do Open Finance e substituir a despesa manual após confirmar.</p>
+                                    <article class="ym-openfinance-candidate" *ngFor="let candidata of candidatosDespesa(transacao)">
+                                        <div>
+                                            <strong>{{ candidata.description }}</strong>
+                                            <div class="ym-list-meta">
+                                                <span>{{ formatarData(candidata.date) }}</span>
+                                                <span>{{ candidata.amount | financialValue }}</span>
+                                                <span>{{ candidata.accountName || 'Conta local' }}</span>
+                                                <span>{{ candidata.categoryName || 'Sem categoria' }}</span>
+                                            </div>
+                                            <small>{{ candidata.reason }}</small>
+                                        </div>
+                                        <div class="ym-openfinance-actions">
+                                            <button class="ym-button" type="button"
+                                                [disabled]="!podeRevisarComoDespesa(transacao) || candidata.canLink === false"
+                                                (click)="vincularDespesaOpenFinance(transacao, candidata, 'expense')">
+                                                Manter e vincular
+                                            </button>
+                                            <button class="ym-button" type="button"
+                                                [disabled]="!podeRevisarComoDespesa(transacao) || candidata.canReplace === false"
+                                                [title]="candidata.cannotReplaceReason || 'Revisar e substituir a despesa manual'"
+                                                (click)="substituirDespesaOpenFinance(transacao, candidata, 'expense')">
+                                                {{ candidata.canReplace === false ? 'Substituição indisponível' : 'Revisar e substituir' }}
+                                            </button>
+                                            <small *ngIf="candidata.canReplace === false">{{ candidata.cannotReplaceReason }}</small>
+                                        </div>
+                                    </article>
+                                </div>
                                 <div class="ym-openfinance-footer">
                                     <button class="ym-button secondary" type="button"
                                         [disabled]="!podeRevisarComoDespesa(transacao)"

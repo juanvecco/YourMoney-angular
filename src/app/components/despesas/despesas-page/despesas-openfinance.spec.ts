@@ -87,13 +87,22 @@ describe('DespesasComponent Open Finance panel', () => {
     const expense = transacao();
     const investment = transacao({ transactionId: 'source-investment', classification: 'INVESTMENT', classificationReason: 'INVESTMENT_APPLICATION' });
     const excluded = transacao({ transactionId: 'source-excluded', classification: 'EXCLUDED', classificationReason: 'CARD_BILL_PAYMENT' });
-    const review = transacao({ transactionId: 'source-review', classification: 'REVIEW', classificationReason: 'AMBIGUOUS' });
+    const review = transacao({
+      transactionId: 'source-review',
+      classification: 'REVIEW',
+      classificationReason: 'AMBIGUOUS',
+      possibleDuplicateCandidates: [
+        { recordType: 'expense', recordId: 'expense-review', description: 'Compra manual', date: '2026-05-12', amount: 42.5, reason: 'Mesmo valor' }
+      ]
+    });
     openFinance.obterVisaoGeralPluggy.and.returnValue(of({ transactions: [expense, investment, excluded, review] } as PluggyOverview));
 
     component.alternarOpenFinance(true);
 
     expect(component.transacoesOpenFinance).toEqual([expense]);
     expect(component.transacoesOpenFinanceEmRevisao).toEqual([review]);
+    expect(component.candidatosDespesa(component.transacoesOpenFinanceEmRevisao[0]).map(candidate => candidate.recordId))
+      .toEqual(['expense-review']);
     expect(component.isTransacaoImportavel(review)).toBeFalse();
     expect(component.totalDespesas).toBe(625);
   });
@@ -399,6 +408,34 @@ describe('DespesasComponent Open Finance panel', () => {
     }, false);
   });
 
+  it('lets an explicitly reviewed expense candidate be kept and linked', async () => {
+    const transaction = transacao({ classification: 'REVIEW', classificationReason: 'AMBIGUOUS' });
+    const candidate = {
+      recordType: 'expense' as const,
+      recordId: 'expense-1',
+      description: 'Compra manual',
+      date: '2026-05-12',
+      amount: 42.5,
+      reason: 'Mesmo valor em centavos',
+      canLink: true,
+      canReplace: true
+    };
+    spyOn(Swal, 'fire').and.resolveTo({ isConfirmed: true } as any);
+    const reconcile = spyOn<any>(component, 'executarReconciliacao');
+
+    await component.vincularDespesaOpenFinance(transaction, candidate, 'expense');
+
+    expect(reconcile).toHaveBeenCalledOnceWith({
+      transactionId: 'source-1',
+      action: 'link',
+      reviewedClassification: 'expense',
+      targetExpenseId: 'expense-1',
+      expectedDescription: 'Compra manual',
+      expectedDate: '2026-05-12',
+      expectedAmount: 42.5
+    }, false);
+  });
+
   it('requests a confirmed replacement with the origin values', async () => {
     const transaction = transacao({ description: 'Mercearia Central', amount: 42.5 });
     const candidate = {
@@ -424,6 +461,45 @@ describe('DespesasComponent Open Finance panel', () => {
       expectedDate: '2026-05-11',
       expectedAmount: 42.5,
       description: 'Mercearia Central',
+      date: '2026-05-12',
+      amount: 42.5
+    }, true);
+  });
+
+  it('requires explicit expense review when replacing a manual candidate from the review queue', async () => {
+    const transaction = transacao({
+      description: 'Shopee *Tucan 1/2',
+      classification: 'REVIEW',
+      classificationReason: 'AMBIGUOUS'
+    });
+    const candidate = {
+      recordType: 'expense' as const,
+      recordId: 'expense-3',
+      description: 'Shopee Tucan',
+      date: '2026-05-12',
+      amount: 42.5,
+      reason: 'Mesmo valor em centavos',
+      canLink: true,
+      canReplace: true
+    };
+    const confirmation = spyOn(Swal, 'fire').and.resolveTo({ isConfirmed: true } as any);
+    const reconcile = spyOn<any>(component, 'executarReconciliacao');
+
+    await component.substituirDespesaOpenFinance(transaction, candidate, 'expense');
+
+    expect(confirmation).toHaveBeenCalledWith(jasmine.objectContaining({
+      title: 'Revisar transação e substituir despesa',
+      html: jasmine.stringContaining('esta movimentação será classificada como despesa')
+    }));
+    expect(reconcile).toHaveBeenCalledOnceWith({
+      transactionId: 'source-1',
+      action: 'replace',
+      reviewedClassification: 'expense',
+      targetExpenseId: 'expense-3',
+      expectedDescription: 'Shopee Tucan',
+      expectedDate: '2026-05-12',
+      expectedAmount: 42.5,
+      description: 'Shopee *Tucan 1/2',
       date: '2026-05-12',
       amount: 42.5
     }, true);
