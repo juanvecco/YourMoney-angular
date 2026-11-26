@@ -88,6 +88,7 @@ export interface PluggyTransactionPreview {
   accountId: string;
   institutionName: string;
   accountName: string;
+  category: string | null;
   date: string;
   description: string;
   amount: number;
@@ -126,6 +127,8 @@ export interface PluggyExpenseReconciliationRequest {
   date?: string | null;
   idContaFinanceira?: string | null;
   idCategoria?: string | null;
+  newCategoryDescription?: string | null;
+  newCategoryParentId?: string | null;
   confirmPossibleDuplicate?: boolean;
 }
 
@@ -134,6 +137,7 @@ export interface PluggyExpenseReconciliationResult {
   action: PluggyExpenseReconciliationAction;
   recordType: 'expense';
   recordId: string;
+  idCategoria: string | null;
   registeredAt: string;
 }
 
@@ -293,6 +297,8 @@ export interface PluggyTransactionImportRequest {
   date: string;
   idContaFinanceira?: string | null;
   idCategoria?: string | null;
+  newCategoryDescription?: string | null;
+  newCategoryParentId?: string | null;
   natureza?: 'RendaDisponivel' | 'EntradaVinculadaDespesa' | 'Reembolso' | null;
   despesaVinculadaId?: string | null;
 }
@@ -301,5 +307,6 @@ export interface PluggyTransactionImportResult {
   transactionId: string;
   recordType: 'expense' | 'revenue';
   recordId: string;
+  idCategoria?: string | null;
   registeredAt: string;
 }

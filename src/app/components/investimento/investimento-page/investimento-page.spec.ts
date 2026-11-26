@@ -407,7 +407,7 @@ describe('InvestimentoPageComponent Open Finance review', () => {
 
   const transacao: PluggyTransactionPreview = {
     transactionId: 'pluggy-investment-1', connectionId: 'connection-1', accountId: 'account-1',
-    institutionName: 'Banco Exemplo', accountName: 'Conta corrente',
+    institutionName: 'Banco Exemplo', accountName: 'Conta corrente', category: null,
     date: '2026-10-29T02:00:00Z', description: 'APLICACAO CDB', amount: -125.5,
     currencyCode: 'BRL', amountInAccountCurrency: null, accountCurrencyCode: 'BRL',
     direction: 'DEBIT', operationType: 'PIX', classification: 'INVESTMENT',

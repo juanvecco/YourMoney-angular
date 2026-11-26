@@ -495,6 +495,13 @@
                                 <option *ngFor="let conta of contas" [value]="conta.id">{{ conta.descricao }}</option>
                             </select>
                         </div>
+                        <div class="col-12" *ngIf="transacaoOpenFinanceEmRevisao">
+                            <p class="ym-form-hint mb-0">
+                                Categoria informada pelo Open Finance:
+                                <strong>{{ transacaoOpenFinanceEmRevisao.category || 'Não informada' }}</strong>
+                            </p>
+                        </div>
+                        <ng-container *ngIf="!transacaoOpenFinanceEmRevisao || !usarNovaCategoriaOpenFinance">
                         <div class="col-md-6">
                             <label class="form-label" for="despesa-tipo">Tipo de Despesa <span class="ym-required" aria-hidden="true">*</span></label>
                               <select id="despesa-tipo" class="form-select" [(ngModel)]="novaDespesa.idTipoDespesa"
@@ -520,20 +527,47 @@
                                 <option *ngFor="let cat of categoriasEspecificas" [value]="cat.id">{{ cat.descricao }}</option>
                             </select>
                         </div>
-                        <div class="col-12" *ngIf="!editando && regraAtiva('despesas.parcelamento')">
+                        <div class="col-12" *ngIf="transacaoOpenFinanceEmRevisao">
+                            <button type="button" class="ym-button" (click)="usarNovaCategoriaOpenFinanceAgora()">
+                                Criar uma nova categoria
+                            </button>
+                        </div>
+                        </ng-container>
+                        <div class="col-12" *ngIf="transacaoOpenFinanceEmRevisao && usarNovaCategoriaOpenFinance">
+                            <label class="form-label" for="despesa-novaCategoria">Categoria da despesa <span class="ym-required" aria-hidden="true">*</span></label>
+                            <input id="despesa-novaCategoria" type="text" class="form-control"
+                                [(ngModel)]="categoriaOpenFinanceNovaDescricao" name="novaCategoriaOpenFinance"
+                                maxlength="100" placeholder="Digite o nome da categoria" />
+                            <small class="ym-form-hint" *ngIf="transacaoOpenFinanceEmRevisao.category">
+                                Você pode editar a sugestão antes de salvar.
+                            </small>
+                            <label class="form-label mt-3" for="despesa-novaCategoriaPai">Adicionar em <span class="ym-required" aria-hidden="true">*</span></label>
+                            <select id="despesa-novaCategoriaPai" class="form-select"
+                                [(ngModel)]="categoriaOpenFinanceNovaParentId" name="novaCategoriaOpenFinancePai" required>
+                                <option value="">Selecione o tipo ou a natureza</option>
+                                <option *ngFor="let pai of categoriasPaiOpenFinance" [value]="pai.id">
+                                    {{ nomeCategoriaPaiOpenFinance(pai) }}
+                                </option>
+                            </select>
+                            <p class="ym-form-hint mt-2">A categoria só será cadastrada junto com esta despesa.</p>
+                            <button type="button" class="ym-button" (click)="usarCategoriaExistenteOpenFinance()">
+                                Escolher uma categoria existente
+                            </button>
+                        </div>
+                        <div class="col-12" *ngIf="!editando && !transacaoOpenFinanceEmRevisao && regraAtiva('despesas.parcelamento')">
                             <label class="ym-check-row accent-danger">
                               <input type="checkbox" [(ngModel)]="parcelamentoAtivo" name="parcelamentoAtivo"
                                     (ngModelChange)="onParcelamentoToggle()" />
                                 <span>Despesa parcelada</span>
                             </label>
                         </div>
-                        <div class="col-md-6" *ngIf="!editando && parcelamentoAtivo">
+                        <div class="col-md-6" *ngIf="!editando && !transacaoOpenFinanceEmRevisao && parcelamentoAtivo">
                             <label class="form-label" for="despesa-quantidadeParcelas">Quantidade de parcelas <span class="ym-required" aria-hidden="true">*</span></label>
                               <input id="despesa-quantidadeParcelas" type="number" min="1" max="120" step="1" class="form-control"
                                 [(ngModel)]="quantidadeParcelas" name="quantidadeParcelas"
                                 (ngModelChange)="atualizarPreviewParcelamento()" required />
                         </div>
-                        <div class="col-md-6" *ngIf="!editando && parcelamentoAtivo && parcelasPreview.length > 0">
+                        <div class="col-md-6" *ngIf="!editando && !transacaoOpenFinanceEmRevisao && parcelamentoAtivo && parcelasPreview.length > 0">
                             <label class="form-label">Total previsto</label>
                             <div class="ym-installment-total">
                                 {{ novaDespesa.valor | financialValue }}
@@ -542,7 +576,7 @@
                     </div>
                 </form>
 
-                <div class="ym-installment-preview" *ngIf="!editando && parcelamentoAtivo">
+                <div class="ym-installment-preview" *ngIf="!editando && !transacaoOpenFinanceEmRevisao && parcelamentoAtivo">
                     <div class="ym-section-header">
                         <div>
                             <h6 class="ym-section-title">Prévia das parcelas</h6>
@@ -568,7 +602,7 @@
                     </div>
                 </div>
 
-                <div class="ym-batch-panel" *ngIf="!editando && !parcelamentoAtivo">
+                <div class="ym-batch-panel" *ngIf="!editando && !transacaoOpenFinanceEmRevisao && !parcelamentoAtivo">
                     <div class="ym-section-header">
                         <div>
                             <h6 class="ym-section-title">Lote de despesas</h6>
@@ -612,11 +646,11 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="ym-button" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="ym-button" *ngIf="!editando && despesasEmLote.length > 0"
+                <button type="button" class="ym-button" *ngIf="!editando && !transacaoOpenFinanceEmRevisao && despesasEmLote.length > 0"
                     (click)="limparLote()">
                     Limpar lote
                 </button>
-                <button type="button" class="ym-button primary" *ngIf="!editando && despesasEmLote.length > 0"
+                <button type="button" class="ym-button primary" *ngIf="!editando && !transacaoOpenFinanceEmRevisao && despesasEmLote.length > 0"
                     (click)="salvarLoteDespesas()">
                     <i class="bi bi-check2-all"></i>Salvar lote ({{ despesasEmLote.length }})
                 </button>

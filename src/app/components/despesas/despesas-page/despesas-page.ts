@@ -114,6 +114,10 @@ export class DespesasComponent implements OnInit, OnDestroy {
     tiposDespesa: Categoria[] = [];
     naturezasDespesa: Categoria[] = [];
     categoriasEspecificas: Categoria[] = [];
+    categoriasPaiOpenFinance: Categoria[] = [];
+    usarNovaCategoriaOpenFinance = false;
+    categoriaOpenFinanceNovaDescricao = '';
+    categoriaOpenFinanceNovaParentId = '';
     naturezasFiltroDespesa: Categoria[] = [];
 
     despesas: Despesa[] = [];
@@ -235,6 +239,8 @@ export class DespesasComponent implements OnInit, OnDestroy {
             .subscribe({
                 next: (contas) => {
                     this.contas = contas;
+                    if (this.transacaoOpenFinanceEmRevisao && !this.novaDespesa.idContaFinanceira)
+                        this.aplicarContaC6OpenFinance(this.transacaoOpenFinanceEmRevisao);
                     this.aplicarTotaisPorConta(this.totaisPorContaBrutos);
                     if (!this.contaConciliacaoId) {
                         this.contaConciliacaoId = this.filtrosTransacoes.idContaFinanceira || (contas.length === 1 ? contas[0].id : '');
@@ -269,10 +275,16 @@ export class DespesasComponent implements OnInit, OnDestroy {
                     this.tiposDespesa = categorias.filter(c =>
                         c.categoriaPaiId === null && c.tipoTransacao === 1
                     );
+                    this.categoriasPaiOpenFinance = categorias.filter(c =>
+                        c.tipoTransacao === 1 && this.obterProfundidadeCategoria(c, categorias) <= 1
+                    );
+                    if (this.transacaoOpenFinanceEmRevisao && this.usarNovaCategoriaOpenFinance
+                        && !this.categoriaOpenFinanceNovaParentId)
+                        this.categoriaOpenFinanceNovaParentId = this.tiposDespesa[0]?.id ?? '';
                     this.naturezasFiltroDespesa = this.filtrosTransacoes.idTipoDespesa
                         ? categorias.filter(c => c.categoriaPaiId === this.filtrosTransacoes.idTipoDespesa)
                         : [];
-                    if (!this.editando) this.aplicarCategoriaPadraoDespesa();
+                    if (!this.editando && !this.transacaoOpenFinanceEmRevisao) this.aplicarCategoriaPadraoDespesa();
                 },
                 error: (erro) => console.error('Erro ao carregar categorias', erro)
             });
@@ -449,6 +461,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         this.classificacaoManualOpenFinance = reviewedAs;
         this.confirmouPossivelDuplicidadeOpenFinance = confirmouPossivelDuplicidade;
         this.aplicarCategoriaPadraoDespesa();
+        this.aplicarSugestoesCadastroOpenFinance(transaction);
         this.abrirModal();
     }
 
@@ -1027,6 +1040,9 @@ export class DespesasComponent implements OnInit, OnDestroy {
         };
         this.naturezasDespesa = [];
         this.categoriasEspecificas = [];
+        this.usarNovaCategoriaOpenFinance = false;
+        this.categoriaOpenFinanceNovaDescricao = '';
+        this.categoriaOpenFinanceNovaParentId = '';
         this.resetParcelamento();
     }
 
@@ -1047,6 +1063,111 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
         const categoriaPadrao = porDescricao(this.categoriasEspecificas, 'Mercado') ?? this.categoriasEspecificas[0];
         if (categoriaPadrao) this.novaDespesa.idCategoriaEspecifica = categoriaPadrao.id;
+    }
+
+    private aplicarSugestoesCadastroOpenFinance(transaction: PluggyTransactionPreview): void {
+        this.aplicarContaC6OpenFinance(transaction);
+        const sourceCategory = transaction.category?.trim();
+        if (!sourceCategory) return;
+
+        const matches = this.encontrarCorrespondenciasCategoria(sourceCategory);
+        if (matches.length === 1) {
+            this.usarNovaCategoriaOpenFinance = false;
+            this.categoriaOpenFinanceNovaDescricao = '';
+            this.categoriaOpenFinanceNovaParentId = '';
+            this.carregarCascataCategoria(matches[0].id);
+            return;
+        }
+
+        this.limparCategoriaSelecionadaOpenFinance();
+        if (matches.length > 1) return;
+
+        this.usarNovaCategoriaOpenFinance = true;
+        this.categoriaOpenFinanceNovaDescricao = sourceCategory;
+        this.categoriaOpenFinanceNovaParentId = this.tiposDespesa[0]?.id ?? '';
+    }
+
+    private encontrarCorrespondenciasCategoria(sourceCategory: string): Categoria[] {
+        const normalizedSource = this.normalizarCategoriaOpenFinance(sourceCategory);
+        const aliases: Record<string, string[]> = {
+            supermercado: ['supermercado', 'supermercados', 'mercado', 'supermarket', 'supermarkets', 'grocery', 'groceries'],
+            compras: ['compras', 'shopping', 'purchase', 'purchases'],
+            farmacia: ['farmacia', 'farmacias', 'drogaria', 'pharmacy', 'pharmacies', 'drugstore'],
+            servicos: ['servicos', 'service', 'services'],
+            vestuario: ['vestuario', 'vestuarios', 'roupa', 'roupas', 'clothing', 'clothes', 'apparel'],
+            transporte: ['transporte', 'transportes', 'transport', 'transportation']
+        };
+        const aliasGroup = Object.values(aliases).find(group => group.includes(normalizedSource));
+        const acceptedNames = aliasGroup ?? [normalizedSource];
+        return this.despesaService.todasCategorias.filter(category =>
+            category.tipoTransacao === 1
+            && acceptedNames.includes(this.normalizarCategoriaOpenFinance(category.descricao))
+        );
+    }
+
+    private normalizarCategoriaOpenFinance(value: string): string {
+        return value.normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLocaleLowerCase('pt-BR')
+            .replace(/[^a-z0-9]+/g, ' ')
+            .trim()
+            .replace(/\s+/g, ' ');
+    }
+
+    private aplicarContaC6OpenFinance(transaction: PluggyTransactionPreview): void {
+        this.novaDespesa.idContaFinanceira = '';
+        const sourceNames = `${transaction.institutionName} ${transaction.accountName}`
+            .split(/\s+/)
+            .map(value => this.normalizarCategoriaOpenFinance(value));
+        if (!sourceNames.includes('c6')) return;
+
+        const c6Accounts = this.contas.filter(account =>
+            this.normalizarCategoriaOpenFinance(account.descricao ?? '') === 'c6 bank'
+        );
+        if (c6Accounts.length === 1) this.novaDespesa.idContaFinanceira = c6Accounts[0].id;
+    }
+
+    private limparCategoriaSelecionadaOpenFinance(): void {
+        this.novaDespesa.idTipoDespesa = '';
+        this.novaDespesa.idNaturezaDespesa = '';
+        this.novaDespesa.idCategoriaEspecifica = '';
+        this.naturezasDespesa = [];
+        this.categoriasEspecificas = [];
+    }
+
+    usarCategoriaExistenteOpenFinance(): void {
+        this.usarNovaCategoriaOpenFinance = false;
+        this.categoriaOpenFinanceNovaDescricao = '';
+        this.categoriaOpenFinanceNovaParentId = '';
+        this.limparCategoriaSelecionadaOpenFinance();
+    }
+
+    usarNovaCategoriaOpenFinanceAgora(): void {
+        this.usarNovaCategoriaOpenFinance = true;
+        this.categoriaOpenFinanceNovaDescricao = this.transacaoOpenFinanceEmRevisao?.category?.trim() ?? '';
+        this.categoriaOpenFinanceNovaParentId = this.novaDespesa.idTipoDespesa || this.tiposDespesa[0]?.id || '';
+        this.limparCategoriaSelecionadaOpenFinance();
+    }
+
+    nomeCategoriaPaiOpenFinance(category: Categoria): string {
+        const all = this.despesaService.todasCategorias;
+        const parent = all.find(item => item.id === category.categoriaPaiId);
+        return parent ? `${parent.descricao} › ${category.descricao}` : category.descricao;
+    }
+
+    private obterProfundidadeCategoria(category: Categoria, categories: Categoria[]): number {
+        let depth = 0;
+        let parentId = category.categoriaPaiId;
+        const visited = new Set<string>([category.id]);
+        while (parentId) {
+            if (visited.has(parentId)) return Number.MAX_SAFE_INTEGER;
+            visited.add(parentId);
+            const parent = categories.find(item => item.id === parentId);
+            if (!parent) return Number.MAX_SAFE_INTEGER;
+            depth++;
+            parentId = parent.categoriaPaiId;
+        }
+        return depth;
     }
 
     private resetParcelamento() {
@@ -1464,6 +1585,12 @@ export class DespesasComponent implements OnInit, OnDestroy {
         const cat = todas.find(c => c.id === idCategoria);
         if (!cat) return;
 
+        this.novaDespesa.idTipoDespesa = '';
+        this.novaDespesa.idNaturezaDespesa = '';
+        this.novaDespesa.idCategoriaEspecifica = '';
+        this.naturezasDespesa = [];
+        this.categoriasEspecificas = [];
+
         if (!cat.categoriaPaiId) {
             this.novaDespesa.idTipoDespesa = cat.id;
             this.naturezasDespesa = todas.filter(c => c.categoriaPaiId === cat.id);
@@ -1591,7 +1718,12 @@ export class DespesasComponent implements OnInit, OnDestroy {
                 amount: payload.valor,
                 date: payload.data,
                 idContaFinanceira: payload.idContaFinanceira,
-                idCategoria: payload.idCategoria,
+                ...(this.usarNovaCategoriaOpenFinance
+                    ? {
+                        newCategoryDescription: this.categoriaOpenFinanceNovaDescricao.trim(),
+                        newCategoryParentId: this.categoriaOpenFinanceNovaParentId
+                    }
+                    : { idCategoria: payload.idCategoria }),
                 ...(this.classificacaoManualOpenFinance
                     ? { reviewedClassification: this.classificacaoManualOpenFinance }
                     : {}),
@@ -1611,10 +1743,12 @@ export class DespesasComponent implements OnInit, OnDestroy {
         }
 
         this.salvandoDespesa = true;
+        const deveAtualizarCategorias = !!this.transacaoOpenFinanceEmRevisao && this.usarNovaCategoriaOpenFinance;
 
         request$.pipe(takeUntil(this.destroy$)).subscribe({
             next: () => {
                 this.salvandoDespesa = false;
+                if (deveAtualizarCategorias) this.carregarCategoriasCompletas();
                 this.fecharModal();
                 this.carregarDespesas();
                 if (this.mostrarOpenFinance) this.carregarTransacoesOpenFinance();
@@ -1754,13 +1888,16 @@ export class DespesasComponent implements OnInit, OnDestroy {
     }
 
     private camposObrigatoriosPreenchidos(): boolean {
+        const categoriaValida = this.transacaoOpenFinanceEmRevisao && this.usarNovaCategoriaOpenFinance
+            ? !!this.categoriaOpenFinanceNovaDescricao.trim() && !!this.categoriaOpenFinanceNovaParentId
+            : !!this.novaDespesa.idTipoDespesa;
         return !!(
             this.novaDespesa.descricao &&
             this.novaDespesa.valor > 0 &&
             this.novaDespesa.data &&
             this.novaDespesa.mesReferencia &&
             this.novaDespesa.idContaFinanceira &&
-            this.novaDespesa.idTipoDespesa
+            categoriaValida
         );
     }
 
@@ -1884,7 +2021,16 @@ export class DespesasComponent implements OnInit, OnDestroy {
     }
 
     private mostrarAlertaCamposObrigatorios() {
-        Swal.fire({ icon: 'warning', title: 'Campos obrigatórios!', text: 'Preencha todos os campos.', confirmButtonColor: '#d4af37' });
+        const missingNewCategory = this.transacaoOpenFinanceEmRevisao && this.usarNovaCategoriaOpenFinance
+            && (!this.categoriaOpenFinanceNovaDescricao.trim() || !this.categoriaOpenFinanceNovaParentId);
+        Swal.fire({
+            icon: 'warning',
+            title: 'Campos obrigatórios!',
+            text: missingNewCategory
+                ? 'Informe o nome da categoria e onde ela será adicionada, além dos outros campos obrigatórios.'
+                : 'Preencha todos os campos.',
+            confirmButtonColor: '#d4af37'
+        });
     }
 
     private mostrarSucesso() {

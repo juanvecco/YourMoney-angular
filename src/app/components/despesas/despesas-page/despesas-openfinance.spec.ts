@@ -21,6 +21,7 @@ describe('DespesasComponent Open Finance panel', () => {
       accountId: 'pluggy-account-1',
       institutionName: 'Banco Exemplo',
       accountName: 'Conta corrente',
+      category: null,
       date: '2026-05-12T00:00:00-03:00',
       description: 'Mercado',
       amount: 42.5,
@@ -165,6 +166,169 @@ describe('DespesasComponent Open Finance panel', () => {
     expect(component.novaDespesa.data).toBe('2026-05-12');
     expect(component.transacaoOpenFinanceEmRevisao?.transactionId).toBe('source-1');
     expect(openFinance.reconciliarDespesaPluggy).not.toHaveBeenCalled();
+  });
+
+  it('prefills a unique matching expense category and the unique C6 Bank account', () => {
+    const categories = [
+      { id: 'essenciais', descricao: 'Essenciais', tipoTransacao: 1, categoriaPaiId: null },
+      { id: 'alimentacao', descricao: 'Alimentação', tipoTransacao: 1, categoriaPaiId: 'essenciais' },
+      { id: 'mercado', descricao: 'Mercado', tipoTransacao: 1, categoriaPaiId: 'alimentacao' }
+    ];
+    (component as any).despesaService = { todasCategorias: categories };
+    component.tiposDespesa = [categories[0] as any];
+    component.contas = [{ id: 'conta-c6', descricao: 'C6 Bank' }];
+    spyOn<any>(component, 'abrirModal');
+
+    component.abrirCadastroOpenFinance(transacao({
+      category: 'Supermarket',
+      institutionName: 'C6 Bank'
+    }));
+
+    expect(component.novaDespesa.idCategoriaEspecifica).toBe('mercado');
+    expect(component.novaDespesa.idContaFinanceira).toBe('conta-c6');
+    expect(component.usarNovaCategoriaOpenFinance).toBeFalse();
+  });
+
+  it('keeps an unmatched provider category editable without creating it before save', () => {
+    const categories = [
+      { id: 'essenciais', descricao: 'Essenciais', tipoTransacao: 1, categoriaPaiId: null },
+      { id: 'alimentacao', descricao: 'Alimentação', tipoTransacao: 1, categoriaPaiId: 'essenciais' }
+    ];
+    (component as any).despesaService = { todasCategorias: categories };
+    component.tiposDespesa = [categories[0] as any];
+    spyOn<any>(component, 'abrirModal');
+
+    component.abrirCadastroOpenFinance(transacao({ category: 'Pharmacy' }));
+
+    expect(component.usarNovaCategoriaOpenFinance).toBeTrue();
+    expect(component.categoriaOpenFinanceNovaDescricao).toBe('Pharmacy');
+    expect(component.categoriaOpenFinanceNovaParentId).toBe('essenciais');
+    expect(openFinance.reconciliarDespesaPluggy).not.toHaveBeenCalled();
+  });
+
+  it('does not pick an arbitrary category or account when matches are ambiguous', () => {
+    const categories = [
+      { id: 'essenciais', descricao: 'Essenciais', tipoTransacao: 1, categoriaPaiId: null },
+      { id: 'alimentacao', descricao: 'Alimentação', tipoTransacao: 1, categoriaPaiId: 'essenciais' },
+      { id: 'mercado-1', descricao: 'Mercado', tipoTransacao: 1, categoriaPaiId: 'alimentacao' },
+      { id: 'nao-essenciais', descricao: 'Não essenciais', tipoTransacao: 1, categoriaPaiId: null },
+      { id: 'compras', descricao: 'Compras', tipoTransacao: 1, categoriaPaiId: 'nao-essenciais' },
+      { id: 'mercado-2', descricao: 'Supermercado', tipoTransacao: 1, categoriaPaiId: 'compras' }
+    ];
+    (component as any).despesaService = { todasCategorias: categories };
+    component.tiposDespesa = [categories[0] as any, categories[3] as any];
+    component.contas = [
+      { id: 'conta-c6-1', descricao: 'C6 Bank' },
+      { id: 'conta-c6-2', descricao: 'C6 Bank' }
+    ];
+    spyOn<any>(component, 'abrirModal');
+
+    component.abrirCadastroOpenFinance(transacao({
+      category: 'Supermarket',
+      institutionName: 'C6 Bank'
+    }));
+
+    expect(component.novaDespesa.idTipoDespesa).toBe('');
+    expect(component.novaDespesa.idNaturezaDespesa).toBe('');
+    expect(component.novaDespesa.idCategoriaEspecifica).toBe('');
+    expect(component.usarNovaCategoriaOpenFinance).toBeFalse();
+    expect(component.novaDespesa.idContaFinanceira).toBe('');
+  });
+
+  it('does not select the C6 account from a merchant description alone', () => {
+    component.contas = [{ id: 'conta-c6', descricao: 'C6 Bank' }];
+    spyOn<any>(component, 'abrirModal');
+
+    component.abrirCadastroOpenFinance(transacao({
+      description: 'Compra na loja C6 Bank',
+      institutionName: 'Banco Exemplo',
+      accountName: 'Conta corrente'
+    }));
+
+    expect(component.novaDespesa.idContaFinanceira).toBe('');
+  });
+
+  it('maps common provider category labels to one existing category', () => {
+    const categories = [
+      { id: 'essenciais', descricao: 'Essenciais', tipoTransacao: 1, categoriaPaiId: null },
+      { id: 'alimentacao', descricao: 'Alimentação', tipoTransacao: 1, categoriaPaiId: 'essenciais' },
+      { id: 'mercado', descricao: 'Mercado', tipoTransacao: 1, categoriaPaiId: 'alimentacao' },
+      { id: 'compras', descricao: 'Compras', tipoTransacao: 1, categoriaPaiId: 'essenciais' },
+      { id: 'farmacia', descricao: 'Farmácia', tipoTransacao: 1, categoriaPaiId: 'essenciais' },
+      { id: 'servicos', descricao: 'Serviços', tipoTransacao: 1, categoriaPaiId: 'essenciais' },
+      { id: 'vestuario', descricao: 'Vestuário', tipoTransacao: 1, categoriaPaiId: 'essenciais' },
+      { id: 'transporte', descricao: 'Transporte', tipoTransacao: 1, categoriaPaiId: 'essenciais' }
+    ];
+    (component as any).despesaService = { todasCategorias: categories };
+    component.tiposDespesa = [categories[0] as any];
+    spyOn<any>(component, 'abrirModal');
+
+    const cases = [
+      ['Supermarket', 'mercado'],
+      ['SHoPPing', 'compras'],
+      ['Pharmacy', 'farmacia'],
+      ['FARMACIA', 'farmacia'],
+      ['SERVICES', 'servicos'],
+      ['Clothing', 'vestuario'],
+      ['Vestuarios', 'vestuario'],
+      ['Transportation', 'transporte']
+    ];
+
+    for (const [category, expectedId] of cases) {
+      component.abrirCadastroOpenFinance(transacao({ category }));
+      expect(component.novaDespesa.idCategoriaEspecifica || component.novaDespesa.idNaturezaDespesa)
+        .withContext(`provider category ${category}`)
+        .toBe(expectedId);
+    }
+  });
+
+  it('sends a new category name and parent only when confirming the expense', () => {
+    component.transacaoOpenFinanceEmRevisao = transacao({ category: 'Pharmacy' });
+    component.usarNovaCategoriaOpenFinance = true;
+    component.categoriaOpenFinanceNovaDescricao = 'Farmácia';
+    component.categoriaOpenFinanceNovaParentId = 'essenciais';
+    component.novaDespesa = {
+      id: '', descricao: 'Drogaria', valor: 35.9, data: '2026-05-12', mesReferencia: '2026-05',
+      idContaFinanceira: 'conta-c6', idTipoDespesa: '', idNaturezaDespesa: '', idCategoriaEspecifica: ''
+    };
+    openFinance.reconciliarDespesaPluggy.and.returnValue(of({
+      transactionId: 'source-1', action: 'create', recordType: 'expense',
+      recordId: 'expense-new', idCategoria: 'category-new', registeredAt: '2026-05-12T12:00:00Z'
+    } as any));
+    spyOn<any>(component, 'fecharModal');
+    spyOn<any>(component, 'mostrarSucesso');
+    spyOn(component, 'carregarDespesas');
+    const refreshCategories = spyOn(component, 'carregarCategoriasCompletas');
+    spyOn<any>(component, 'verificarBadgeOrganizador');
+
+    component.salvarDespesa();
+
+    expect(openFinance.reconciliarDespesaPluggy).toHaveBeenCalledOnceWith(jasmine.objectContaining({
+      transactionId: 'source-1', action: 'create', idContaFinanceira: 'conta-c6',
+      newCategoryDescription: 'Farmácia', newCategoryParentId: 'essenciais'
+    }));
+    expect('idCategoria' in openFinance.reconciliarDespesaPluggy.calls.mostRecent().args[0]).toBeFalse();
+    expect(refreshCategories).toHaveBeenCalled();
+  });
+
+  it('does not submit a new category until its name and parent are provided', () => {
+    component.transacaoOpenFinanceEmRevisao = transacao();
+    component.usarNovaCategoriaOpenFinance = true;
+    component.categoriaOpenFinanceNovaDescricao = '';
+    component.categoriaOpenFinanceNovaParentId = '';
+    component.novaDespesa = {
+      id: '', descricao: 'Drogaria', valor: 35.9, data: '2026-05-12', mesReferencia: '2026-05',
+      idContaFinanceira: 'conta-c6', idTipoDespesa: '', idNaturezaDespesa: '', idCategoriaEspecifica: ''
+    };
+    spyOn(Swal, 'fire');
+
+    component.salvarDespesa();
+
+    expect(openFinance.reconciliarDespesaPluggy).not.toHaveBeenCalled();
+    expect(Swal.fire).toHaveBeenCalledWith(jasmine.objectContaining({
+      title: 'Campos obrigatórios!',
+      text: jasmine.stringMatching(/nome da categoria/i)
+    }));
   });
 
   it('requires an explicit expense choice before opening a form for uncertain nature', async () => {
