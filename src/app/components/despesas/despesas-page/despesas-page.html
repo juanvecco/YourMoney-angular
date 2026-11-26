@@ -185,8 +185,8 @@
                                 Autorizar no Open Finance
                             </button>
                         </div>
-                        <div class="ym-openfinance-state" *ngIf="!carregandoOpenFinance && !erroOpenFinance && (contasOpenFinanceDisponiveis ?? 0) > 0 && transacoesOpenFinance.length === 0">
-                            Nenhuma transação de saída disponível neste mês. Confira a conexão na área Open Finance; a integração mantém apenas o período recente disponível.
+                        <div class="ym-openfinance-state" *ngIf="!carregandoOpenFinance && !erroOpenFinance && (contasOpenFinanceDisponiveis ?? 0) > 0 && transacoesOpenFinance.length === 0 && transacoesOpenFinanceEmRevisao.length === 0">
+                            Nenhuma despesa de consumo disponível neste mês. Confira a conexão na área Open Finance; a integração mantém apenas o período recente disponível.
                         </div>
 
                         <article class="ym-openfinance-transaction" *ngFor="let transacao of transacoesOpenFinance">
@@ -255,6 +255,44 @@
                                 <small>Descrição, data e valor serão preenchidos e poderão ser revisados.</small>
                             </div>
                         </article>
+
+                        <section *ngIf="transacoesOpenFinanceEmRevisao.length > 0" class="ym-openfinance-review" aria-labelledby="openfinance-review-title">
+                            <header class="ym-openfinance-review__header">
+                                <div>
+                                    <h3 id="openfinance-review-title">Revisar classificação</h3>
+                                    <p>Estas movimentações não foram incluídas como despesas porque os dados não confirmam sua natureza.</p>
+                                </div>
+                                <span class="ym-chip">{{ transacoesOpenFinanceEmRevisao.length }} para revisar</span>
+                            </header>
+                            <article class="ym-openfinance-transaction ym-openfinance-review__item" *ngFor="let transacao of transacoesOpenFinanceEmRevisao">
+                                <div class="ym-openfinance-transaction-header">
+                                    <div>
+                                        <span class="ym-openfinance-source-label"><i class="bi bi-question-circle" aria-hidden="true"></i> Classificação pendente</span>
+                                        <h4 class="ym-list-title">{{ transacao.description }}</h4>
+                                        <div class="ym-list-meta">
+                                            <span>{{ transacao.institutionName }}</span>
+                                            <span>{{ transacao.accountName }}</span>
+                                            <span>{{ formatarDataOpenFinance(transacao.date) }}</span>
+                                            <span>{{ transacao.currencyCode }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="ym-openfinance-amount">
+                                        <strong>{{ formatarValorOrigemOpenFinance(transacao) }}</strong>
+                                    </div>
+                                </div>
+                                <p class="ym-openfinance-notice" role="status">
+                                    {{ transacao.importUnavailableReason || mensagemRevisaoClassificacaoOpenFinance(transacao) }}
+                                </p>
+                                <div class="ym-openfinance-footer">
+                                    <button class="ym-button secondary" type="button"
+                                        [disabled]="!podeRevisarComoDespesa(transacao)"
+                                        (click)="confirmarCadastroSeparadoOpenFinance(transacao, 'expense')">
+                                        Revisar como despesa
+                                    </button>
+                                    <small>Ao continuar, você revisará os dados. Nenhuma despesa será registrada antes de confirmar o cadastro.</small>
+                                </div>
+                            </article>
+                        </section>
                     </div>
                 </section>
 

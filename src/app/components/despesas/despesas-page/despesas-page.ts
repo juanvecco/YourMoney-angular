@@ -138,11 +138,13 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
     mostrarOpenFinance = false;
     transacoesOpenFinance: PluggyTransactionPreview[] = [];
+    transacoesOpenFinanceEmRevisao: PluggyTransactionPreview[] = [];
     contasOpenFinanceDisponiveis: number | null = null;
     carregandoOpenFinance = false;
     erroOpenFinance = '';
     openFinanceConfiguracaoPendente = false;
     transacaoOpenFinanceEmRevisao: PluggyTransactionPreview | null = null;
+    classificacaoManualOpenFinance: 'expense' | null = null;
     confirmouPossivelDuplicidadeOpenFinance = false;
 
     recorrencias: DespesaRecorrenteResponse[] = [];
@@ -338,6 +340,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
         this.openFinanceRevision++;
         this.transacoesOpenFinance = [];
+        this.transacoesOpenFinanceEmRevisao = [];
         this.contasOpenFinanceDisponiveis = null;
         this.carregandoOpenFinance = false;
         this.erroOpenFinance = '';
@@ -364,8 +367,12 @@ export class DespesasComponent implements OnInit, OnDestroy {
                 next: (overview) => {
                     if (revision !== this.openFinanceRevision || !this.mostrarOpenFinance) return;
                     this.contasOpenFinanceDisponiveis = overview.accounts?.length ?? 0;
-                    this.transacoesOpenFinance = (overview.transactions ?? [])
-                        .filter(transaction => transaction.direction === 'DEBIT');
+                    const transactions = overview.transactions ?? [];
+                    this.transacoesOpenFinance = transactions
+                        .filter(transaction => transaction.classification === 'EXPENSE');
+                    this.transacoesOpenFinanceEmRevisao = transactions
+                        .filter(transaction => transaction.classification === 'REVIEW'
+                            && transaction.registrationStatus !== 'REGISTERED');
                     this.carregandoOpenFinance = false;
                 },
                 error: (error) => {
@@ -383,17 +390,49 @@ export class DespesasComponent implements OnInit, OnDestroy {
         return candidates.filter(candidate => candidate.recordType === 'expense');
     }
 
-    podeCadastrarOpenFinance(transaction: PluggyTransactionPreview): boolean {
+    podeCadastrarOpenFinance(
+        transaction: PluggyTransactionPreview,
+        reviewedAs: 'expense' | null = null
+    ): boolean {
+        const classifiedExpense = transaction.classification === 'EXPENSE' && reviewedAs === null;
+        const explicitExpenseReview = transaction.classification === 'REVIEW'
+            && reviewedAs === 'expense'
+            && transaction.direction === 'DEBIT'
+            && transaction.status?.toUpperCase() === 'POSTED';
+        if (!classifiedExpense && !explicitExpenseReview) return false;
         return transaction.registrationStatus !== 'REGISTERED'
             && transaction.importable
             && this.valorEmReaisOpenFinance(transaction) > 0;
     }
 
+    podeRevisarComoDespesa(transaction: PluggyTransactionPreview): boolean {
+        return transaction.classification === 'REVIEW'
+            && transaction.direction === 'DEBIT'
+            && transaction.status?.toUpperCase() === 'POSTED'
+            && transaction.registrationStatus !== 'REGISTERED'
+            && transaction.importable
+            && this.valorEmReaisOpenFinance(transaction) > 0;
+    }
+
+    mensagemRevisaoClassificacaoOpenFinance(transaction: PluggyTransactionPreview): string {
+        switch (transaction.classificationReason) {
+            case 'CONFLICTING_SIGNALS':
+                return 'Os dados da instituição apontam naturezas diferentes. Confira descrição, conta, data e valor antes de escolher como registrar.';
+            case 'UNSUPPORTED_STATUS':
+                return 'A situação desta transação não permite confirmar um registro agora. Consulte a conexão novamente quando ela estiver concluída.';
+            case 'UNSUPPORTED_VALUE':
+                return 'Não foi possível obter um valor confiável em reais. Revise a transação sem registrá-la como despesa.';
+            default:
+                return 'Não foi possível identificar a natureza desta transação. Revise os dados e escolha um destino antes de continuar.';
+        }
+    }
+
     abrirCadastroOpenFinance(
         transaction: PluggyTransactionPreview,
-        confirmouPossivelDuplicidade = false
+        confirmouPossivelDuplicidade = false,
+        reviewedAs: 'expense' | null = null
     ): void {
-        if (!this.podeCadastrarOpenFinance(transaction)) return;
+        if (!this.podeCadastrarOpenFinance(transaction, reviewedAs)) return;
 
         this.editando = false;
         this.limparLote();
@@ -406,13 +445,17 @@ export class DespesasComponent implements OnInit, OnDestroy {
             mesReferencia: this.obterMesReferenciaInput(this.obterDataCivil(transaction.date))
         };
         this.transacaoOpenFinanceEmRevisao = transaction;
+        this.classificacaoManualOpenFinance = reviewedAs;
         this.confirmouPossivelDuplicidadeOpenFinance = confirmouPossivelDuplicidade;
         this.aplicarCategoriaPadraoDespesa();
         this.abrirModal();
     }
 
-    async confirmarCadastroSeparadoOpenFinance(transaction: PluggyTransactionPreview): Promise<void> {
-        if (!this.podeCadastrarOpenFinance(transaction)) return;
+    async confirmarCadastroSeparadoOpenFinance(
+        transaction: PluggyTransactionPreview,
+        reviewedAs: 'expense' | null = null
+    ): Promise<void> {
+        if (!this.podeCadastrarOpenFinance(transaction, reviewedAs)) return;
 
         const candidates = this.candidatosDespesa(transaction);
         if (candidates.length > 0) {
@@ -428,7 +471,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
             if (!confirmation.isConfirmed) return;
         }
 
-        this.abrirCadastroOpenFinance(transaction, candidates.length > 0);
+        this.abrirCadastroOpenFinance(transaction, candidates.length > 0, reviewedAs);
     }
 
     async vincularDespesaOpenFinance(
@@ -497,10 +540,9 @@ export class DespesasComponent implements OnInit, OnDestroy {
     }
 
     isTransacaoImportavel(transaction: PluggyTransactionPreview): boolean {
+        if (transaction.classification !== 'EXPENSE') return false;
         if (!this.podeCadastrarOpenFinance(transaction)) return false;
-        if (transaction.status?.toUpperCase() === 'PENDING') return false;
-        const operation = (transaction.operationType ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
-        return !['TRANSFER', 'REVERSAL', 'REFUND', 'ESTORNO'].some(part => operation.includes(part));
+        return transaction.status?.toUpperCase() === 'POSTED';
     }
 
     textoStatusOpenFinance(transaction: PluggyTransactionPreview): string {
@@ -941,6 +983,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     abrirModalDespesa() {
         this.editando = false;
         this.transacaoOpenFinanceEmRevisao = null;
+        this.classificacaoManualOpenFinance = null;
         this.confirmouPossivelDuplicidadeOpenFinance = false;
         this.limparLote();
         this.resetForm();
@@ -952,6 +995,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     abrirModalEditar(despesa: Despesa) {
         this.editando = true;
         this.transacaoOpenFinanceEmRevisao = null;
+        this.classificacaoManualOpenFinance = null;
         this.confirmouPossivelDuplicidadeOpenFinance = false;
         this.resetParcelamento();
         this.novaDespesa = {
@@ -1547,6 +1591,9 @@ export class DespesasComponent implements OnInit, OnDestroy {
                 date: payload.data,
                 idContaFinanceira: payload.idContaFinanceira,
                 idCategoria: payload.idCategoria,
+                ...(this.classificacaoManualOpenFinance
+                    ? { reviewedClassification: this.classificacaoManualOpenFinance }
+                    : {}),
                 confirmPossibleDuplicate: this.confirmouPossivelDuplicidadeOpenFinance
             });
         } else if (this.editando) {
@@ -1957,6 +2004,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         const modal = (window as any).bootstrap.Modal.getInstance(document.getElementById('modalDespesa'));
         modal?.hide();
         this.transacaoOpenFinanceEmRevisao = null;
+        this.classificacaoManualOpenFinance = null;
         this.confirmouPossivelDuplicidadeOpenFinance = false;
     }
 

@@ -194,6 +194,27 @@
   background: var(--ym-surface);
 }
 
+.ym-openfinance-review {
+  display: grid;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ym-border);
+}
+
+.ym-openfinance-review__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+
+  h3 { margin: 0; color: var(--ym-text); font-size: 1rem; }
+  p { margin: 5px 0 0; color: var(--ym-muted); }
+}
+
+.ym-openfinance-review__item {
+  border-color: color-mix(in srgb, var(--ym-warning, #f59e0b) 42%, var(--ym-border));
+}
+
 .ym-openfinance-source-label {
   display: inline-flex;
   align-items: center;
@@ -458,6 +479,7 @@
   }
 
   .ym-openfinance-toggle-row,
+  .ym-openfinance-review__header,
   .ym-openfinance-transaction-header,
   .ym-openfinance-candidate {
     align-items: flex-start;

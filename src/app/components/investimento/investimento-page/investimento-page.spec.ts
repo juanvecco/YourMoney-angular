@@ -410,7 +410,8 @@ describe('InvestimentoPageComponent Open Finance review', () => {
     institutionName: 'Banco Exemplo', accountName: 'Conta corrente',
     date: '2026-10-29T02:00:00Z', description: 'APLICACAO CDB', amount: -125.5,
     currencyCode: 'BRL', amountInAccountCurrency: null, accountCurrencyCode: 'BRL',
-    direction: 'DEBIT', operationType: 'PIX', status: 'POSTED', previewOnly: true,
+    direction: 'DEBIT', operationType: 'PIX', classification: 'INVESTMENT',
+    classificationReason: 'INVESTMENT_APPLICATION', status: 'POSTED', previewOnly: true,
     registrationStatus: 'PENDING', registeredRecordType: null, registeredRecordId: null,
     possibleDuplicate: false, duplicateCandidate: null, possibleDuplicateCandidates: [],
     importable: true, suggestedAmountBrl: 125.5, importUnavailableReason: null

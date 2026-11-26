@@ -29,6 +29,8 @@ describe('DespesasComponent Open Finance panel', () => {
       accountCurrencyCode: 'BRL',
       direction: 'DEBIT',
       operationType: 'PIX',
+      classification: 'EXPENSE',
+      classificationReason: 'CONSUMPTION',
       status: 'POSTED',
       previewOnly: true,
       registrationStatus: 'PENDING',
@@ -65,7 +67,7 @@ describe('DespesasComponent Open Finance panel', () => {
 
   it('loads the selected month only after the switch is enabled and does not change local totals', () => {
     const debit = transacao();
-    const credit = transacao({ transactionId: 'source-credit', direction: 'CREDIT' });
+    const credit = transacao({ transactionId: 'source-credit', direction: 'CREDIT', classification: 'EXCLUDED', classificationReason: 'NON_CONSUMPTION' });
     openFinance.obterVisaoGeralPluggy.and.returnValue(of({
       transactions: [debit, credit]
     } as PluggyOverview));
@@ -78,6 +80,21 @@ describe('DespesasComponent Open Finance panel', () => {
     expect(component.totalDespesas).toBe(625);
     expect(component.totalDespesasFiltradas).toBe(240);
     expect(component.totalResultadosDespesas).toBe(7);
+  });
+
+  it('separates eligible expenses from investments, excluded transactions and uncertain items', () => {
+    const expense = transacao();
+    const investment = transacao({ transactionId: 'source-investment', classification: 'INVESTMENT', classificationReason: 'INVESTMENT_APPLICATION' });
+    const excluded = transacao({ transactionId: 'source-excluded', classification: 'EXCLUDED', classificationReason: 'CARD_BILL_PAYMENT' });
+    const review = transacao({ transactionId: 'source-review', classification: 'REVIEW', classificationReason: 'AMBIGUOUS' });
+    openFinance.obterVisaoGeralPluggy.and.returnValue(of({ transactions: [expense, investment, excluded, review] } as PluggyOverview));
+
+    component.alternarOpenFinance(true);
+
+    expect(component.transacoesOpenFinance).toEqual([expense]);
+    expect(component.transacoesOpenFinanceEmRevisao).toEqual([review]);
+    expect(component.isTransacaoImportavel(review)).toBeFalse();
+    expect(component.totalDespesas).toBe(625);
   });
 
   it('ignores an outstanding source response after the switch is turned off', () => {
@@ -147,6 +164,20 @@ describe('DespesasComponent Open Finance panel', () => {
     expect(component.novaDespesa.valor).toBe(42.5);
     expect(component.novaDespesa.data).toBe('2026-05-12');
     expect(component.transacaoOpenFinanceEmRevisao?.transactionId).toBe('source-1');
+    expect(openFinance.reconciliarDespesaPluggy).not.toHaveBeenCalled();
+  });
+
+  it('requires an explicit expense choice before opening a form for uncertain nature', async () => {
+    const review = transacao({ classification: 'REVIEW', classificationReason: 'AMBIGUOUS' });
+    spyOn<any>(component, 'abrirModal');
+
+    component.abrirCadastroOpenFinance(review);
+    expect(component.transacaoOpenFinanceEmRevisao).toBeNull();
+
+    await component.confirmarCadastroSeparadoOpenFinance(review, 'expense');
+
+    expect(component.transacaoOpenFinanceEmRevisao?.transactionId).toBe('source-1');
+    expect(component.classificacaoManualOpenFinance).toBe('expense');
     expect(openFinance.reconciliarDespesaPluggy).not.toHaveBeenCalled();
   });
 
@@ -273,6 +304,27 @@ describe('DespesasComponent Open Finance panel', () => {
       confirmPossibleDuplicate: false
     });
     expect(component.salvandoDespesa).toBeFalse();
+  });
+
+  it('sends the explicit review decision with the confirmed expense', () => {
+    const transaction = transacao({ classification: 'REVIEW', classificationReason: 'AMBIGUOUS' });
+    component.transacaoOpenFinanceEmRevisao = transaction;
+    component.classificacaoManualOpenFinance = 'expense';
+    component.novaDespesa = {
+      id: '', descricao: 'Compra revisada', valor: 43.25, data: '2026-05-12', mesReferencia: '2026-05',
+      idContaFinanceira: 'local-account-1', idTipoDespesa: 'local-category-1', idNaturezaDespesa: '', idCategoriaEspecifica: ''
+    };
+    openFinance.reconciliarDespesaPluggy.and.returnValue(of({} as any));
+    spyOn<any>(component, 'fecharModal');
+    spyOn<any>(component, 'mostrarSucesso');
+    spyOn(component, 'carregarDespesas');
+    spyOn<any>(component, 'verificarBadgeOrganizador');
+
+    component.salvarDespesa();
+
+    expect(openFinance.reconciliarDespesaPluggy).toHaveBeenCalledWith(jasmine.objectContaining({
+      transactionId: 'source-1', action: 'create', reviewedClassification: 'expense'
+    }));
   });
 
   it('requires an explicit create-separately confirmation when a candidate exists', async () => {

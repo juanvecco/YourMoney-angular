@@ -96,6 +96,8 @@ export interface PluggyTransactionPreview {
   accountCurrencyCode: string;
   direction: 'CREDIT' | 'DEBIT' | 'UNKNOWN';
   operationType: string | null;
+  classification: 'EXPENSE' | 'INVESTMENT' | 'EXCLUDED' | 'REVIEW';
+  classificationReason: string;
   status: string;
   previewOnly: true;
   registrationStatus: 'PENDING' | 'REGISTERED';
@@ -114,6 +116,7 @@ export type PluggyExpenseReconciliationAction = 'create' | 'link' | 'replace';
 export interface PluggyExpenseReconciliationRequest {
   transactionId: string;
   action: PluggyExpenseReconciliationAction;
+  reviewedClassification?: 'expense' | null;
   targetExpenseId?: string | null;
   expectedDescription?: string | null;
   expectedAmount?: number | null;
@@ -139,6 +142,7 @@ export type PluggyInvestmentReconciliationAction = 'create' | 'link' | 'replace'
 export interface PluggyInvestmentReconciliationRequest {
   transactionId: string;
   action: PluggyInvestmentReconciliationAction;
+  reviewedClassification?: 'investment' | null;
   targetInvestmentId?: string | null;
   expectedDescription?: string | null;
   expectedAmount?: number | null;
@@ -283,6 +287,7 @@ export interface PluggyInvestmentAssetReconciliationResult {
 export interface PluggyTransactionImportRequest {
   transactionId: string;
   recordType: 'expense' | 'revenue';
+  reviewedClassification?: 'expense' | null;
   description: string;
   amount: number;
   date: string;
