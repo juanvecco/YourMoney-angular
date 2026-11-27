@@ -506,9 +506,16 @@ describe('DespesasComponent Open Finance panel', () => {
     await component.substituirDespesaOpenFinance(transaction, candidate, 'expense');
 
     expect(confirmation).toHaveBeenCalledWith(jasmine.objectContaining({
-      title: 'Revisar transação e substituir despesa',
-      html: jasmine.stringContaining('esta movimentação será classificada como despesa')
+      title: 'Confirmar substituição da despesa',
+      customClass: { popup: 'ym-openfinance-replace-popup' },
+      confirmButtonText: 'Substituir despesa',
+      html: jasmine.stringContaining('você classifica esta transação como despesa')
     }));
+    const modalHtml = (confirmation.calls.mostRecent().args[0] as unknown as { html: string }).html;
+    expect(modalHtml).toContain('<h3>Descrição</h3>');
+    expect(modalHtml).toContain('<span>Atual</span>');
+    expect(modalHtml).toContain('<span>Open Finance</span>');
+    expect(modalHtml).toContain('A transação ainda está pendente no banco');
     expect(reconcile).toHaveBeenCalledOnceWith({
       transactionId: 'source-1',
       action: 'replace',

@@ -283,15 +283,6 @@
   small { color: var(--ym-muted); }
 }
 
-.ym-openfinance-diff {
-  display: grid;
-  gap: 8px;
-  text-align: left;
-
-  > div { display: grid; grid-template-columns: 0.8fr 1fr 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px solid #ddd; }
-  p { margin: 6px 0 0; }
-}
-
 .ym-filter-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr)) auto;

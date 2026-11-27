@@ -532,22 +532,41 @@ export class DespesasComponent implements OnInit, OnDestroy {
         const novaData = this.obterDataCivil(transaction.date);
         const novoValor = this.valorEmReaisOpenFinance(transaction);
         const confirmation = await Swal.fire({
-            title: reviewedAs ? 'Revisar transação e substituir despesa' : 'Revisar substituição',
+            title: 'Confirmar substituição da despesa',
             html: `<div class="ym-openfinance-diff">
-                <div><strong>Campo</strong><strong>Atual</strong><strong>Open Finance</strong></div>
-                <div><span>Descrição</span><span>${this.escaparHtml(candidate.description)}</span><span>${this.escaparHtml(transaction.description)}</span></div>
-                <div><span>Data</span><span>${this.formatarData(candidate.date)}</span><span>${this.formatarData(novaData)}</span></div>
-                <div><span>Valor</span><span>${this.formatarValor(candidate.amount)}</span><span>${this.formatarValor(novoValor)}</span></div>
-                <p>${reviewedAs
-                    ? 'Ao confirmar, esta movimentação será classificada como despesa e substituirá descrição, data e valor. Conta e categoria serão preservadas.'
-                    : 'Conta e classificação da despesa serão preservadas.'}</p>
+                <p class="ym-openfinance-diff__intro">Confira os dados da despesa antes de substituir:</p>
+                <div class="ym-openfinance-diff__field">
+                    <h3>Descrição</h3>
+                    <div class="ym-openfinance-diff__values">
+                        <div><span>Atual</span><strong>${this.escaparHtml(candidate.description)}</strong></div>
+                        <div><span>Open Finance</span><strong>${this.escaparHtml(transaction.description)}</strong></div>
+                    </div>
+                </div>
+                <div class="ym-openfinance-diff__field">
+                    <h3>Data</h3>
+                    <div class="ym-openfinance-diff__values">
+                        <div><span>Atual</span><strong>${this.formatarData(candidate.date)}</strong></div>
+                        <div><span>Open Finance</span><strong>${this.formatarData(novaData)}</strong></div>
+                    </div>
+                </div>
+                <div class="ym-openfinance-diff__field">
+                    <h3>Valor</h3>
+                    <div class="ym-openfinance-diff__values">
+                        <div><span>Atual</span><strong>${this.formatarValor(candidate.amount)}</strong></div>
+                        <div><span>Open Finance</span><strong>${this.formatarValor(novoValor)}</strong></div>
+                    </div>
+                </div>
+                <p class="ym-openfinance-diff__summary">${reviewedAs
+                    ? 'Ao confirmar, você classifica esta transação como despesa e substitui descrição, data e valor do lançamento atual.'
+                    : 'Ao confirmar, você substitui descrição, data e valor do lançamento atual.'} A conta e a categoria permanecem como estão.</p>
                 ${transaction.status?.toUpperCase() === 'PENDING'
-                    ? '<p>O banco ainda marca a transação como pendente. Valor e data podem mudar depois da confirmação bancária.</p>'
+                    ? '<p class="ym-openfinance-diff__warning">A transação ainda está pendente no banco. Valor e data podem mudar quando ela for concluída.</p>'
                     : ''}
             </div>`,
+            customClass: { popup: 'ym-openfinance-replace-popup' },
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'Confirmar substituição',
+            confirmButtonText: 'Substituir despesa',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#dc3545'
         });

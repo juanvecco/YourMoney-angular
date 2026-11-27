@@ -10,3 +10,48 @@
 .swal2-title, .swal2-html-container { color: var(--ym-text) !important; }
 .swal2-confirm { min-height: 44px; background: var(--ym-primary) !important; }
 .swal2-cancel { min-height: 44px; color: var(--ym-text) !important; background: var(--ym-surface-strong) !important; }
+
+.swal2-popup.ym-openfinance-replace-popup {
+  width: min(42rem, calc(100vw - 2rem));
+
+  .swal2-title { font-size: clamp(1.35rem, 3vw, 1.8rem); }
+  .swal2-html-container { margin-top: 1rem; }
+}
+
+.ym-openfinance-diff {
+  display: grid;
+  gap: 1rem;
+  text-align: left;
+
+  p { margin: 0; }
+
+  &__intro { color: var(--ym-muted); }
+
+  &__field {
+    padding: .8rem 1rem;
+    border: 1px solid var(--ym-border);
+    border-radius: .6rem;
+    background: var(--ym-surface-strong);
+  }
+
+  h3 { margin: 0 0 .65rem; font-size: 1rem; font-weight: 700; }
+
+  &__values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+  &__values > div { min-width: 0; overflow-wrap: anywhere; }
+  &__values span { display: block; margin-bottom: .25rem; color: var(--ym-muted); font-size: .8rem; }
+  &__values strong { display: block; font-size: .95rem; font-weight: 600; line-height: 1.4; }
+
+  &__summary { line-height: 1.5; }
+
+  &__warning {
+    padding: .75rem 1rem;
+    border-left: 3px solid var(--ym-warning);
+    border-radius: .35rem;
+    background: var(--ym-surface-strong);
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 520px) {
+  .ym-openfinance-diff__values { grid-template-columns: 1fr; gap: .65rem; }
+}
