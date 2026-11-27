@@ -372,6 +372,23 @@ describe('DespesasComponent Open Finance panel', () => {
     expect((component as any).abrirModal).not.toHaveBeenCalled();
   });
 
+  it('shows a pending debit for review and requires an explicit expense decision', () => {
+    const pending = transacao({
+      status: 'PENDING', classification: 'REVIEW', classificationReason: 'PENDING_STATUS'
+    });
+    openFinance.obterVisaoGeralPluggy.and.returnValue(of({ transactions: [pending] } as PluggyOverview));
+
+    component.alternarOpenFinance(true);
+
+    expect(component.transacoesOpenFinance).toEqual([]);
+    expect(component.transacoesOpenFinanceEmRevisao).toEqual([pending]);
+    expect(component.isTransacaoImportavel(pending)).toBeFalse();
+    expect(component.podeCadastrarOpenFinance(pending)).toBeFalse();
+    expect(component.podeRevisarComoDespesa(pending)).toBeTrue();
+    expect(component.podeCadastrarOpenFinance(pending, 'expense')).toBeTrue();
+    expect(component.mensagemRevisaoClassificacaoOpenFinance(pending)).toContain('valor e data podem mudar');
+  });
+
   it('uses the Brazilian civil date when the provider timestamp is UTC', () => {
     const transaction = transacao({ date: '2026-05-13T02:00:00Z' });
     spyOn<any>(component, 'abrirModal');
@@ -409,7 +426,7 @@ describe('DespesasComponent Open Finance panel', () => {
   });
 
   it('lets an explicitly reviewed expense candidate be kept and linked', async () => {
-    const transaction = transacao({ classification: 'REVIEW', classificationReason: 'AMBIGUOUS' });
+    const transaction = transacao({ status: 'PENDING', classification: 'REVIEW', classificationReason: 'PENDING_STATUS' });
     const candidate = {
       recordType: 'expense' as const,
       recordId: 'expense-1',
@@ -469,8 +486,9 @@ describe('DespesasComponent Open Finance panel', () => {
   it('requires explicit expense review when replacing a manual candidate from the review queue', async () => {
     const transaction = transacao({
       description: 'Shopee *Tucan 1/2',
+      status: 'PENDING',
       classification: 'REVIEW',
-      classificationReason: 'AMBIGUOUS'
+      classificationReason: 'PENDING_STATUS'
     });
     const candidate = {
       recordType: 'expense' as const,
@@ -547,7 +565,7 @@ describe('DespesasComponent Open Finance panel', () => {
   });
 
   it('sends the explicit review decision with the confirmed expense', () => {
-    const transaction = transacao({ classification: 'REVIEW', classificationReason: 'AMBIGUOUS' });
+    const transaction = transacao({ status: 'PENDING', classification: 'REVIEW', classificationReason: 'PENDING_STATUS' });
     component.transacaoOpenFinanceEmRevisao = transaction;
     component.classificacaoManualOpenFinance = 'expense';
     component.novaDespesa = {

@@ -316,9 +316,9 @@
               <span>Já existe um lançamento parecido: {{ candidato.description }} em {{ candidato.date | date:'dd/MM/yyyy' }}, no valor de {{ candidato.amount | financialValue:'BRL' }}. Revise antes de continuar.</span>
             </div>
           }
-          @if (transacao.status === 'PENDING') { <p class="of-pending-warning" role="note">A instituição ainda marca esta transação como pendente. Confirme os dados antes do cadastro.</p> }
+          @if (transacao.status === 'PENDING') { <p class="of-pending-warning" role="note">A instituição ainda marca esta transação como pendente. Você pode decidir cadastrá-la agora após conferir os dados; valor e data podem mudar quando o banco a concluir.</p> }
           @if (transacaoExigeClassificacaoManual(transacao) && !formImportacao.recordType) {
-            <p class="of-pending-warning" role="note">Esta transação está pendente, pode ser transferência/estorno ou não tem direção clara. Escolha manualmente se deseja cadastrá-la como despesa ou receita.</p>
+            <p class="of-pending-warning" role="note">A natureza desta transação precisa de confirmação. Confira se é uma compra, transferência ou estorno e escolha manualmente o tipo de lançamento.</p>
           } @else if ((transacao.direction === 'CREDIT' && formImportacao.recordType === 'expense') || (transacao.direction === 'DEBIT' && formImportacao.recordType === 'revenue')) {
             <p class="of-pending-warning" role="note">A classificação escolhida difere da direção informada pelo banco. Confira antes de confirmar.</p>
           }

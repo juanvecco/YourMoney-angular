@@ -8,6 +8,7 @@ import {
   OpenFinanceSourcesResponse,
   OpenFinanceTransactionPreviewResponse
 } from '../../../models/openfinance.model';
+import { PluggyTransactionPreview } from '../../../models/pluggy.model';
 
 describe('OpenFinancePageComponent', () => {
   let component: OpenFinancePageComponent;
@@ -440,5 +441,42 @@ describe('OpenFinancePageComponent', () => {
 
     expect(component.mensagemProvedor).toBe('Não foi possível abrir as credenciais protegidas.');
     expect(openFinanceService.obterConnectToken).toHaveBeenCalledWith(undefined, carteira.id);
+  });
+
+  it('sends an explicit expense decision for a pending transaction from Connections', () => {
+    const pending = {
+      transactionId: 'pending-purchase',
+      direction: 'DEBIT',
+      status: 'PENDING',
+      classification: 'REVIEW',
+      importable: true,
+      registrationStatus: 'PENDING',
+      description: 'Compra no mercado',
+      amount: 25,
+      currencyCode: 'BRL',
+      date: '2026-11-24T12:00:00Z'
+    } as PluggyTransactionPreview;
+    component.transacaoEmRevisao = pending;
+    expect(component.transacaoExigeClassificacaoManual(pending)).toBeTrue();
+    component.formImportacao = {
+      ...component.formImportacao,
+      recordType: 'expense',
+      descricao: pending.description,
+      valor: 25,
+      data: '2026-11-24',
+      idContaFinanceira: 'account-1',
+      idTipoDespesa: 'category-1'
+    };
+    spyOn(component, 'carregarDadosPluggy');
+
+    component.confirmarImportacaoTransacao();
+
+    expect(openFinanceService.importarTransacaoPluggy).toHaveBeenCalledWith(jasmine.objectContaining({
+      transactionId: 'pending-purchase',
+      recordType: 'expense',
+      reviewedClassification: 'expense',
+      idContaFinanceira: 'account-1',
+      idCategoria: 'category-1'
+    }), carteira.id);
   });
 });

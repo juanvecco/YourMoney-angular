@@ -283,6 +283,9 @@
                                 <p class="ym-openfinance-notice" role="status">
                                     {{ transacao.importUnavailableReason || mensagemRevisaoClassificacaoOpenFinance(transacao) }}
                                 </p>
+                                <p class="ym-openfinance-notice" *ngIf="transacao.status?.toUpperCase() === 'PENDING' && transacao.classificationReason !== 'PENDING_STATUS'">
+                                    O banco ainda marca esta transação como pendente. Valor e data podem mudar após a confirmação bancária.
+                                </p>
                                 <div class="ym-openfinance-candidates" *ngIf="candidatosDespesa(transacao).length > 0">
                                     <h4>Possíveis despesas já cadastradas</h4>
                                     <p>Confira a correspondência. Você pode manter a despesa e vinculá-la ou revisar os dados do Open Finance e substituir a despesa manual após confirmar.</p>
@@ -496,6 +499,9 @@
             <div class="modal-body pt-4">
                 <form>
                   <p class="ym-form-hint">Campos com * são obrigatórios.</p>
+                  <p class="ym-openfinance-notice" *ngIf="transacaoOpenFinanceEmRevisao?.status?.toUpperCase() === 'PENDING'">
+                    Esta transação ainda está pendente no banco. Confira descrição, data e valor antes de confirmar; eles podem mudar quando o banco a concluir.
+                  </p>
                     <div class="row g-3">
                         <div class="col-12">
                             <label class="form-label" for="despesa-descricao">Descrição <span class="ym-required" aria-hidden="true">*</span></label>

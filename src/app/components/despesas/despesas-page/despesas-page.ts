@@ -411,7 +411,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         const explicitExpenseReview = transaction.classification === 'REVIEW'
             && reviewedAs === 'expense'
             && transaction.direction === 'DEBIT'
-            && transaction.status?.toUpperCase() === 'POSTED';
+            && ['POSTED', 'PENDING'].includes(transaction.status?.toUpperCase() ?? '');
         if (!classifiedExpense && !explicitExpenseReview) return false;
         return transaction.registrationStatus !== 'REGISTERED'
             && transaction.importable
@@ -421,7 +421,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     podeRevisarComoDespesa(transaction: PluggyTransactionPreview): boolean {
         return transaction.classification === 'REVIEW'
             && transaction.direction === 'DEBIT'
-            && transaction.status?.toUpperCase() === 'POSTED'
+            && ['POSTED', 'PENDING'].includes(transaction.status?.toUpperCase() ?? '')
             && transaction.registrationStatus !== 'REGISTERED'
             && transaction.importable
             && this.valorEmReaisOpenFinance(transaction) > 0;
@@ -429,6 +429,8 @@ export class DespesasComponent implements OnInit, OnDestroy {
 
     mensagemRevisaoClassificacaoOpenFinance(transaction: PluggyTransactionPreview): string {
         switch (transaction.classificationReason) {
+            case 'PENDING_STATUS':
+                return 'O banco ainda marca esta transação como pendente. Confira se é uma despesa e confirme o cadastro se desejar; valor e data podem mudar quando o banco a concluir.';
             case 'CONFLICTING_SIGNALS':
                 return 'Os dados da instituição apontam naturezas diferentes. Confira descrição, conta, data e valor antes de escolher como registrar.';
             case 'UNSUPPORTED_STATUS':
@@ -498,7 +500,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
         const confirmation = await Swal.fire({
             title: reviewedAs ? 'Confirmar despesa e vincular?' : 'Manter e vincular?',
             text: reviewedAs
-                ? `Ao confirmar esta movimentação como despesa, a despesa “${candidate.description}” será mantida sem alterações e vinculada à transação bancária.`
+                ? `Ao confirmar esta movimentação como despesa, a despesa “${candidate.description}” será mantida sem alterações e vinculada à transação bancária.${transaction.status?.toUpperCase() === 'PENDING' ? ' O banco ainda marca a transação como pendente; valor e data podem mudar.' : ''}`
                 : `A despesa “${candidate.description}” será mantida sem alterações e vinculada à transação bancária.`,
             icon: 'question',
             showCancelButton: true,
@@ -539,6 +541,9 @@ export class DespesasComponent implements OnInit, OnDestroy {
                 <p>${reviewedAs
                     ? 'Ao confirmar, esta movimentação será classificada como despesa e substituirá descrição, data e valor. Conta e categoria serão preservadas.'
                     : 'Conta e classificação da despesa serão preservadas.'}</p>
+                ${transaction.status?.toUpperCase() === 'PENDING'
+                    ? '<p>O banco ainda marca a transação como pendente. Valor e data podem mudar depois da confirmação bancária.</p>'
+                    : ''}
             </div>`,
             icon: 'warning',
             showCancelButton: true,

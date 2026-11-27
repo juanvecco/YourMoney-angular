@@ -682,6 +682,9 @@ export class OpenFinancePageComponent implements OnInit {
     const request: PluggyTransactionImportRequest = {
       transactionId: transacao.transactionId,
       recordType,
+      ...(recordType === 'expense' && transacao.classification === 'REVIEW'
+        ? { reviewedClassification: 'expense' as const }
+        : {}),
       description: this.formImportacao.descricao.trim(),
       amount: this.formImportacao.valor,
       date: this.formImportacao.data,
@@ -764,6 +767,7 @@ export class OpenFinancePageComponent implements OnInit {
   transacaoExigeClassificacaoManual(transacao: PluggyTransactionPreview): boolean {
     const operationType = transacao.operationType ?? '';
     return transacao.direction === 'UNKNOWN'
+      || transacao.classification === 'REVIEW'
       || transacao.status.toUpperCase() === 'PENDING'
       || /transfer|reversal|refund|chargeback|estorno|reembolso/i.test(operationType);
   }
