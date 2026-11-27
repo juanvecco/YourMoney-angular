@@ -61,6 +61,10 @@ export class OpenFinancePageComponent implements OnInit {
   conexoesPluggy: PluggyConnection[] = [];
   contasPluggy: PluggyAccount[] = [];
   contasDisponiveisPluggy: PluggyAccount[] = [];
+  contasManuaisParaVinculo: Record<string, string> = {};
+  contaPluggySalvandoId: string | null = null;
+  erroVinculoConta = '';
+  mensagemVinculoConta = '';
   transacoesPluggy: PluggyTransactionPreview[] = [];
   saldosPluggy: PluggyOverview['balancesByCurrencyAndType'] = [];
   visaoGeralPluggy: PluggyOverview | null = null;
@@ -158,6 +162,9 @@ export class OpenFinancePageComponent implements OnInit {
     this.conexoesPluggy = [];
     this.contasPluggy = [];
     this.contasDisponiveisPluggy = [];
+    this.contasManuaisParaVinculo = {};
+    this.erroVinculoConta = '';
+    this.mensagemVinculoConta = '';
     this.contasFinanceirasImportacao = [];
     this.visaoGeralPluggy = null;
     this.configuracaoPluggyVisivel = false;
@@ -466,8 +473,48 @@ export class OpenFinancePageComponent implements OnInit {
   private carregarContasDisponiveisPluggy(): void {
     const walletId = this.carteiraSelecionadaId;
     this.openFinanceService.obterContasPluggy(walletId).subscribe({
-      next: contas => { if (walletId === this.carteiraSelecionadaId) this.contasDisponiveisPluggy = contas; },
-      error: () => { if (walletId === this.carteiraSelecionadaId) this.contasDisponiveisPluggy = this.visaoGeralPluggy?.accounts ?? []; },
+      next: contas => {
+        if (walletId !== this.carteiraSelecionadaId) return;
+        this.contasDisponiveisPluggy = contas;
+        this.contasManuaisParaVinculo = Object.fromEntries(contas.map(account =>
+          [account.accountId, account.linkedContaFinanceiraId ?? '']));
+      },
+      error: () => {
+        if (walletId !== this.carteiraSelecionadaId) return;
+        this.contasDisponiveisPluggy = this.visaoGeralPluggy?.accounts ?? [];
+        this.contasManuaisParaVinculo = Object.fromEntries(this.contasDisponiveisPluggy.map(account =>
+          [account.accountId, account.linkedContaFinanceiraId ?? '']));
+      },
+    });
+  }
+
+  salvarVinculoContaPluggy(account: PluggyAccount): void {
+    if (this.contaPluggySalvandoId) return;
+    const walletId = this.carteiraSelecionadaId;
+    const selectedId = this.contasManuaisParaVinculo[account.accountId] || null;
+    this.contaPluggySalvandoId = account.accountId;
+    this.erroVinculoConta = '';
+    this.mensagemVinculoConta = '';
+    this.openFinanceService.vincularContaPluggy(account.connectionId, account.accountId, selectedId, walletId).subscribe({
+      next: updated => {
+        if (walletId !== this.carteiraSelecionadaId) return;
+        this.contaPluggySalvandoId = null;
+        this.contasDisponiveisPluggy = this.contasDisponiveisPluggy.map(item =>
+          item.accountId === account.accountId && item.connectionId === account.connectionId ? updated : item);
+        this.contasPluggy = this.contasPluggy.map(item =>
+          item.accountId === account.accountId && item.connectionId === account.connectionId ? updated : item);
+        this.transacoesPluggy = this.transacoesPluggy.map(item =>
+          item.accountId === account.accountId && item.connectionId === account.connectionId
+            ? { ...item, linkedContaFinanceiraId: selectedId } : item);
+        this.mensagemVinculoConta = selectedId
+          ? 'Conta vinculada. As próximas revisões usarão esta conta como sugestão.'
+          : 'Vínculo removido. As próximas revisões pedirão uma conta.';
+      },
+      error: error => {
+        if (walletId !== this.carteiraSelecionadaId) return;
+        this.contaPluggySalvandoId = null;
+        this.erroVinculoConta = error?.error?.message || 'Não foi possível salvar o vínculo da conta.';
+      },
     });
   }
 
@@ -598,6 +645,8 @@ export class OpenFinancePageComponent implements OnInit {
         firstValueFrom(this.despesaService.listarCategorias()),
       ]);
       this.contasFinanceirasImportacao = contas;
+      this.formImportacao.idContaFinanceira = contas.some(account => account.id === transacao.linkedContaFinanceiraId)
+        ? transacao.linkedContaFinanceiraId! : '';
       this.categoriasImportacao = categorias;
       this.tiposDespesaImportacao = categorias.filter(categoria => !categoria.categoriaPaiId);
       this.naturezasDespesaImportacao = [];

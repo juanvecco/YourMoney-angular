@@ -108,6 +108,12 @@ export class OpenFinanceService {
     return this.http.get<PluggyAccount[]>(`${this.baseUrl}/OpenFinance/accounts`, { params: this.walletParams(carteiraId) });
   }
 
+  vincularContaPluggy(connectionId: string, accountId: string, contaFinanceiraId: string | null,
+    carteiraId?: string): Observable<PluggyAccount> {
+    return this.http.put<PluggyAccount>(`${this.baseUrl}/OpenFinance/accounts/link`,
+      { connectionId, accountId, contaFinanceiraId }, { params: this.walletParams(carteiraId) });
+  }
+
   obterTransacoesPluggy(carteiraId?: string): Observable<PluggyTransactionPreview[]> {
     return this.http.get<PluggyTransactionPreview[]>(`${this.baseUrl}/OpenFinance/real-transactions/preview`, { params: this.walletParams(carteiraId) });
   }

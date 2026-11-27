@@ -177,7 +177,7 @@ describe('DespesasComponent Open Finance panel', () => {
     expect(openFinance.reconciliarDespesaPluggy).not.toHaveBeenCalled();
   });
 
-  it('prefills a unique matching expense category and the unique C6 Bank account', () => {
+  it('prefills a unique category and the existing C6BANK account from C6 PAR2', () => {
     const categories = [
       { id: 'essenciais', descricao: 'Essenciais', tipoTransacao: 1, categoriaPaiId: null },
       { id: 'alimentacao', descricao: 'Alimentação', tipoTransacao: 1, categoriaPaiId: 'essenciais' },
@@ -185,17 +185,70 @@ describe('DespesasComponent Open Finance panel', () => {
     ];
     (component as any).despesaService = { todasCategorias: categories };
     component.tiposDespesa = [categories[0] as any];
-    component.contas = [{ id: 'conta-c6', descricao: 'C6 Bank' }];
+    component.contas = [{ id: 'conta-c6', descricao: 'C6BANK' }];
     spyOn<any>(component, 'abrirModal');
 
     component.abrirCadastroOpenFinance(transacao({
       category: 'Supermarket',
-      institutionName: 'C6 Bank'
-    }));
+      institutionName: 'MeuPluggy',
+      accountName: 'C6 PAR2',
+      classification: 'REVIEW',
+      status: 'PENDING'
+    }), false, 'expense');
 
     expect(component.novaDespesa.idCategoriaEspecifica).toBe('mercado');
     expect(component.novaDespesa.idContaFinanceira).toBe('conta-c6');
     expect(component.usarNovaCategoriaOpenFinance).toBeFalse();
+  });
+
+  it('prefills NUBANK when a provider account name identifies Nubank', () => {
+    component.contas = [{ id: 'conta-nu', descricao: 'NUBANK' }, { id: 'conta-c6', descricao: 'C6BANK' }];
+    spyOn<any>(component, 'abrirModal');
+
+    component.abrirCadastroOpenFinance(transacao({
+      institutionName: 'MeuPluggy',
+      accountName: 'platinum',
+      accountOriginalName: 'Nubank Mastercard Platinum'
+    }));
+
+    expect(component.novaDespesa.idContaFinanceira).toBe('conta-nu');
+  });
+
+  it('requires account choice when the provider only reports a generic card name', () => {
+    component.contas = [{ id: 'conta-nu', descricao: 'NUBANK' }];
+    spyOn<any>(component, 'abrirModal');
+
+    component.abrirCadastroOpenFinance(transacao({
+      institutionName: 'MeuPluggy', accountName: 'platinum', accountOriginalName: 'Cartão Platinum'
+    }));
+
+    expect(component.novaDespesa.idContaFinanceira).toBe('');
+  });
+
+  it('requires account choice when bank metadata conflicts or local matches are duplicated', () => {
+    component.contas = [{ id: 'conta-nu', descricao: 'NUBANK' }, { id: 'conta-c6', descricao: 'C6BANK' }];
+    spyOn<any>(component, 'abrirModal');
+
+    component.abrirCadastroOpenFinance(transacao({
+      institutionName: 'Nubank', accountName: 'C6 PAR2'
+    }));
+    expect(component.novaDespesa.idContaFinanceira).toBe('');
+
+    component.contas = [{ id: 'nu-1', descricao: 'NUBANK' }, { id: 'nu-2', descricao: 'Nu Bank' }];
+    component.abrirCadastroOpenFinance(transacao({ institutionName: 'Nubank' }));
+    expect(component.novaDespesa.idContaFinanceira).toBe('');
+  });
+
+  it('uses a confirmed account link for a generic provider account name', () => {
+    component.contas = [{ id: 'conta-nu', descricao: 'NUBANK' }];
+    spyOn<any>(component, 'abrirModal');
+
+    component.abrirCadastroOpenFinance(transacao({
+      institutionName: 'MeuPluggy', accountName: 'platinum',
+      linkedContaFinanceiraId: 'conta-nu'
+    }));
+
+    expect(component.novaDespesa.idContaFinanceira).toBe('conta-nu');
   });
 
   it('keeps an unmatched provider category editable without creating it before save', () => {

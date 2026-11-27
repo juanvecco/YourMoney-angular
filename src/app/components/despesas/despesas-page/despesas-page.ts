@@ -240,7 +240,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
                 next: (contas) => {
                     this.contas = contas;
                     if (this.transacaoOpenFinanceEmRevisao && !this.novaDespesa.idContaFinanceira)
-                        this.aplicarContaC6OpenFinance(this.transacaoOpenFinanceEmRevisao);
+                        this.aplicarContaOpenFinance(this.transacaoOpenFinanceEmRevisao);
                     this.aplicarTotaisPorConta(this.totaisPorContaBrutos);
                     if (!this.contaConciliacaoId) {
                         this.contaConciliacaoId = this.filtrosTransacoes.idContaFinanceira || (contas.length === 1 ? contas[0].id : '');
@@ -1107,7 +1107,7 @@ export class DespesasComponent implements OnInit, OnDestroy {
     }
 
     private aplicarSugestoesCadastroOpenFinance(transaction: PluggyTransactionPreview): void {
-        this.aplicarContaC6OpenFinance(transaction);
+        this.aplicarContaOpenFinance(transaction);
         const sourceCategory = transaction.category?.trim();
         if (!sourceCategory) return;
 
@@ -1155,17 +1155,26 @@ export class DespesasComponent implements OnInit, OnDestroy {
             .replace(/\s+/g, ' ');
     }
 
-    private aplicarContaC6OpenFinance(transaction: PluggyTransactionPreview): void {
+    private aplicarContaOpenFinance(transaction: PluggyTransactionPreview): void {
         this.novaDespesa.idContaFinanceira = '';
-        const sourceNames = `${transaction.institutionName} ${transaction.accountName}`
-            .split(/\s+/)
-            .map(value => this.normalizarCategoriaOpenFinance(value));
-        if (!sourceNames.includes('c6')) return;
+        if (transaction.linkedContaFinanceiraId) {
+            if (this.contas.some(account => account.id === transaction.linkedContaFinanceiraId))
+                this.novaDespesa.idContaFinanceira = transaction.linkedContaFinanceiraId;
+            return;
+        }
+        const sourceNames = [transaction.institutionName, transaction.accountName, transaction.accountOriginalName]
+            .filter((value): value is string => !!value)
+            .map(value => this.normalizarCategoriaOpenFinance(value))
+            .join(' ');
+        const isC6 = /\b(?:c6|c6bank)\b/.test(sourceNames);
+        const isNubank = /\b(?:nubank|nu bank|nu pagamentos)\b/.test(sourceNames);
+        if (isC6 === isNubank) return;
 
-        const c6Accounts = this.contas.filter(account =>
-            this.normalizarCategoriaOpenFinance(account.descricao ?? '') === 'c6 bank'
+        const aliases = isC6 ? ['c6bank', 'bancoc6', 'c6'] : ['nubank', 'nupagamentos'];
+        const matchingAccounts = this.contas.filter(account =>
+            aliases.includes(this.normalizarCategoriaOpenFinance(account.descricao ?? '').replace(/\s/g, ''))
         );
-        if (c6Accounts.length === 1) this.novaDespesa.idContaFinanceira = c6Accounts[0].id;
+        if (matchingAccounts.length === 1) this.novaDespesa.idContaFinanceira = matchingAccounts[0].id;
     }
 
     private limparCategoriaSelecionadaOpenFinance(): void {

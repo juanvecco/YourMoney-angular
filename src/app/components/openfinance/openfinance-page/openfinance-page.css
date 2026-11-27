@@ -57,6 +57,9 @@
 .of-balance-card small { color: var(--ym-muted); }
 .of-account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: .65rem; margin: .5rem 0 1.5rem; }
 .of-account-tile { display: flex; align-items: center; gap: .75rem; min-width: 0; padding: .85rem; border: 1px solid var(--ym-border); border-radius: var(--ym-radius-sm); background: var(--ym-surface-strong); }
+.of-account-tile:has(.of-account-link) { flex-wrap: wrap; }
+.of-account-link { display: grid; gap: .35rem; width: 100%; font-size: .85rem; color: var(--ym-text-muted); }
+.of-account-link select { width: 100%; }
 .of-account-icon { display: grid; flex: 0 0 2.5rem; width: 2.5rem; height: 2.5rem; place-items: center; border-radius: .8rem; color: var(--ym-primary); background: color-mix(in srgb, var(--ym-primary) 10%, var(--ym-surface)); font-size: 1.15rem; }
 .of-account-copy { flex: 1; min-width: 0; }
 .of-account-copy span, .of-account-copy small { display: block; color: var(--ym-muted); font-size: .78rem; }

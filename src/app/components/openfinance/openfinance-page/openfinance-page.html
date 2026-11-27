@@ -241,6 +241,9 @@
       }
 
       @if (contasPluggy.length > 0) {
+        <p>Associe cada conta conectada à conta manual usada nos seus lançamentos. O vínculo preenche a conta nas próximas revisões e não altera lançamentos existentes.</p>
+        @if (erroVinculoConta) { <p class="of-import-error" role="alert">{{ erroVinculoConta }}</p> }
+        @if (mensagemVinculoConta) { <p class="of-provider-message" role="status">{{ mensagemVinculoConta }}</p> }
         <div class="of-account-grid" aria-label="Contas conectadas">
           @for (conta of contasPluggy; track conta.accountId) {
             <article class="of-account-tile">
@@ -249,6 +252,16 @@
                 @if (conta.number) { <small>•••• {{ conta.number }}</small> }
               </div>
               @if (conta.balance !== null) { <strong>{{ conta.balance | financialValue:conta.currencyCode }}</strong> }
+              <label class="of-account-link">Conta manual correspondente
+                <select [name]="'accountLink-' + conta.accountId" [(ngModel)]="contasManuaisParaVinculo[conta.accountId]">
+                  <option value="">Sem vínculo</option>
+                  @for (manual of contasFinanceiras; track manual.id) { <option [value]="manual.id">{{ manual.descricao }}</option> }
+                </select>
+              </label>
+              <button type="button" class="ym-button secondary" (click)="salvarVinculoContaPluggy(conta)"
+                [disabled]="contaPluggySalvandoId !== null || (contasManuaisParaVinculo[conta.accountId] || '') === (conta.linkedContaFinanceiraId || '')">
+                {{ contaPluggySalvandoId === conta.accountId ? 'Salvando...' : !contasManuaisParaVinculo[conta.accountId] ? 'Desvincular conta' : conta.linkedContaFinanceiraId ? 'Atualizar vínculo' : 'Vincular conta' }}
+              </button>
             </article>
           }
         </div>

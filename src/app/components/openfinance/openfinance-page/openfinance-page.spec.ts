@@ -84,6 +84,7 @@ describe('OpenFinancePageComponent', () => {
       'obterConexoes',
       'obterConnectToken',
       'obterContasPluggy',
+      'vincularContaPluggy',
       'obterVisaoGeralPluggy',
       'removerConexao',
       'registrarConexao',
@@ -115,6 +116,8 @@ describe('OpenFinancePageComponent', () => {
     openFinanceService.obterConexoes.and.returnValue(of([]));
     openFinanceService.obterConnectToken.and.returnValue(of({ accessToken: 'temporary', expiresAt: '2026-10-27T15:00:00Z' }));
     openFinanceService.obterContasPluggy.and.returnValue(of([]));
+    openFinanceService.vincularContaPluggy.and.callFake((connectionId, accountId, contaFinanceiraId) =>
+      of({ connectionId, accountId, linkedContaFinanceiraId: contaFinanceiraId, name: 'platinum' } as any));
     openFinanceService.obterVisaoGeralPluggy.and.returnValue(of({ accounts: [], balancesByCurrencyAndType: [], transactions: [] } as any));
     openFinanceService.removerConexao.and.returnValue(of(void 0));
     openFinanceService.registrarConexao.and.returnValue(of({ id: 'connection-1' } as any));
@@ -478,5 +481,33 @@ describe('OpenFinancePageComponent', () => {
       idContaFinanceira: 'account-1',
       idCategoria: 'category-1'
     }), carteira.id);
+  });
+
+  it('saves a manual Nubank link for a generic Platinum source and uses it in review', async () => {
+    const source = { connectionId: 'connection-1', accountId: 'pluggy-platinum',
+      institutionName: 'MeuPluggy', name: 'platinum', linkedContaFinanceiraId: null } as any;
+    const pending = { transactionId: 'purchase-1', connectionId: source.connectionId,
+      accountId: source.accountId, linkedContaFinanceiraId: null,
+      direction: 'DEBIT', status: 'PENDING', classification: 'EXPENSE', importable: true,
+      registrationStatus: 'PENDING', description: 'Compra', amount: 25,
+      currencyCode: 'BRL', date: '2026-11-24T12:00:00Z' } as PluggyTransactionPreview;
+    contaFinanceiraService.listarContas.and.returnValue(of([{ id: 'nubank', descricao: 'NUBANK' }] as any));
+    component.contasFinanceiras = [{ id: 'nubank', descricao: 'NUBANK' }] as any;
+    component.contasDisponiveisPluggy = [source];
+    component.contasPluggy = [source];
+    component.transacoesPluggy = [pending];
+    component.contasManuaisParaVinculo[source.accountId] = 'nubank';
+    (component as any).despesaService = {
+      listarCategorias: () => of([]),
+      obterPorReferencia: () => of([])
+    };
+
+    component.salvarVinculoContaPluggy(source);
+
+    expect(openFinanceService.vincularContaPluggy).toHaveBeenCalledOnceWith(
+      'connection-1', 'pluggy-platinum', 'nubank', carteira.id);
+    expect(component.transacoesPluggy[0].linkedContaFinanceiraId).toBe('nubank');
+    await component.abrirRevisaoTransacao(component.transacoesPluggy[0]);
+    expect(component.formImportacao.idContaFinanceira).toBe('nubank');
   });
 });

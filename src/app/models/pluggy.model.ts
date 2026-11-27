@@ -32,6 +32,8 @@ export interface PluggyAccount {
   institutionName: string;
   accountId: string;
   name: string;
+  originalName?: string | null;
+  linkedContaFinanceiraId?: string | null;
   type: string;
   number: string | null;
   balance: number | null;
@@ -88,6 +90,8 @@ export interface PluggyTransactionPreview {
   accountId: string;
   institutionName: string;
   accountName: string;
+  accountOriginalName?: string | null;
+  linkedContaFinanceiraId?: string | null;
   category: string | null;
   date: string;
   description: string;
