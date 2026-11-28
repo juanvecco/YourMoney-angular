@@ -26,6 +26,8 @@ import { ViewStateComponent } from '../../shared/view-state/view-state';
 import { FinancialValuePipe } from '../../../pipes/financial-value.pipe';
 import { FinancialValueInputDirective } from '../../../directives/financial-value-input.directive';
 import { RegraNegocioService } from '../../../services/regra-negocio.service';
+import { OpenFinanceService } from '../../../services/openfinance';
+import { PluggyTransactionPreview } from '../../../models/pluggy.model';
 
 type ReceitaRecorrenteForm = {
     descricao: string;
@@ -57,6 +59,7 @@ type ConfirmacaoSugestaoReceitaForm = {
 export class ReceitaPageComponent implements OnInit, OnDestroy {
     private destroy$ = new Subject<void>();
     private loadRevision = 0;
+    private openFinanceRevision = 0;
 
     // === DADOS ===
     receitas: Receita[] = [];
@@ -67,6 +70,13 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
     estadoCarregamento: FinancialViewState = 'loading';
     mensagemCarregamento = '';
     contas: ContaFinanceira[] = [];
+    mostrarOpenFinance = false;
+    transacoesOpenFinance: PluggyTransactionPreview[] = [];
+    contasOpenFinanceDisponiveis: number | null = null;
+    carregandoOpenFinance = false;
+    erroOpenFinance = '';
+    openFinanceConfiguracaoPendente = false;
+    transacaoOpenFinanceEmRevisao: PluggyTransactionPreview | null = null;
 
     recorrencias: ReceitaRecorrenteResponse[] = [];
     sugestoesRecorrentes: SugestaoReceitaRecorrenteResponse[] = [];
@@ -92,7 +102,8 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         data: new Date().toISOString().split('T')[0],
         mesReferencia: this.obterMesReferenciaInput(new Date()),
         natureza: 'RendaDisponivel' as NaturezaReceita,
-        despesaVinculadaId: ''
+        despesaVinculadaId: '',
+        idContaFinanceira: ''
     };
 
     editando = false;
@@ -111,7 +122,8 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         private authService: AuthService,
         private router: Router,
         private financialContext: FinancialNavigationContextService = new FinancialNavigationContextService(),
-        @Optional() private readonly regras: RegraNegocioService | null = null
+        @Optional() private readonly regras: RegraNegocioService | null = null,
+        @Optional() private readonly openFinanceService: OpenFinanceService | null = null
     ) {
         this.mesAtual = this.financialContext.period().date;
     }
@@ -147,6 +159,125 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
 
     regraAtiva(codigo: string): boolean {
         return this.regras?.estaAtiva(codigo) ?? true;
+    }
+
+    alternarOpenFinance(ativo: boolean): void {
+        this.mostrarOpenFinance = ativo;
+        if (ativo) {
+            this.carregarTransacoesOpenFinance();
+            return;
+        }
+
+        this.openFinanceRevision++;
+        this.transacoesOpenFinance = [];
+        this.contasOpenFinanceDisponiveis = null;
+        this.carregandoOpenFinance = false;
+        this.erroOpenFinance = '';
+        this.openFinanceConfiguracaoPendente = false;
+    }
+
+    carregarTransacoesOpenFinance(): void {
+        if (!this.mostrarOpenFinance || !this.openFinanceService) return;
+
+        const revision = ++this.openFinanceRevision;
+        const inicio = this.obterDataMesInput(this.mesAtual);
+        const fim = this.obterDataMesInput(new Date(this.mesAtual.getFullYear(), this.mesAtual.getMonth() + 1, 0));
+        this.carregandoOpenFinance = true;
+        this.erroOpenFinance = '';
+        this.openFinanceConfiguracaoPendente = false;
+
+        this.openFinanceService.obterVisaoGeralPluggy({ from: inicio, to: fim })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: overview => {
+                    if (revision !== this.openFinanceRevision || !this.mostrarOpenFinance) return;
+                    this.contasOpenFinanceDisponiveis = overview.accounts?.length ?? 0;
+                    const motivosNaoReceita = new Set([
+                        'CARD_BILL_PAYMENT', 'TRANSFER', 'REDEMPTION', 'REVERSAL', 'UNSUPPORTED_STATUS'
+                    ]);
+                    this.transacoesOpenFinance = (overview.transactions ?? []).filter(transaction =>
+                        transaction.direction === 'CREDIT'
+                        && transaction.registrationStatus !== 'REGISTERED'
+                        && transaction.importable
+                        && !motivosNaoReceita.has(transaction.classificationReason)
+                        && ['POSTED', 'PENDING'].includes(transaction.status?.toUpperCase() ?? '')
+                    );
+                    this.carregandoOpenFinance = false;
+                },
+                error: error => {
+                    if (revision !== this.openFinanceRevision || !this.mostrarOpenFinance) return;
+                    this.carregandoOpenFinance = false;
+                    this.openFinanceConfiguracaoPendente = error?.status === 503;
+                    this.erroOpenFinance = this.mensagemErroOpenFinance(error);
+                }
+            });
+    }
+
+    abrirOpenFinance(): void {
+        this.router.navigate(['/openfinance']);
+    }
+
+    abrirRevisaoReceitaOpenFinance(transaction: PluggyTransactionPreview): void {
+        if (!this.podeRevisarReceitaOpenFinance(transaction)) return;
+
+        const data = this.dataCivilOpenFinance(transaction.date);
+        this.editando = false;
+        this.novaReceita = {
+            id: '',
+            descricao: transaction.description,
+            valor: this.valorReceitaOpenFinance(transaction),
+            data,
+            mesReferencia: data.slice(0, 7),
+            natureza: 'RendaDisponivel',
+            despesaVinculadaId: '',
+            idContaFinanceira: this.contas.some(account => account.id === transaction.linkedContaFinanceiraId)
+                ? transaction.linkedContaFinanceiraId!
+                : ''
+        };
+        this.transacaoOpenFinanceEmRevisao = transaction;
+        this.abrirModal();
+    }
+
+    podeRevisarReceitaOpenFinance(transaction: PluggyTransactionPreview): boolean {
+        const motivosNaoReceita = ['CARD_BILL_PAYMENT', 'TRANSFER', 'REDEMPTION', 'REVERSAL', 'UNSUPPORTED_STATUS'];
+        return transaction.direction === 'CREDIT'
+            && transaction.registrationStatus !== 'REGISTERED'
+            && transaction.importable
+            && !motivosNaoReceita.includes(transaction.classificationReason)
+            && ['POSTED', 'PENDING'].includes(transaction.status?.toUpperCase() ?? '');
+    }
+
+    valorReceitaOpenFinance(transaction: PluggyTransactionPreview): number {
+        const value = transaction.suggestedAmountBrl
+            ?? (transaction.currencyCode?.toUpperCase() === 'BRL'
+                ? transaction.amount
+                : transaction.amountInAccountCurrency ?? 0);
+        return Math.abs(value);
+    }
+
+    dataCivilOpenFinance(value: string): string {
+        const datePart = value?.slice(0, 10) ?? '';
+        return /^\d{4}-\d{2}-\d{2}$/.test(datePart)
+            ? datePart
+            : new Date(value).toISOString().slice(0, 10);
+    }
+
+    formatarDataOpenFinance(value: string): string {
+        const [year, month, day] = this.dataCivilOpenFinance(value).split('-');
+        return `${day}/${month}/${year}`;
+    }
+
+    private obterDataMesInput(date: Date): string {
+        const ano = date.getFullYear();
+        const mes = String(date.getMonth() + 1).padStart(2, '0');
+        return `${ano}-${mes}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    private mensagemErroOpenFinance(error: any): string {
+        if (error?.status === 503) return error?.error?.message || 'O Open Finance ainda não está configurado para esta conta.';
+        if (error?.status === 409) return 'A autorização Open Finance precisa ser renovada. Confira a área Conexões.';
+        if (error?.status === 403) return 'Esta conexão Open Finance não está disponível para esta conta.';
+        return 'Não foi possível carregar as entradas Open Finance. Tente novamente.';
     }
 
     carregarContas() {
@@ -270,6 +401,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         this.carregarReceitas();
         this.carregarDespesasVinculaveis();
         this.carregarSugestoesRecorrentes();
+        if (this.mostrarOpenFinance) this.carregarTransacoesOpenFinance();
     }
 
     // === CALENDÁRIO ===
@@ -290,6 +422,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         this.carregarReceitas();
         this.carregarDespesasVinculaveis();
         this.carregarSugestoesRecorrentes();
+        if (this.mostrarOpenFinance) this.carregarTransacoesOpenFinance();
     }
 
     selecionarMes(periodo: Date): void {
@@ -298,6 +431,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
         this.carregarReceitas();
         this.carregarDespesasVinculaveis();
         this.carregarSugestoesRecorrentes();
+        if (this.mostrarOpenFinance) this.carregarTransacoesOpenFinance();
     }
 
     logout(): void {
@@ -312,18 +446,21 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
 
     abrirModalReceita() {
         this.editando = false;
+        this.transacaoOpenFinanceEmRevisao = null;
         this.resetForm();
         this.abrirModal();
     }
 
     abrirModalEditar(receita: Receita) {
         this.editando = true;
+        this.transacaoOpenFinanceEmRevisao = null;
         this.novaReceita = {
             ...receita,
             data: new Date(receita.data).toISOString().split('T')[0],
             mesReferencia: this.obterMesReferenciaInput(receita.mesReferencia || receita.data),
             natureza: receita.natureza ?? 'RendaDisponivel',
-            despesaVinculadaId: receita.despesaVinculadaId ?? ''
+            despesaVinculadaId: receita.despesaVinculadaId ?? '',
+            idContaFinanceira: receita.idContaFinanceira ?? ''
         };
         this.abrirModal();
     }
@@ -341,13 +478,19 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
             data: new Date().toISOString().split('T')[0],
             mesReferencia: this.obterMesReferenciaInput(this.mesAtual),
             natureza: 'RendaDisponivel',
-            despesaVinculadaId: ''
+            despesaVinculadaId: '',
+            idContaFinanceira: ''
         };
     }
 
     // === SALVAR ===
     salvarReceita() {
         if (this.salvandoReceita) return;
+
+        if (this.transacaoOpenFinanceEmRevisao) {
+            this.salvarReceitaOpenFinance();
+            return;
+        }
 
         if (!this.camposObrigatoriosPreenchidos()) {
             this.mostrarAlertaCamposObrigatorios();
@@ -360,6 +503,7 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
             data: this.novaReceita.data,
             mesReferencia: this.converterMesReferenciaParaApi(this.novaReceita.mesReferencia),
             natureza: this.novaReceita.natureza,
+            idContaFinanceira: this.novaReceita.idContaFinanceira || null,
             despesaVinculadaId: this.novaReceita.natureza === 'Reembolso'
                 ? this.novaReceita.despesaVinculadaId || null
                 : null
@@ -384,6 +528,49 @@ export class ReceitaPageComponent implements OnInit, OnDestroy {
                 this.salvandoReceita = false;
             },
             error: (error: unknown) => {
+                this.salvandoReceita = false;
+                this.mostrarErro(error);
+            }
+        });
+    }
+
+    private salvarReceitaOpenFinance(): void {
+        const transaction = this.transacaoOpenFinanceEmRevisao;
+        if (!transaction || !this.openFinanceService) return;
+        if (!this.novaReceita.idContaFinanceira) {
+            Swal.fire({ icon: 'warning', title: 'Selecione uma conta', text: 'Escolha a conta do YourMoney para esta entrada.' });
+            return;
+        }
+        if (!this.camposObrigatoriosPreenchidos()) {
+            this.mostrarAlertaCamposObrigatorios();
+            return;
+        }
+
+        this.salvandoReceita = true;
+        this.openFinanceService.importarTransacaoPluggy({
+            transactionId: transaction.transactionId,
+            recordType: 'revenue',
+            description: this.novaReceita.descricao.trim(),
+            amount: this.novaReceita.valor,
+            date: this.novaReceita.data,
+            idContaFinanceira: this.novaReceita.idContaFinanceira,
+            natureza: this.novaReceita.natureza,
+            despesaVinculadaId: this.novaReceita.natureza === 'Reembolso'
+                ? this.novaReceita.despesaVinculadaId || null
+                : null
+        }).pipe(takeUntil(this.destroy$)).subscribe({
+            next: () => {
+                transaction.registrationStatus = 'REGISTERED';
+                transaction.registeredRecordType = 'revenue';
+                this.transacaoOpenFinanceEmRevisao = null;
+                this.salvandoReceita = false;
+                this.fecharModal();
+                this.carregarReceitas();
+                this.carregarDespesasVinculaveis();
+                this.carregarTransacoesOpenFinance();
+                this.mostrarSucesso();
+            },
+            error: error => {
                 this.salvandoReceita = false;
                 this.mostrarErro(error);
             }

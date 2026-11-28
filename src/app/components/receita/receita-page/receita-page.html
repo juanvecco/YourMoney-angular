@@ -16,6 +16,60 @@
                     <p class="ym-kpi-meta">Referência: {{ mesAtual | date:'MMMM yyyy':'pt-BR' }}</p>
                 </article>
 
+                <section *ngIf="regraAtiva('openfinance.visivel')" class="ym-revenue-openfinance" aria-labelledby="receitaOpenFinanceTitle">
+                    <div class="ym-revenue-openfinance__toggle-row">
+                        <label class="ym-revenue-openfinance__toggle" for="mostrarOpenFinanceReceitas">
+                            <input id="mostrarOpenFinanceReceitas" type="checkbox" role="switch"
+                                [ngModel]="mostrarOpenFinance" (ngModelChange)="alternarOpenFinance($event)"
+                                name="mostrarOpenFinanceReceitas" aria-controls="listaOpenFinanceReceitas"
+                                [attr.aria-expanded]="mostrarOpenFinance" />
+                            <span>
+                                <strong id="receitaOpenFinanceTitle">Mostrar transações Open Finance</strong>
+                                <small>Confira entradas bancárias e escolha quais cadastrar como receitas.</small>
+                            </span>
+                        </label>
+                        <span class="ym-chip ym-revenue-openfinance__badge">Somente entradas</span>
+                    </div>
+
+                    <div id="listaOpenFinanceReceitas" [hidden]="!mostrarOpenFinance" class="ym-revenue-openfinance__list"
+                        aria-live="polite" [attr.aria-busy]="carregandoOpenFinance">
+                        <div class="ym-revenue-openfinance__state" *ngIf="carregandoOpenFinance">Carregando entradas da instituição...</div>
+                        <div class="ym-revenue-openfinance__state error" role="alert" *ngIf="!carregandoOpenFinance && erroOpenFinance">
+                            <span>{{ erroOpenFinance }}</span>
+                            <button class="ym-button secondary" type="button" *ngIf="openFinanceConfiguracaoPendente" (click)="abrirOpenFinance()">Abrir Conexões</button>
+                            <button class="ym-button" type="button" *ngIf="!openFinanceConfiguracaoPendente" (click)="carregarTransacoesOpenFinance()">Tentar novamente</button>
+                        </div>
+                        <div class="ym-revenue-openfinance__state" *ngIf="!carregandoOpenFinance && !erroOpenFinance && contasOpenFinanceDisponiveis === 0">
+                            Nenhuma conexão Open Finance disponível. Conecte um banco pela área <button class="ym-text-button" type="button" (click)="abrirOpenFinance()">Conexões</button>.
+                        </div>
+                        <div class="ym-revenue-openfinance__state" *ngIf="!carregandoOpenFinance && !erroOpenFinance && (contasOpenFinanceDisponiveis ?? 0) > 0 && transacoesOpenFinance.length === 0">
+                            Nenhuma entrada disponível para revisar neste mês. Transferências, resgates, estornos e movimentações já cadastradas não aparecem aqui.
+                        </div>
+
+                        <article class="ym-revenue-openfinance__item" *ngFor="let transacao of transacoesOpenFinance">
+                            <div class="ym-revenue-openfinance__item-main">
+                                <div>
+                                    <span class="ym-revenue-openfinance__source">Open Finance · {{ transacao.institutionName }}</span>
+                                    <h3>{{ transacao.description }}</h3>
+                                    <p>{{ transacao.accountName }} · {{ formatarDataOpenFinance(transacao.date) }}</p>
+                                </div>
+                                <strong class="ym-revenue-openfinance__amount">{{ valorReceitaOpenFinance(transacao) | financialValue }}</strong>
+                            </div>
+                            <p class="ym-revenue-openfinance__notice" *ngIf="transacao.status?.toUpperCase() === 'PENDING'">
+                                O banco ainda mostra esta entrada como pendente; valor e data podem mudar.
+                            </p>
+                            <p class="ym-revenue-openfinance__notice" *ngIf="transacao.currencyCode?.toUpperCase() !== 'BRL'">
+                                Valor convertido para reais conforme os dados disponíveis da instituição.
+                            </p>
+                            <button class="ym-button primary accent-success" type="button"
+                                [disabled]="!podeRevisarReceitaOpenFinance(transacao)"
+                                (click)="abrirRevisaoReceitaOpenFinance(transacao)">
+                                Revisar como receita
+                            </button>
+                        </article>
+                    </div>
+                </section>
+
                 <section *ngIf="regraAtiva('receitas.recorrencia')" class="ym-recurring-band" aria-labelledby="tituloSugestoesReceita">
                     <div class="ym-section-header ym-section-header-compact">
                         <div>
@@ -270,13 +324,16 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title fw-bold">
-                    <i class="bi bi-cash-stack me-2"></i>{{ novaReceita.id ? 'Editar' : 'Nova' }} Receita
+                    <i class="bi bi-cash-stack me-2"></i>{{ transacaoOpenFinanceEmRevisao ? 'Revisar receita Open Finance' : novaReceita.id ? 'Editar Receita' : 'Nova Receita' }}
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body pt-4">
                 <form>
                   <p class="ym-form-hint">Campos com * são obrigatórios.</p>
+                    <p *ngIf="transacaoOpenFinanceEmRevisao" class="ym-revenue-openfinance__notice" role="note">
+                        Confira os dados antes de confirmar. O banco ainda pode alterar valor ou data se a entrada estiver pendente.
+                    </p>
                     <div class="row g-3">
                         <div class="col-12">
                             <label class="form-label" for="receita-descricao">Descrição <span class="ym-required" aria-hidden="true">*</span></label>
@@ -292,6 +349,14 @@
                             <label class="form-label" for="receita-data">Data <span class="ym-required" aria-hidden="true">*</span></label>
                               <input id="receita-data" type="date" class="form-control" [(ngModel)]="novaReceita.data" name="data"
                                 required />
+                        </div>
+                        <div class="col-12" *ngIf="transacaoOpenFinanceEmRevisao">
+                            <label class="form-label" for="receita-conta">Conta <span class="ym-required" aria-hidden="true">*</span></label>
+                            <select id="receita-conta" class="form-select" [(ngModel)]="novaReceita.idContaFinanceira"
+                                name="receitaConta" required>
+                                <option value="">Selecione uma conta</option>
+                                <option *ngFor="let conta of contas" [value]="conta.id">{{ conta.descricao }}</option>
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label" for="receita-mesReferencia">Mês de Referência <span class="ym-required" aria-hidden="true">*</span></label>
@@ -332,7 +397,7 @@
                     [disabled]="salvandoReceita">
                     <i class="bi" [class.bi-hourglass-split]="salvandoReceita"
                         [class.bi-check2]="!salvandoReceita"></i>
-                    {{ salvandoReceita ? 'Salvando...' : 'Salvar Receita' }}
+                    {{ salvandoReceita ? 'Salvando...' : transacaoOpenFinanceEmRevisao ? 'Confirmar receita' : 'Salvar Receita' }}
                 </button>
             </div>
         </div>

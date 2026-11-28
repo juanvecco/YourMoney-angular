@@ -12,6 +12,48 @@
 .ym-revenue-item__summary .ym-list-title { min-width: 0; overflow-wrap: anywhere; }
 .ym-revenue-item__hint { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; color: var(--ym-primary); font-size: 12px; font-weight: 700; }
 
+.ym-revenue-openfinance {
+    display: grid;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid var(--ym-border);
+    border-radius: 16px;
+    background: var(--ym-surface, rgba(255, 255, 255, 0.03));
+}
+
+.ym-revenue-openfinance__toggle-row,
+.ym-revenue-openfinance__toggle,
+.ym-revenue-openfinance__item-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.ym-revenue-openfinance__toggle { justify-content: flex-start; cursor: pointer; }
+.ym-revenue-openfinance__toggle input { width: 20px; height: 20px; accent-color: var(--ym-success, #22c55e); }
+.ym-revenue-openfinance__toggle span { display: grid; gap: 3px; }
+.ym-revenue-openfinance__toggle small,
+.ym-revenue-openfinance__item p { color: var(--ym-muted, #aab3c2); }
+.ym-revenue-openfinance__badge { color: var(--ym-success, #22c55e); white-space: nowrap; }
+.ym-revenue-openfinance__list { display: grid; gap: 10px; }
+.ym-revenue-openfinance__state { padding: 12px; border: 1px solid var(--ym-border); border-radius: 12px; }
+.ym-revenue-openfinance__state.error { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--ym-danger, #ff8585); }
+.ym-revenue-openfinance__item { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--ym-border); border-radius: 12px; }
+.ym-revenue-openfinance__item-main { align-items: flex-start; }
+.ym-revenue-openfinance__item h3 { margin: 4px 0; color: var(--ym-text); font-size: 15px; overflow-wrap: anywhere; }
+.ym-revenue-openfinance__item p { margin: 0; font-size: 13px; }
+.ym-revenue-openfinance__source { color: var(--ym-muted, #aab3c2); font-size: 12px; }
+.ym-revenue-openfinance__amount { color: var(--ym-success, #22c55e); white-space: nowrap; }
+.ym-revenue-openfinance__notice { margin: 0; color: var(--ym-warning, #ffc078); font-size: 13px; }
+.ym-text-button { padding: 0; border: 0; color: var(--ym-primary); background: transparent; text-decoration: underline; }
+
+@media (max-width: 600px) {
+    .ym-revenue-openfinance__toggle-row { align-items: flex-start; flex-direction: column; }
+    .ym-revenue-openfinance__state.error { align-items: flex-start; flex-direction: column; }
+    .ym-revenue-openfinance__item-main { flex-direction: column; }
+}
+
 .natureza-disponivel {
     background: rgba(25, 135, 84, 0.12);
     border-color: rgba(25, 135, 84, 0.28);
